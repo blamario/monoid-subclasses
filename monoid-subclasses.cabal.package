@@ -1,0 +1,39 @@
+Name:                monoid-subclasses
+Version:             0.1
+Cabal-Version:       >= 1.10
+Build-Type:          Simple
+Synopsis:            Subclasses of Monoid
+Category:            Data
+Tested-with:         GHC
+Description:
+  This package defines a hierarchy of subclasses of 'Monoid' together with their instances for all data
+  structures from base, containers, and text packages.
+  
+License:             BSD3
+License-file:        BSD3-LICENSE.txt
+Copyright:           (c) 2013 Mario Blazevic
+Author:              Mario Blazevic
+Maintainer:          blamario@yahoo.com
+Homepage:            https://github.com/blamario/monoid-subclasses/
+Source-repository head
+  type:              darcs
+  location:          http://code.haskell.org/SCC/
+
+Library
+  Exposed-Modules:   Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
+                     Data.Monoid.Instances.ByteString.UTF8
+  Build-Depends:     base < 5, bytestring >= 0.9 && < 1.0, containers == 0.5.*, text == 0.11.*, primes == 0.2.*,
+                     utf8-string == 0.3.*, vector == 0.10.*
+  GHC-prof-options:  -auto-all
+  if impl(ghc >= 7.0.0)
+     default-language: Haskell2010
+
+test-suite Main
+  Type:              exitcode-stdio-1.0
+  x-uses-tf:         true
+  Build-Depends:     base < 5, bytestring >= 0.9 && < 1.0, containers == 0.5.*, text == 0.11.*, primes == 0.2.*,
+                     utf8-string == 0.3.*, vector == 0.10.*, QuickCheck == 2.*, quickcheck-instances == 0.3.*,
+                     test-framework >= 0.4.1, test-framework-quickcheck2
+  Main-is:           Test/TestMonoidSubclasses.hs
+  Other-Modules:     Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null
+  default-language:  Haskell2010
