@@ -6,9 +6,9 @@ monoid-subclasses
 The monoid-subclasses package has been released [on Hackage](http://hackage.haskell.org/package/monoid-subclasses). The package defines several classes that are richer than [monoids](http://hackage.haskell.org/packages/archive/base/latest/doc/html/Data-Monoid.html#t:Monoid) but less demanding than [groups](http://hackage.haskell.org/packages/archive/groups/0.1.0.1/doc/html/Data-Group.html):
   * [ReductiveMonoid](http://hackage.haskell.org/packages/archive/monoid-subclasses/0.1/doc/html/Data-Monoid-Cancellative.html#t:ReductiveMonoid) provides the operator `</>` which acts as a partial inverse of the `<>` operator, _i.e._, `Monoid.mappend`.
   * [CancellativeMonoid](http://hackage.haskell.org/packages/archive/monoid-subclasses/0.1/doc/html/Data-Monoid-Cancellative.html#t:CancellativeMonoid) is a subclass of `ReductiveMonoid` that provides additional guarantees about the `</>` operation result:
- 
-    > (a <> b) </> a == Just b
-    > (a <> b) </> b == Just a
+
+        (a <> b) </> a == Just b
+        (a <> b) </> b == Just a
 
     Every group (<em>i.e.</em>, every `Monoid a` with the operation `inverse :: a -> a`) is a `CancellativeMonoid` where `a </> b = Just (a <> inverse b)` but not every `CancellativeMonoid` is a group.
   * [GCDMonoid](http://hackage.haskell.org/packages/archive/monoid-subclasses/0.1/doc/html/Data-Monoid-Cancellative.html#t:GCDMonoid) is a subclass of `ReductiveMonoid` that provides the `gcd` operation for getting the greatest common denominator for two given monoid values.
