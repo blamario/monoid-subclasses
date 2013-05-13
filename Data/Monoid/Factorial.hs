@@ -126,10 +126,10 @@ class MonoidNull m => FactorialMonoid m where
    foldr f f0 = List.foldr f f0 . factors
    length = List.length . factors
    map f = foldr (mappend . f) mempty
-   span p = foldr f (mempty, mempty)
-      where f s (prefix, suffix) = if p s 
-                                   then (mappend s prefix, suffix) 
-                                   else (mempty, mappend s (mappend prefix suffix))
+   span p m = spanAfter id m
+      where spanAfter f m = case splitPrimePrefix m
+                            of Just (prime, rest) | p prime -> spanAfter (f . mappend prime) rest
+                               _ -> (f mempty, m)
    break = span . (not .)
    split p m = foldr f [mempty] m
       where f prime s@(x:xs) | p prime = mempty : s 
