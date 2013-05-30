@@ -89,9 +89,9 @@ class MonoidNull m => FactorialMonoid m where
    foldr :: (m -> a -> a) -> a -> m -> a
    -- | The 'length' of the list of 'primes'.
    length :: m -> Int
-   -- | Equivalent to 'List.map' from "Data.List", except the argument function works on prime factors rather than list
-   -- elements.
-   map :: (FactorialMonoid m, Monoid n) => (m -> n) -> m -> n
+   -- | Generalizes 'foldMap' from "Data.Foldable", except the function arguments are prime factors rather than the
+   -- structure elements.
+   foldMap :: (FactorialMonoid m, Monoid n) => (m -> n) -> m -> n
    -- | Like 'List.span' from "Data.List" on the list of 'primes'.
    span :: (m -> Bool) -> m -> (m, m)
    -- | Equivalent to 'List.break' from "Data.List".
@@ -125,7 +125,7 @@ class MonoidNull m => FactorialMonoid m where
    foldl' f f0 = List.foldl' f f0 . factors
    foldr f f0 = List.foldr f f0 . factors
    length = List.length . factors
-   map f = foldr (mappend . f) mempty
+   foldMap f = foldr (mappend . f) mempty
    span p m = spanAfter id m
       where spanAfter f m = case splitPrimePrefix m
                             of Just (prime, rest) | p prime -> spanAfter (f . mappend prime) rest
@@ -206,7 +206,7 @@ instance FactorialMonoid [x] where
    foldr _ f0 [] = f0
    foldr f f0 (x:xs) = f [x] (foldr f f0 xs)
    length = List.length
-   map f = mconcat . List.map (f . (:[]))
+   foldMap f = mconcat . List.map (f . (:[]))
    break f = List.break (f . (:[]))
    span f = List.span (f . (:[]))
    dropWhile f = List.dropWhile (f . (:[]))
@@ -448,7 +448,7 @@ instance FactorialMonoid (Vector.Vector a) where
 
 -- | A 'Monad.mapM' equivalent.
 mapM :: (FactorialMonoid a, Monoid b, Monad m) => (a -> m b) -> a -> m b
-mapM f = ($ return mempty) . appEndo . map (Endo . Monad.liftM2 mappend . f)
+mapM f = ($ return mempty) . appEndo . foldMap (Endo . Monad.liftM2 mappend . f)
 
 -- | A 'Monad.mapM_' equivalent.
 mapM_ :: (FactorialMonoid a, Monad m) => (a -> m b) -> a -> m ()
