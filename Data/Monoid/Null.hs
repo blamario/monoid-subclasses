@@ -33,6 +33,8 @@ import qualified Data.Vector as Vector
 -- | Extension of 'Monoid' that allows testing a value for equality with 'mempty'. The following law must hold:
 -- 
 -- prop> null x == (x == mempty)
+-- 
+-- Furthermore, the performance of this method should be constant, /i.e./, independent of the length of its argument.
 class Monoid m => MonoidNull m where
    null :: m -> Bool
 
