@@ -20,6 +20,7 @@ where
 import Prelude hiding (break, drop, dropWhile, foldl, foldr, length, map, mapM, mapM_, null,
                        reverse, span, splitAt, take, takeWhile)
    
+import Control.Arrow (first)
 import qualified Control.Monad as Monad
 import Data.Monoid (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
@@ -131,9 +132,11 @@ class MonoidNull m => FactorialMonoid m where
                             of Just (prime, rest) | p prime -> spanAfter (f . mappend prime) rest
                                _ -> (f mempty, m)
    break = span . (not .)
-   split p m = foldr f [mempty] m
-      where f prime s@(x:xs) | p prime = mempty : s 
-                             | otherwise = mappend prime x : xs
+   split p m = prefix : splitRest
+      where (prefix, rest) = break p m
+            splitRest = case splitPrimePrefix rest
+                        of Nothing -> []
+                           Just (_, tail) -> split p tail
    takeWhile p = fst . span p
    dropWhile p = snd . span p
    splitAt n m | n <= 0 = (mempty, m)
@@ -275,8 +278,8 @@ instance FactorialMonoid Text.Text where
    factors = Text.chunksOf 1
    primePrefix = Text.take 1
    primeSuffix x = if Text.null x then Text.empty else Text.singleton (Text.last x)
-   splitPrimePrefix = fmap (\(c, t)-> (Text.singleton c, t)) . Text.uncons
-   splitPrimeSuffix x = if Text.null x then Nothing else Just (Text.splitAt (Text.length x - 1) x)
+   splitPrimePrefix = fmap (first Text.singleton) . Text.uncons
+   splitPrimeSuffix x = if Text.null x then Nothing else Just (Text.init x, Text.singleton (Text.last x))
    foldl f = Text.foldl f'
       where f' a char = f a (Text.singleton char)
    foldl' f = Text.foldl' f'
@@ -299,8 +302,10 @@ instance FactorialMonoid LazyText.Text where
    factors = LazyText.chunksOf 1
    primePrefix = LazyText.take 1
    primeSuffix x = if LazyText.null x then LazyText.empty else LazyText.singleton (LazyText.last x)
-   splitPrimePrefix = fmap (\(c, t)-> (LazyText.singleton c, t)) . LazyText.uncons
-   splitPrimeSuffix x = if LazyText.null x then Nothing else Just (LazyText.splitAt (LazyText.length x - 1) x)
+   splitPrimePrefix = fmap (first LazyText.singleton) . LazyText.uncons
+   splitPrimeSuffix x = if LazyText.null x
+                        then Nothing
+                        else Just (LazyText.init x, LazyText.singleton (LazyText.last x))
    foldl f = LazyText.foldl f'
       where f' a char = f a (LazyText.singleton char)
    foldl' f = LazyText.foldl' f'

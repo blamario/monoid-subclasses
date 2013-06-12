@@ -16,6 +16,8 @@ where
 
 import Prelude hiding (foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1, map, concatMap, break, span)
 
+import qualified Data.Foldable as Foldable
+import qualified Data.Traversable as Traversable
 import Data.Maybe (fromJust)
 import Data.Either (rights)
 import qualified Data.List as List
@@ -23,6 +25,8 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
 import Data.Text (Text)
 import Data.Monoid (Monoid(mappend, mconcat, mempty))
+import qualified Data.Sequence as Sequence
+import qualified Data.Vector as Vector
 import Data.String (IsString(fromString))
 
 import Data.Monoid.Null (MonoidNull (null))
@@ -185,8 +189,12 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    dropWhile pt pc = snd . span pt pc
    span pt pc = Factorial.span (\prime-> maybe (pt prime) pc (characterPrefix prime))
    break pt pc = Factorial.break (\prime-> maybe (pt prime) pc (characterPrefix prime))
-   split f = Factorial.split (maybe False f . characterPrefix)
-   find f = foldr (const id) (\c r-> if f c then Just c else r) Nothing
+   split p m = prefix : splitRest
+      where (prefix, rest) = break (const False) p m
+            splitRest = case splitCharacterPrefix rest
+                        of Nothing -> []
+                           Just (_, tail) -> split p tail
+   find p = foldr (const id) (\c r-> if p c then Just c else r) Nothing
 
 foldlChars f (t, c1) c2 = (mappend t (singleton c'), c')
    where c' = f c1 c2
@@ -279,3 +287,73 @@ instance TextualMonoid LazyText.Text where
    span _ = LazyText.span
    split = LazyText.split
    find = LazyText.find
+
+instance IsString (Sequence.Seq Char) where
+   fromString = Sequence.fromList
+
+instance TextualMonoid (Sequence.Seq Char) where
+   singleton = Sequence.singleton
+   splitCharacterPrefix s = case Sequence.viewl s
+                            of Sequence.EmptyL -> Nothing
+                               c Sequence.:< rest -> Just (c, rest)
+   characterPrefix s = case Sequence.viewl s
+                       of Sequence.EmptyL -> Nothing
+                          c Sequence.:< rest -> Just c
+   map = Traversable.fmapDefault
+   concatMap = Foldable.foldMap
+   any = Foldable.any
+   all = Foldable.all
+
+   foldl   = const Foldable.foldl
+   foldl'  = const Foldable.foldl'
+   foldr   = const Foldable.foldr
+
+   scanl = Sequence.scanl
+   scanl1 f v | Sequence.null v = Sequence.empty
+              | otherwise = Sequence.scanl1 f v
+   scanr = Sequence.scanr
+   scanr1 f v | Sequence.null v = Sequence.empty
+              | otherwise = Sequence.scanr1 f v
+
+   takeWhile _ = Sequence.takeWhileL
+   dropWhile _ = Sequence.dropWhileL
+   break _ = Sequence.breakl
+   span _ = Sequence.spanl
+   find = Foldable.find
+
+instance IsString (Vector.Vector Char) where
+   fromString = Vector.fromList
+
+instance TextualMonoid (Vector.Vector Char) where
+   singleton = Vector.singleton
+   splitCharacterPrefix t = if Vector.null t then Nothing else Just (Vector.unsafeHead t, Vector.unsafeTail t)
+   characterPrefix = (Vector.!? 0)
+   map = Vector.map
+   concatMap = Vector.concatMap
+   any = Vector.any
+   all = Vector.all
+
+   foldl   = const Vector.foldl
+   foldl'  = const Vector.foldl'
+   foldr   = const Vector.foldr
+
+   scanl = Vector.scanl
+   scanl1 f v | Vector.null v = Vector.empty
+              | otherwise = Vector.scanl1 f v
+   scanr = Vector.scanr
+   scanr1 f v | Vector.null v = Vector.empty
+              | otherwise = Vector.scanr1 f v
+   mapAccumL f a0 t = (a, Vector.reverse $ Vector.fromList l)
+      where (a, l) = Vector.foldl fc (a0, []) t
+            fc (a, l) c = (a', c':l)
+               where (a', c') = f a c
+   mapAccumR f a0 t = (a, Vector.fromList l)
+      where (a, l) = Vector.foldr fc (a0, []) t
+            fc c (a, l) = (a',  c':l)
+               where (a', c') = f a c
+
+   takeWhile _ = Vector.takeWhile
+   dropWhile _ = Vector.dropWhile
+   break _ = Vector.break
+   span _ = Vector.span
+   find = Vector.find

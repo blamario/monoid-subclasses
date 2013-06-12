@@ -51,6 +51,7 @@ import Data.Monoid (Monoid (mappend), Dual(..), Sum(..), Product(..))
 import qualified Data.List as List
 import Data.Maybe (isJust)
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Unsafe as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
@@ -451,13 +452,13 @@ instance Eq a => RightGCDMonoid (Vector.Vector a) where
 
 instance LeftReductiveMonoid ByteString.ByteString where
    stripPrefix p l = if ByteString.isPrefixOf p l
-                     then Just (ByteString.drop (ByteString.length p) l)
+                     then Just (ByteString.unsafeDrop (ByteString.length p) l)
                      else Nothing
    isPrefixOf = ByteString.isPrefixOf
 
 instance RightReductiveMonoid ByteString.ByteString where
    stripSuffix s l = if ByteString.isSuffixOf s l
-                     then Just (ByteString.take (ByteString.length l - ByteString.length s) l)
+                     then Just (ByteString.unsafeTake (ByteString.length l - ByteString.length s) l)
                      else Nothing
    isSuffixOf = ByteString.isSuffixOf
 
@@ -466,18 +467,21 @@ instance LeftCancellativeMonoid ByteString.ByteString
 instance RightCancellativeMonoid ByteString.ByteString
 
 instance LeftGCDMonoid ByteString.ByteString where
-   stripCommonPrefix x y = (xp, xs, ByteString.drop maxPrefixLength y)
+   stripCommonPrefix x y = (xp, xs, ByteString.unsafeDrop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (ByteString.length x `min` ByteString.length y)
-            prefixLength n len | n < len && ByteString.index x n == ByteString.index y n = prefixLength (succ n) len
-            prefixLength n _ = n
+            prefixLength n len | n < len, 
+                                 ByteString.unsafeIndex x n == ByteString.unsafeIndex y n = 
+                                    prefixLength (succ n) len
+                               | otherwise = n
             (xp, xs) = ByteString.splitAt maxPrefixLength x
 
 instance RightGCDMonoid ByteString.ByteString where
    stripCommonSuffix x y = findSuffix (ByteString.length x - 1) (ByteString.length y - 1)
-      where findSuffix m n | m >= 0 && n >= 0 && ByteString.index x m == ByteString.index y n =
-               findSuffix (pred m) (pred n)
-            findSuffix m n = (ByteString.take (succ m) x, yp, ys)
-               where (yp, ys) = ByteString.splitAt (succ n) y
+      where findSuffix m n | m >= 0, n >= 0,
+                             ByteString.unsafeIndex x m == ByteString.unsafeIndex y n =
+                                findSuffix (pred m) (pred n)
+                           | otherwise = let (yp, ys) = ByteString.splitAt (succ n) y
+                                         in (ByteString.unsafeTake (succ m) x, yp, ys)
 
 -- Lazy ByteString instances
 
