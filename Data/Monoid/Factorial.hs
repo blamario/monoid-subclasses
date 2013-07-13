@@ -149,6 +149,15 @@ class MonoidNull m => FactorialMonoid m where
    take n p = fst (splitAt n p)
    reverse = mconcat . List.reverse . factors
 
+instance FactorialMonoid () where
+   factors () = []
+   primePrefix () = ()
+   primeSuffix () = ()
+   splitPrimePrefix () = Nothing
+   splitPrimeSuffix () = Nothing
+   length () = 0
+   reverse = id
+
 instance FactorialMonoid a => FactorialMonoid (Dual a) where
    factors (Dual a) = fmap Dual (reverse $ factors a)
    length (Dual a) = length a

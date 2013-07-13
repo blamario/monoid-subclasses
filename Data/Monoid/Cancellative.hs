@@ -181,6 +181,34 @@ class RightReductiveMonoid m => RightGCDMonoid m where
             Just x' = stripSuffix s x
             Just y' = stripSuffix s y
 
+-- Unit instances
+
+instance CommutativeMonoid ()
+
+instance ReductiveMonoid () where
+   () </> () = Just ()
+
+instance CancellativeMonoid ()
+
+instance GCDMonoid () where
+   gcd () () = ()
+
+instance LeftReductiveMonoid () where
+   stripPrefix () () = Just ()
+
+instance RightReductiveMonoid () where
+   stripSuffix () () = Just ()
+
+instance LeftCancellativeMonoid ()
+
+instance RightCancellativeMonoid ()
+
+instance LeftGCDMonoid () where
+   commonPrefix () () = ()
+
+instance RightGCDMonoid () where
+   commonSuffix () () = ()
+
 -- Dual instances
 
 instance CommutativeMonoid a => CommutativeMonoid (Dual a)
