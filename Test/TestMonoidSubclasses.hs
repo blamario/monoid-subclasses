@@ -43,7 +43,7 @@ import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual
 import Data.Monoid.Null (MonoidNull, null)
 import Data.Monoid.Factorial (FactorialMonoid, factors, splitPrimePrefix, splitPrimeSuffix, primePrefix, primeSuffix,
                               foldl, foldl', foldr, length, reverse, span, split, splitAt)
-import Data.Monoid.Cancellative (ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
+import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
                                  (</>), gcd,
@@ -52,7 +52,8 @@ import Data.Monoid.Cancellative (ReductiveMonoid, LeftReductiveMonoid, RightRedu
 import Data.Monoid.Textual (TextualMonoid)
 import qualified Data.Monoid.Textual as Textual
 
-data Test = NullTest (forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) => a -> Property)
+data Test = CommutativeTest (forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) => a -> Property)
+          | NullTest (forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) => a -> Property)
           | FactorialTest (forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, FactorialMonoid a) => a -> Property)
           | TextualTest (forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property)
           | LeftReductiveTest (forall a. (Arbitrary a, Show a, Eq a, LeftReductiveMonoid a) => a -> Property)
@@ -70,6 +71,12 @@ data Test = NullTest (forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) => a -
 main = mapM_ (quickCheck . uncurry checkInstances) tests
 
 checkInstances :: String -> Test -> Property
+checkInstances name (CommutativeTest checkType) = label name (checkType (mempty :: Sum Integer)
+                                                              .&&. checkType (mempty :: Product Integer)
+                                                              .&&. checkType (mempty :: Dual (Sum Integer))
+                                                              .&&. checkType (mempty :: (Sum Integer, Sum Int))
+                                                              .&&. checkType (mempty :: IntSet)
+                                                              .&&. checkType (mempty :: Set Integer))
 checkInstances name (NullTest checkType) = label name (checkType ()
                                                        .&&. checkType (mempty :: Ordering)
                                                        .&&. checkType (mempty :: All)
@@ -206,7 +213,8 @@ checkInstances name (CancellativeGCDTest checkType) = label name (checkType (mem
                                                                   .&&. checkType (mempty :: (Sum Integer, Sum Int)))
 
 tests :: [(String, Test)]
-tests = [("MonoidNull", NullTest checkNull),
+tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
+         ("MonoidNull", NullTest checkNull),
          ("mconcat . factors == id", FactorialTest checkConcatFactors),
          ("all factors . factors", FactorialTest checkFactorsOfFactors),
          ("splitPrimePrefix", FactorialTest checkSplitPrimePrefix),
@@ -263,6 +271,9 @@ tests = [("MonoidNull", NullTest checkNull),
          ("gcd", GCDTest checkGCD),
          ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD)
         ]
+
+checkCommutative :: forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) => a -> Property
+checkCommutative e = forAll (arbitrary :: Gen (a, a)) (\(a, b)-> a <> b == b <> a)
 
 checkNull :: forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) => a -> Property
 checkNull e = null e .&&. forAll (arbitrary :: Gen a) (\a-> null a == (a == mempty))

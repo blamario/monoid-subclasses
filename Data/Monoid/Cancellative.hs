@@ -35,8 +35,8 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Cancellative (
-   -- * Symmetric monoid classes
-   ReductiveMonoid(..), CancellativeMonoid(..), GCDMonoid(..),
+   -- * Symmetric, commutative monoid classes
+   CommutativeMonoid, ReductiveMonoid(..), CancellativeMonoid(..), GCDMonoid(..),
    -- * Asymmetric monoid classes
    LeftReductiveMonoid(..), RightReductiveMonoid(..),
    LeftCancellativeMonoid(..), RightCancellativeMonoid(..),
@@ -63,12 +63,17 @@ import qualified Data.Set as Set
 import Data.Sequence (ViewL((:<)), ViewR((:>)), (<|), (|>))
 import qualified Data.Vector as Vector
 
+-- | Class of all Abelian ({i.e.}, commutative) monoids that satisfy the commutativity property:
+-- 
+-- > a <> b == b <> a
+class Monoid m => CommutativeMonoid m
+
 -- | Class of Abelian monoids with a partial inverse for the Monoid '<>' operation. The inverse operation '</>' must
 -- satisfy the following laws:
 -- 
 -- > maybe a (b <>) (a </> b) == a
 -- > maybe a (<> b) (a </> b) == a
-class (LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m where
+class (CommutativeMonoid m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m where
    (</>) :: m -> m -> Maybe m
 
 infix 5 </>
@@ -178,6 +183,8 @@ class RightReductiveMonoid m => RightGCDMonoid m where
 
 -- Dual instances
 
+instance CommutativeMonoid a => CommutativeMonoid (Dual a)
+
 instance ReductiveMonoid a => ReductiveMonoid (Dual a) where
    Dual a </> Dual b = fmap Dual (a </> b)
 
@@ -206,6 +213,8 @@ instance RightGCDMonoid a => LeftGCDMonoid (Dual a) where
 
 -- Sum instances
 
+instance Num a => CommutativeMonoid (Sum a)
+
 instance Integral a => ReductiveMonoid (Sum a) where
    Sum a </> Sum b = Just $ Sum (a - b)
 
@@ -232,6 +241,8 @@ instance (Integral a, Ord a) => RightGCDMonoid (Sum a) where
 
 -- Product instances
 
+instance Num a => CommutativeMonoid (Product a)
+
 instance Integral a => ReductiveMonoid (Product a) where
    Product 0 </> Product 0 = Just (Product 0)
    Product a </> Product 0 = Nothing
@@ -254,6 +265,8 @@ instance Integral a => RightGCDMonoid (Product a) where
    commonSuffix a b = gcd a b
 
 -- Pair instances
+
+instance (CommutativeMonoid a, CommutativeMonoid b) => CommutativeMonoid (a, b)
 
 instance (ReductiveMonoid a, ReductiveMonoid b) => ReductiveMonoid (a, b) where
    (a, b) </> (c, d) = case (a </> c, b </> d)
@@ -289,6 +302,8 @@ instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (a, b) where
 
 -- Set instances
 
+instance Ord a => CommutativeMonoid (Set.Set a)
+
 instance Ord a => LeftReductiveMonoid (Set.Set a) where
    isPrefixOf = Set.isSubsetOf
    stripPrefix a b = b </> a
@@ -311,6 +326,8 @@ instance Ord a => GCDMonoid (Set.Set a) where
    gcd = Set.intersection
 
 -- IntSet instances
+
+instance CommutativeMonoid IntSet.IntSet
 
 instance LeftReductiveMonoid IntSet.IntSet where
    isPrefixOf = IntSet.isSubsetOf
