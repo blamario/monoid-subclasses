@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             0.3
+Version:             0.3.1
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -21,7 +21,7 @@ Source-repository head
 
 Library
   Exposed-Modules:   Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
-                     Data.Monoid.Instances.ByteString.UTF8
+                     Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.Concat
   Build-Depends:     base < 5, bytestring >= 0.9 && < 1.0, containers == 0.5.*, text == 0.11.*, primes == 0.2.*,
                      utf8-string == 0.3.*, vector >= 0.9 && < 0.11
   GHC-prof-options:  -auto-all

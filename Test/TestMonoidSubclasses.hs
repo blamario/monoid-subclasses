@@ -4,7 +4,7 @@
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
-{-# LANGUAGE Rank2Types, ScopedTypeVariables, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE CPP, Rank2Types, ScopedTypeVariables, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
 module Main where
 
@@ -14,8 +14,11 @@ import Test.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
                         quickCheck, arbitrary, coarbitrary, property, label, forAll, variant, whenFail, (.&&.))
 import Test.QuickCheck.Instances ()
 
+import Control.Applicative (Applicative(..))
 import Data.Int (Int8, Int32)
 import Data.Foldable (toList)
+import qualified Data.Foldable as Foldable
+import Data.Traversable (Traversable)
 import Data.List (intersperse, unfoldr)
 import qualified Data.List as List
 import Data.Maybe (isJust)
@@ -23,12 +26,15 @@ import Data.Either (lefts, rights)
 import Data.Tuple (swap)
 import Data.String (IsString, fromString)
 import Data.Char (isLetter)
+import Data.Int (Int16)
+import Data.Word (Word, Word8)
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as Lazy (ByteString)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as Lazy (Text)
 import qualified Data.Text as Text
+import qualified Data.Sequence as Sequence
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
 import Data.Map (Map)
@@ -37,11 +43,13 @@ import Data.Set (Set)
 import Data.Vector (Vector, fromList)
 
 import Data.Monoid.Instances.ByteString.UTF8 (ByteStringUTF8(ByteStringUTF8))
+import Data.Monoid.Instances.Concat (Concat, extract, inject)
 
 import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
-import Data.Monoid.Null (MonoidNull, null)
-import Data.Monoid.Factorial (FactorialMonoid, factors, splitPrimePrefix, splitPrimeSuffix, primePrefix, primeSuffix,
+import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
+import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid, 
+                              factors, splitPrimePrefix, splitPrimeSuffix, primePrefix, primeSuffix,
                               foldl, foldl', foldr, length, reverse, span, split, splitAt)
 import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
@@ -99,7 +107,17 @@ checkInstances name (NullTest checkType) = label name (checkType ()
                                                        .&&. checkType (mempty :: Map String Int)
                                                        .&&. checkType (mempty :: Seq Int)
                                                        .&&. checkType (mempty :: Set String)
-                                                       .&&. checkType (mempty :: Vector Int))
+                                                       .&&. checkType (mempty :: Vector Int)
+                                                       .&&. checkType (mempty :: Concat Any)
+                                                       .&&. checkType (mempty :: Concat String)
+                                                       .&&. checkType (mempty :: Concat ByteString)
+                                                       .&&. checkType (mempty :: Concat Text)
+                                                       .&&. checkType (mempty :: Concat Lazy.Text)
+                                                       .&&. checkType (mempty :: Concat (Dual String))
+                                                       .&&. checkType (mempty :: Concat (Maybe String))
+                                                       .&&. checkType (mempty :: Concat (Text, String))
+                                                       .&&. checkType (mempty :: Concat (IntMap Int))
+                                                       .&&. checkType (mempty :: Concat (Map String Int)))
 checkInstances name (FactorialTest checkType) = label name (checkType ()
                                                             .&&. checkType (mempty :: TestString)
                                                             .&&. checkType (mempty :: String)
@@ -118,14 +136,26 @@ checkInstances name (FactorialTest checkType) = label name (checkType ()
                                                             .&&. checkType (mempty :: Map String Int)
                                                             .&&. checkType (mempty :: Seq Int)
                                                             .&&. checkType (mempty :: Set String)
-                                                            .&&. checkType (mempty :: Vector Int))
+                                                            .&&. checkType (mempty :: Vector Int)
+                                                            .&&. checkType (mempty :: Concat String)
+                                                            .&&. checkType (mempty :: Concat ByteString)
+                                                            .&&. checkType (mempty :: Concat Text)
+                                                            .&&. checkType (mempty :: Concat Lazy.Text)
+                                                            .&&. checkType (mempty :: Concat (Dual String))
+                                                            .&&. checkType (mempty :: Concat (Maybe String))
+                                                            .&&. checkType (mempty :: Concat (Text, String))
+                                                            .&&. checkType (mempty :: Concat (IntMap Int))
+                                                            .&&. checkType (mempty :: Concat (Map String Int)))
 checkInstances name (TextualTest checkType) = label name (checkType (mempty :: TestString)
                                                           .&&. checkType (mempty :: String)
                                                           .&&. checkType (mempty :: ByteStringUTF8)
                                                           .&&. checkType (mempty :: Text)
                                                           .&&. checkType (mempty :: Lazy.Text)
                                                           .&&. checkType (mempty :: Seq Char)
-                                                          .&&. checkType (mempty :: Vector Char))
+                                                          .&&. checkType (mempty :: Vector Char)
+                                                          .&&. checkType (mempty :: Concat String)
+                                                          .&&. checkType (mempty :: Concat Text)
+                                                          .&&. checkType (mempty :: Concat Lazy.Text))
 checkInstances name (LeftReductiveTest checkType) = label name (checkType ()
                                                                 .&&. checkType (mempty :: String)
                                                                 .&&. checkType (mempty :: ByteString)
@@ -139,7 +169,13 @@ checkInstances name (LeftReductiveTest checkType) = label name (checkType ()
                                                                 .&&. checkType (mempty :: IntSet)
                                                                 .&&. checkType (mempty :: Seq String)
                                                                 .&&. checkType (mempty :: Set Integer)
-                                                                .&&. checkType (mempty :: Vector Int))
+                                                                .&&. checkType (mempty :: Vector Int)
+                                                                .&&. checkType (mempty :: Concat String)
+                                                                .&&. checkType (mempty :: Concat ByteString)
+                                                                .&&. checkType (mempty :: Concat Lazy.ByteString)
+                                                                .&&. checkType (mempty :: Concat Text)
+                                                                .&&. checkType (mempty :: Concat Lazy.Text)
+                                                                .&&. checkType (mempty :: Concat (Dual Text)))
 checkInstances name (RightReductiveTest checkType) = label name (checkType ()
                                                                  .&&. checkType (mempty :: ByteString)
                                                                  .&&. checkType (mempty :: Lazy.ByteString)
@@ -152,7 +188,12 @@ checkInstances name (RightReductiveTest checkType) = label name (checkType ()
                                                                  .&&. checkType (mempty :: IntSet)
                                                                  .&&. checkType (mempty :: Seq Int)
                                                                  .&&. checkType (mempty :: Set String)
-                                                                 .&&. checkType (mempty :: Vector Int))
+                                                                 .&&. checkType (mempty :: Vector Int)
+                                                                 .&&. checkType (mempty :: Concat ByteString)
+                                                                 .&&. checkType (mempty :: Concat Lazy.ByteString)
+                                                                 .&&. checkType (mempty :: Concat Text)
+                                                                 .&&. checkType (mempty :: Concat Lazy.Text)
+                                                                 .&&. checkType (mempty :: Concat (Dual Text)))
 checkInstances name (ReductiveTest checkType) = label name (checkType ()
                                                             .&&. checkType (mempty :: Sum Integer)
                                                             .&&. checkType (mempty :: Product Integer)
@@ -200,7 +241,13 @@ checkInstances name (LeftGCDTest checkType) = label name (checkType ()
                                                           .&&. checkType (mempty :: Map String Int)
                                                           .&&. checkType (mempty :: Seq Int)
                                                           .&&. checkType (mempty :: Set String)
-                                                          .&&. checkType (mempty :: Vector Int))
+                                                          .&&. checkType (mempty :: Vector Int)
+                                                          .&&. checkType (mempty :: Concat String)
+                                                          .&&. checkType (mempty :: Concat ByteString)
+                                                          .&&. checkType (mempty :: Concat Lazy.ByteString)
+                                                          .&&. checkType (mempty :: Concat Text)
+                                                          .&&. checkType (mempty :: Concat Lazy.Text)
+                                                          .&&. checkType (mempty :: Concat (Dual ByteString)))
 checkInstances name (RightGCDTest checkType) = label name (checkType ()
                                                            .&&. checkType (mempty :: ByteString)
                                                            .&&. checkType (mempty :: Lazy.ByteString)
@@ -211,7 +258,10 @@ checkInstances name (RightGCDTest checkType) = label name (checkType ()
                                                            .&&. checkType (mempty :: IntSet)
                                                            .&&. checkType (mempty :: Seq Int)
                                                            .&&. checkType (mempty :: Set String)
-                                                           .&&. checkType (mempty :: Vector Int))
+                                                           .&&. checkType (mempty :: Vector Int)
+                                                           .&&. checkType (mempty :: Concat ByteString)
+                                                           .&&. checkType (mempty :: Concat Lazy.ByteString)
+                                                           .&&. checkType (mempty :: Concat (Dual Text)))
 checkInstances name (GCDTest checkType) = label name (checkType ()
                                                       .&&. checkType (mempty :: Sum Integer)
                                                       .&&. checkType (mempty :: Product Integer)
@@ -579,9 +629,6 @@ instance TextualMonoid TestString where
    splitCharacterPrefix (TestString []) = Nothing
    splitCharacterPrefix (TestString (x:xs)) = Just (x, TestString xs)
 
-instance Show a => Show (a -> Bool) where
-   show _ = "predicate"
-
 instance Arbitrary All where
    arbitrary = fmap All arbitrary
 
@@ -609,6 +656,9 @@ instance Arbitrary a => Arbitrary (Vector a) where
 instance Arbitrary ByteStringUTF8 where
    arbitrary = fmap ByteStringUTF8 arbitrary
 
+instance (Arbitrary a, MonoidNull a, PositiveMonoid a) => Arbitrary (Concat a) where
+   arbitrary = fmap inject arbitrary
+
 instance CoArbitrary All where
    coarbitrary (All p) = coarbitrary p
 
@@ -635,3 +685,20 @@ instance CoArbitrary a => CoArbitrary (Vector a) where
 
 instance CoArbitrary ByteStringUTF8 where
    coarbitrary (ByteStringUTF8 bs) = coarbitrary bs
+
+instance CoArbitrary a => CoArbitrary (Concat a) where
+   coarbitrary = coarbitrary . extract
+
+instance Show a => Show (a -> Bool) where
+   show _ = "predicate"
+
+instance (PositiveMonoid a, MonoidNull b) => PositiveMonoid (a, b)
+
+#if MIN_VERSION_containers(0,5,2)
+#else
+instance Applicative Seq where
+   pure = Sequence.singleton
+   fs <*> xs = Foldable.foldl' add mempty fs
+      where add ys f = ys <> fmap f xs
+
+#endif

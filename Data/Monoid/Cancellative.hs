@@ -328,6 +328,34 @@ instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (a, b) where
 instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (a, b) where
    commonSuffix (a, b) (c, d) = (commonSuffix a c, commonSuffix b d)
 
+-- Maybe instances
+
+instance LeftReductiveMonoid x => LeftReductiveMonoid (Maybe x) where
+   stripPrefix Nothing y = Just y
+   stripPrefix Just{} Nothing = Nothing
+   stripPrefix (Just x) (Just y) = fmap Just $ stripPrefix x y
+
+instance LeftGCDMonoid x => LeftGCDMonoid (Maybe x) where
+   commonPrefix (Just x) (Just y) = Just (commonPrefix x y)
+   commonPrefix _ _ = Nothing
+
+   stripCommonPrefix (Just x) (Just y) = (Just p, Just x', Just y')
+      where (p, x', y') = stripCommonPrefix x y
+   stripCommonPrefix x y = (Nothing, x, y)
+
+instance RightReductiveMonoid x => RightReductiveMonoid (Maybe x) where
+   stripSuffix Nothing y = Just y
+   stripSuffix Just{} Nothing = Nothing
+   stripSuffix (Just x) (Just y) = fmap Just $ stripSuffix x y
+
+instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
+   commonSuffix (Just x) (Just y) = Just (commonSuffix x y)
+   commonSuffix _ _ = Nothing
+
+   stripCommonSuffix (Just x) (Just y) = (Just x', Just y', Just s)
+      where (x', y', s) = stripCommonSuffix x y
+   stripCommonSuffix x y = (x, y, Nothing)
+
 -- Set instances
 
 instance Ord a => CommutativeMonoid (Set.Set a)
