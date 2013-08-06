@@ -21,4 +21,8 @@ That being said, there are two major differences in the goals of _ListLike_ and 
   * _ListLike_ strives to reproduce the standard [Data.List](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/Data-List.html) interface, whereas _monoid-subclasses_ builds from deeper theoretical foundations; and
   * The _monoid-subclasses_ implementation uses standard Haskell 2010, with the exception of two minor extensions which can be worked around if necessary.
 
-The [incremental-parser](http://hackage.haskell.org/package/incremental-parser) package provides one example of use of _monoid-subclasses_.
+The [incremental-parser](http://hackage.haskell.org/package/incremental-parser) package provides one example of use of _monoid-subclasses_. Another example is [monoid-attoparsec](https://bitbucket.org/blamario/monoid-attoparsec), a fork of [attoparsec](http://hackage.haskell.org/package/attoparsec).
+
+A more thorough description of the library can be found in the Haskell Symposium 2013 paper [Adding Structure to Monoids
+](https://github.com/blamario/monoid-subclasses/wiki/Files/HaskellSymposium2013.pdf)
+
