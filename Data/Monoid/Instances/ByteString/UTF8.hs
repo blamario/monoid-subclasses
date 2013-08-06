@@ -26,7 +26,7 @@ import qualified Data.ByteString.UTF8 as UTF8
 
 import Data.Monoid (Monoid)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid)
-import Data.Monoid.Null (MonoidNull)
+import Data.Monoid.Null (MonoidNull, PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial (FactorialMonoid(..))
@@ -40,6 +40,8 @@ instance Show ByteStringUTF8 where
 
 instance IsString ByteStringUTF8 where
    fromString = ByteStringUTF8 . UTF8.fromString
+
+instance PositiveMonoid ByteStringUTF8
 
 instance FactorialMonoid ByteStringUTF8 where
    splitPrimePrefix (ByteStringUTF8 bs) = 

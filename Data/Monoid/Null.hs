@@ -10,7 +10,7 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Null (
-   MonoidNull(..)
+   MonoidNull(..), PositiveMonoid
    )
 where
 
@@ -37,6 +37,12 @@ import qualified Data.Vector as Vector
 -- Furthermore, the performance of this method should be constant, /i.e./, independent of the length of its argument.
 class Monoid m => MonoidNull m where
    null :: m -> Bool
+
+-- | Subclass of 'Monoid' for types whose values have no inverse, with the exception of 'mempty'. More formally, the
+-- class instances must satisfy the following law:
+-- 
+-- prop> null (x <> y) == (null x && null y)
+class MonoidNull m => PositiveMonoid m
 
 instance MonoidNull () where
    null () = True
@@ -106,3 +112,28 @@ instance Ord a => MonoidNull (Set.Set a) where
 
 instance MonoidNull (Vector.Vector a) where
    null = Vector.null
+
+instance PositiveMonoid ()
+instance PositiveMonoid Ordering
+instance PositiveMonoid All
+instance PositiveMonoid Any
+instance PositiveMonoid ByteString.ByteString
+instance PositiveMonoid LazyByteString.ByteString
+instance PositiveMonoid Text.Text
+instance PositiveMonoid LazyText.Text
+instance Monoid a => PositiveMonoid (Maybe a)
+instance PositiveMonoid (First a)
+instance PositiveMonoid (Last a)
+instance PositiveMonoid a => PositiveMonoid (Dual a)
+instance PositiveMonoid [x]
+instance Ord k => PositiveMonoid (Map.Map k v)
+instance PositiveMonoid (IntMap.IntMap v)
+instance PositiveMonoid IntSet.IntSet
+instance PositiveMonoid (Sequence.Seq a)
+instance Ord a => PositiveMonoid (Set.Set a)
+instance PositiveMonoid (Vector.Vector a)
+
+-- Both instances are not allowed, so we leave the choice to the user.
+--
+-- instance (PositiveMonoid a, Monoid b) => PositiveMonoid (a, b)
+-- instance (Monoid a, PositiveMonoid b) => PositiveMonoid (a, b)
