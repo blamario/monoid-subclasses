@@ -10,8 +10,8 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Factorial (
-   -- * Class
-   FactorialMonoid(..),
+   -- * Classes
+   FactorialMonoid(..), StableFactorialMonoid,
    -- * Monad function equivalents
    mapM, mapM_
    )
@@ -64,10 +64,6 @@ import Data.Monoid.Null (MonoidNull(null))
 -- > List.all (List.all (not . pred) . factors) . split pred
 -- > mconcat . intersperse prime . split (== prime) == id
 -- > splitAt i m == (mconcat l, mconcat r) where (l, r) = List.splitAt i (factors m)
---
--- It's worth noting that a class instance does /not/ need to satisfy this law:
---
--- > factors (a <> b) == factors a <> factors b
 --
 -- A minimal instance definition must implement 'factors' or 'splitPrimePrefix'. Other methods are provided and should
 -- be implemented only for performance reasons.
@@ -148,6 +144,11 @@ class MonoidNull m => FactorialMonoid m where
    drop n p = snd (splitAt n p)
    take n p = fst (splitAt n p)
    reverse = mconcat . List.reverse . factors
+
+-- | A subclass of 'FactorialMonoid' whose instances satisfy this additional law:
+--
+-- > factors (a <> b) == factors a <> factors b
+class FactorialMonoid m => StableFactorialMonoid m
 
 instance FactorialMonoid () where
    factors () = []
@@ -459,6 +460,16 @@ instance FactorialMonoid (Vector.Vector a) where
    take = Vector.take
    length = Vector.length
    reverse = Vector.reverse
+
+instance StableFactorialMonoid ()
+instance StableFactorialMonoid a => StableFactorialMonoid (Dual a)
+instance StableFactorialMonoid [x]
+instance StableFactorialMonoid ByteString.ByteString
+instance StableFactorialMonoid LazyByteString.ByteString
+instance StableFactorialMonoid Text.Text
+instance StableFactorialMonoid LazyText.Text
+instance StableFactorialMonoid (Sequence.Seq a)
+instance StableFactorialMonoid (Vector.Vector a)
 
 -- | A 'Monad.mapM' equivalent.
 mapM :: (FactorialMonoid a, Monoid b, Monad m) => (a -> m b) -> a -> m b
