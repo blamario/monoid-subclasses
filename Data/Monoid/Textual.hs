@@ -38,7 +38,7 @@ import qualified Data.Monoid.Factorial as Factorial
 -- characters. Its methods are generally equivalent to their namesake functions from "Data.List" and "Data.Text", and
 -- they satisfy the following laws:
 -- 
--- > splitCharacterPrefix (singleton c <> t) == Just (c, t)
+-- > unfoldr splitCharacterPrefix . fromString == id
 -- > splitCharacterPrefix . primePrefix == fmap (\(c, t)-> (c, mempty)) . splitCharacterPrefix
 -- >
 -- > map f . fromString == fromString . List.map f

@@ -141,11 +141,10 @@ checkInstances name (FactorialTest checkType) = label name (checkType ()
                                                             .&&. checkType (mempty :: Concat ByteString)
                                                             .&&. checkType (mempty :: Concat Text)
                                                             .&&. checkType (mempty :: Concat Lazy.Text)
-                                                            .&&. checkType (mempty :: Concat (Dual String))
+                                                            .&&. checkType (mempty :: Concat (Dual ByteString))
                                                             .&&. checkType (mempty :: Concat (Maybe String))
                                                             .&&. checkType (mempty :: Concat (Text, String))
-                                                            .&&. checkType (mempty :: Concat (IntMap Int))
-                                                            .&&. checkType (mempty :: Concat (Map String Int)))
+                                                            .&&. checkType (mempty :: Concat (IntMap Int)))
 checkInstances name (TextualTest checkType) = label name (checkType (mempty :: TestString)
                                                           .&&. checkType (mempty :: String)
                                                           .&&. checkType (mempty :: ByteStringUTF8)
@@ -311,7 +310,6 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("Textual.scanr1", TextualTest checkTextualScanr1),
          ("Textual.mapAccumL", TextualTest checkTextualMapAccumL),
          ("Textual.mapAccumR", TextualTest checkTextualMapAccumR),
-         ("Textual.mapAccumR", TextualTest checkTextualMapAccumR),
          ("Textual.takeWhile", TextualTest checkTextualTakeWhile),
          ("Textual.dropWhile", TextualTest checkTextualDropWhile),
          ("Textual.span", TextualTest checkTextualSpan),
@@ -398,10 +396,10 @@ checkSingleton :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMo
 checkSingleton _ = forAll (arbitrary :: Gen Char) (\c-> Textual.singleton c == (fromString [c] :: a))
 
 checkSplitCharacterPrefix :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property
-checkSplitCharacterPrefix _ = forAll (arbitrary :: Gen (Char, a)) check
-   where check p@(c, t) = Textual.splitCharacterPrefix (Textual.singleton c <> t) == Just p
-                          && Textual.splitCharacterPrefix (primePrefix t)
-                             == fmap (\(c, t)-> (c, mempty)) (Textual.splitCharacterPrefix t)
+checkSplitCharacterPrefix _ = forAll (arbitrary :: Gen String) check1 .&&. forAll (arbitrary :: Gen a) check2
+   where check1 s = unfoldr Textual.splitCharacterPrefix (fromString s :: a) == s
+         check2 t = Textual.splitCharacterPrefix (primePrefix t)
+                    == fmap (\(c, t)-> (c, mempty)) (Textual.splitCharacterPrefix t)
 
 checkCharacterPrefix :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property
 checkCharacterPrefix _ = forAll (arbitrary :: Gen a) check
@@ -465,7 +463,7 @@ checkTextualScanl _ = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary 
                     && (lefts . textualFactors . Textual.scanl f 'Y') a == (lefts . textualFactors) a
                     && Textual.scanl f 'W' a == Textual.scanl1 f (Textual.singleton 'W' <> a)
          check2 s = Textual.scanl f 'X' (fromString s :: a) == fromString (List.scanl f 'X' s)
-         f c1 c2 = succ (max c1 c2)
+         f c1 c2 = min c1 c2
 
 checkTextualScanr :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property
 checkTextualScanr _ = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
@@ -473,19 +471,19 @@ checkTextualScanr _ = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary 
                     && (lefts . textualFactors . Textual.scanr f 'Y') a == (lefts . textualFactors) a
                     && Textual.scanr f 'W' a == Textual.scanr1 f (a <> Textual.singleton 'W')
          check2 s = Textual.scanr f 'X' (fromString s :: a) == fromString (List.scanr f 'X' s)
-         f c1 c2 = succ (max c1 c2)
+         f c1 c2 = min c1 c2
 
 checkTextualScanl1 :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property
 checkTextualScanl1 _ = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.scanl1 (const id) a == a
          check2 s = Textual.scanl1 f (fromString s :: a) == fromString (List.scanl1 f s)
-         f c1 c2 = succ (max c1 c2)
+         f c1 c2 = min c1 c2
 
 checkTextualScanr1 :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property
 checkTextualScanr1 _ = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.scanr1 const a == a
          check2 s = Textual.scanr1 f (fromString s :: a) == fromString (List.scanr1 f s)
-         f c1 c2 = succ (max c1 c2)
+         f c1 c2 = min c1 c2
 
 checkTextualMapAccumL :: forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => a -> Property
 checkTextualMapAccumL _ = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2

@@ -15,14 +15,19 @@ module Data.Monoid.Instances.ByteString.UTF8 (
    )
 where
 
-import Prelude hiding (foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1, map, concatMap, break, span)
+import Prelude hiding (drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1, map, concatMap, break, span)
 
+import Data.Bits ((.&.), (.|.), shiftL, shiftR)
+import Data.Char (chr, ord)
+import qualified Data.Foldable as Foldable
+import qualified Data.List as List
+import Data.Maybe (fromMaybe)
 import Data.String (IsString(fromString))
+import Data.Word (Word8)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as ByteString.Char8
-import Data.ByteString.Unsafe (unsafeDrop, unsafeIndex)
-import qualified Data.ByteString.UTF8 as UTF8
+import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeIndex)
 
 import Data.Monoid (Monoid)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid)
@@ -36,59 +41,129 @@ newtype ByteStringUTF8 = ByteStringUTF8 ByteString deriving (Eq, Monoid, MonoidN
                                                              LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid)
 
 instance Show ByteStringUTF8 where
-   show (ByteStringUTF8 bs) = show (UTF8.toString bs)
+   show (ByteStringUTF8 bs) = show (ByteString.Char8.unpack bs)
 
 instance IsString ByteStringUTF8 where
-   fromString = ByteStringUTF8 . UTF8.fromString
+   fromString = ByteStringUTF8 . Foldable.foldMap fromChar
 
 instance PositiveMonoid ByteStringUTF8
 
 instance FactorialMonoid ByteStringUTF8 where
-   splitPrimePrefix (ByteStringUTF8 bs) = 
-      do (_, n) <- UTF8.decode bs
-         let (bytes, rest) = ByteString.splitAt n bs
-         return (ByteStringUTF8 bytes, ByteStringUTF8 rest)
-   splitAt n (ByteStringUTF8 bs) = wrapPair (UTF8.splitAt n bs)
-   take n (ByteStringUTF8 bs) = ByteStringUTF8 (UTF8.take n bs)
-   drop n (ByteStringUTF8 bs) = ByteStringUTF8 (UTF8.drop n bs)
-   length (ByteStringUTF8 bs) = UTF8.length bs
-   span p (ByteStringUTF8 bs) = wrapPair (loop 0)
-      where limit = ByteString.length bs
-            loop i = if i < limit
-                     then let w = unsafeIndex bs i
-                          in if w < 0x80
-                             then if p (ByteStringUTF8 $ ByteString.singleton w)
-                                  then loop (succ i)
-                                  else ByteString.splitAt i bs
-                             else let cs = ByteString.drop i bs
-                                  in case UTF8.decode cs
-                                     of Just (_,n) | p (ByteStringUTF8 $ ByteString.take n cs)
-                                                     -> loop (i+n)
-                                        _ -> ByteString.splitAt i bs
-                     else (bs, ByteString.empty)
+   splitPrimePrefix utf8@(ByteStringUTF8 bs)
+      | ByteString.null bs = Nothing
+      | unsafeHead bs < 0x80 = Just (wrapPair $ ByteString.splitAt 1 bs)
+      | otherwise = case ByteString.findIndex byteStartsCharacter (unsafeTail bs)
+                    of Just i -> Just (wrapPair $ ByteString.splitAt (succ i) bs)
+                       Nothing -> Just (utf8, ByteStringUTF8 $ ByteString.empty)
+   factors (ByteStringUTF8 bs) = List.map ByteStringUTF8 $ ByteString.groupBy continued bs
+      where continued a b = a >= 0x80 && b >= 0x80 && b < 0xC0
+   length (ByteStringUTF8 bs) = fst (ByteString.foldl' count (0, False) bs)
+      where count (n, high) byte | byte < 0x80 = (succ n, False)
+                                 | byte < 0xC0 = (if high then n else succ n, True)
+                                 | otherwise = (succ n, True)
+   splitAt n (ByteStringUTF8 bs) = wrapPair (ByteString.splitAt (charStartIndex n bs) bs)
+   take n (ByteStringUTF8 bs) = ByteStringUTF8 (ByteString.take (charStartIndex n bs) bs)
+   drop n (ByteStringUTF8 bs) = ByteStringUTF8 (ByteString.drop (charStartIndex n bs) bs)
+   dropWhile p (ByteStringUTF8 bs) = dropASCII bs
+      where dropASCII bs =
+               let suffix = ByteString.dropWhile (\w-> w < 0x80 && p (ByteStringUTF8 $ ByteString.singleton w)) bs
+               in if ByteString.null suffix || unsafeHead suffix < 0x80
+                  then ByteStringUTF8 suffix
+                  else dropMultiByte suffix
+            dropMultiByte bs =
+               let utf8 = ByteStringUTF8 bs
+               in case ByteString.findIndex byteStartsCharacter (unsafeTail bs)
+                  of Nothing -> if p utf8 then ByteStringUTF8 ByteString.empty else utf8
+                     Just i -> let (hd, tl) = ByteString.splitAt (succ i) bs
+                               in if p (ByteStringUTF8 hd)
+                                  then dropASCII tl
+                                  else utf8
+   takeWhile p utf8@(ByteStringUTF8 bs) =
+      ByteStringUTF8 $ ByteString.take (ByteString.length bs - ByteString.length s) bs
+      where suffix@(ByteStringUTF8 s) = Factorial.dropWhile p utf8
+   span p utf8@(ByteStringUTF8 bs) =
+      (ByteStringUTF8 $ ByteString.take (ByteString.length bs - ByteString.length s) bs, suffix)
+      where suffix@(ByteStringUTF8 s) = Factorial.dropWhile p utf8
    break p = Factorial.span (not . p)
-   takeWhile p = fst . Factorial.span p
-   dropWhile p = snd . Factorial.span p
 
 instance TextualMonoid ByteStringUTF8 where
-   splitCharacterPrefix (ByteStringUTF8 bs) = do (c, rest) <- UTF8.uncons bs
-                                                 if c == UTF8.replacement_char
-                                                    then Nothing
-                                                    else return (c, ByteStringUTF8 rest)
-   span pb pc (ByteStringUTF8 bs) = wrapPair (spanASCII 0 bs)
-      where spanASCII i rest = case ByteString.Char8.findIndex (\c-> c > '\x7f' || not (pc c)) rest
-                               of Nothing -> (bs, ByteString.empty)
-                                  Just j -> if unsafeIndex rest j > 0x7f
-                                            then spanMultiByte (i + j) (unsafeDrop j rest)
-                                            else ByteString.splitAt (i + j) bs
-            spanMultiByte i rest = case UTF8.decode rest
-                                   of Just (c,n) | if c == UTF8.replacement_char
-                                                      then pb (ByteStringUTF8 $ ByteString.take n rest)
-                                                      else pc c
-                                                   -> spanASCII (i+n) (unsafeDrop n rest)
-                                      _ -> ByteString.splitAt i bs
+   singleton = ByteStringUTF8 . fromChar
+   splitCharacterPrefix (ByteStringUTF8 bs) =
+      case ByteString.uncons bs
+      of Nothing -> Nothing
+         Just (hd, tl) | hd < 0x80 -> Just (chr $ fromIntegral hd, ByteStringUTF8 tl)
+                       | hd < 0xC0 -> Nothing
+                       | hd < 0xE0 ->
+                          do (b0, t0) <- ByteString.uncons tl
+                             if hd >= 0xC2 && headIndex tl == 1
+                                then return (chr (shiftL (fromIntegral hd .&. 0x1F) 6
+                                                  .|. fromIntegral b0 .&. 0x3F),
+                                             ByteStringUTF8 t0)
+                                else Nothing
+                       | hd < 0xF0 ->
+                          do (b1, t1) <- ByteString.uncons tl
+                             (b0, t0) <- ByteString.uncons t1
+                             if (hd > 0xE0 || b1 >= 0xA0) && headIndex tl == 2
+                                then return (chr (shiftL (fromIntegral hd .&. 0xF) 12
+                                                  .|. shiftL (fromIntegral b1 .&. 0x3F) 6
+                                                  .|. fromIntegral b0 .&. 0x3F),
+                                             ByteStringUTF8 t0)
+                                else Nothing
+                       | hd < 0xF8 ->
+                          do (b2, t2) <- ByteString.uncons tl
+                             (b1, t1) <- ByteString.uncons t2
+                             (b0, t0) <- ByteString.uncons t1
+                             if (hd > 0xF0 || b1 >= 0x90) && hd < 0xF4 && headIndex tl == 3
+                                then return (chr (shiftL (fromIntegral hd .&. 0x7) 18
+                                                  .|. shiftL (fromIntegral b2 .&. 0x3F) 12
+                                                  .|. shiftL (fromIntegral b1 .&. 0x3F) 6
+                                                  .|. fromIntegral b0 .&. 0x3F),
+                                             ByteStringUTF8 t0)
+                                else Nothing
+                       | otherwise -> Nothing
+   dropWhile pb pc (ByteStringUTF8 bs) = ByteStringUTF8 $ dropASCII bs
+      where dropASCII rest = case ByteString.Char8.findIndex (\c-> c > '\x7f' || not (pc c)) rest
+                             of Nothing -> ByteString.empty
+                                Just j -> let rest' = unsafeDrop j rest
+                                          in if unsafeHead rest' > 0x7f
+                                             then dropMultiByte rest'
+                                             else rest'
+            dropMultiByte rest = case splitCharacterPrefix (ByteStringUTF8 rest)
+                                 of Just (c, ByteStringUTF8 rest') | pc c -> dropASCII rest'
+                                    Nothing -> let j = succ (headIndex $ drop 1 rest)
+                                               in if pb (ByteStringUTF8 $ ByteString.take j rest)
+                                                  then dropASCII (unsafeDrop j rest)
+                                                  else rest
+                                    _ -> rest
+   takeWhile pb pc utf8@(ByteStringUTF8 bs) = ByteStringUTF8 $ ByteString.take (ByteString.length bs - ByteString.length suffix) bs
+      where ByteStringUTF8 suffix = Textual.dropWhile pb pc utf8
+   span pb pc utf8@(ByteStringUTF8 bs) = wrapPair $ ByteString.splitAt (ByteString.length bs - ByteString.length suffix) bs
+      where ByteStringUTF8 suffix = Textual.dropWhile pb pc utf8
    break pb pc = Textual.span (not . pb) (not . pc)
-   takeWhile pb pc = fst . Textual.span pb pc
-   dropWhile pb pc = snd . Textual.span pb pc
 
 wrapPair (bs1, bs2) = (ByteStringUTF8 bs1, ByteStringUTF8 bs2)
+
+fromChar :: Char -> ByteString
+fromChar c | c < '\x80'    = ByteString.Char8.singleton c
+           | c < '\x800'   = ByteString.pack [0xC0 + fromIntegral (shiftR n 6),
+                                              0x80 + fromIntegral (n .&. 0x3F)]
+           | c < '\x10000' = ByteString.pack [0xE0 + fromIntegral (shiftR n 12),
+                                              0x80 + fromIntegral (shiftR n 6 .&. 0x3F),
+                                              0x80 + fromIntegral (n .&. 0x3F)]
+           | n < 0x200000  = ByteString.pack [0xF0 + fromIntegral (shiftR n 18),
+                                              0x80 + fromIntegral (shiftR n 12 .&. 0x3F),
+                                              0x80 + fromIntegral (shiftR n 6 .&. 0x3F),
+                                              0x80 + fromIntegral (n .&. 0x3F)]
+   where n = ord c
+
+headIndex bs = fromMaybe (ByteString.length bs) $ ByteString.findIndex byteStartsCharacter bs
+
+byteStartsCharacter :: Word8 -> Bool
+byteStartsCharacter b = b < 0x80 || b >= 0xC0
+
+charStartIndex :: Int -> ByteString -> Int
+charStartIndex n _ | n <= 0 = 0
+charStartIndex n bs =
+   case List.drop (pred n) (ByteString.findIndices byteStartsCharacter $ ByteString.drop 1 bs)
+   of [] -> ByteString.length bs
+      k:_ -> succ k
