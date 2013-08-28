@@ -23,7 +23,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Traversable as Traversable
 import Data.Maybe (fromMaybe)
 import Data.String (IsString(..))
-import Data.Monoid (Monoid(..), First(..), Sum(..))
+import Data.Monoid (Monoid(..), (<>), First(..), Sum(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -147,6 +147,12 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
                   | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
             where (xpp, xps) = Factorial.span (p . Concat . Seq.singleton) xp
                   (Concat xsp, xss) = Factorial.span p (Concat xs)
+   split p (Concat x) = Foldable.foldr splitNext [mempty] x
+      where splitNext a (xp:xs) =
+               let as = fmap (Concat . Seq.singleton) (Factorial.split (p . Concat . Seq.singleton) a)
+               in if null xp
+                  then as ++ xs
+                  else init as ++ (last as <> xp):xs
    splitAt 0 c = (mempty, c)
    splitAt n (Concat x) =
       case Seq.viewl x
