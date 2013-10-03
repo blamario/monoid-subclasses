@@ -3,21 +3,22 @@ Version:             0.3.3
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
-Category:            Data
+Category:            Data, Algebra, Text
 Tested-with:         GHC
 Description:
-  This package defines a hierarchy of subclasses of 'Monoid' together with their instances for all data
-  structures from base, containers, and text packages.
+  A hierarchy of subclasses of 'Monoid' together with their instances for all data structures from base, containers, and
+  text packages.
   
 License:             BSD3
 License-file:        BSD3-LICENSE.txt
 Copyright:           (c) 2013 Mario Blazevic
 Author:              Mario Blazevic
-Maintainer:          blamario@yahoo.com
+Maintainer:          Mario Blazevic <blamario@yahoo.com>
 Homepage:            https://github.com/blamario/monoid-subclasses/
+Bug-reports:         https://github.com/blamario/monoid-subclasses/issues
 Source-repository head
-  type:              darcs
-  location:          http://code.haskell.org/SCC/
+  type:              git
+  location:          git://github.com/blamario/monoid-subclasses.git
 
 Library
   Exposed-Modules:   Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
