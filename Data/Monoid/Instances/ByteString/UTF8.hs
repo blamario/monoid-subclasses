@@ -9,11 +9,12 @@
 -- 
 
 module Data.Monoid.Instances.ByteString.UTF8 (
-   ByteStringUTF8(..)
+   ByteStringUTF8(..), decode
    )
 where
 
-import Prelude hiding (drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1, map, concatMap, break, span)
+import Prelude hiding (drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1,
+                       map, concatMap, break, span)
 
 import Data.Bits ((.&.), (.|.), shiftL, shiftR)
 import Data.Char (chr, ord)
@@ -36,6 +37,20 @@ import qualified Data.Monoid.Factorial as Factorial (FactorialMonoid(..))
 import qualified Data.Monoid.Textual as Textual (TextualMonoid(..))
 
 newtype ByteStringUTF8 = ByteStringUTF8 ByteString deriving (Eq, Ord)
+
+-- | Takes a raw 'ByteString' chunk and returns a pair of 'ByteStringUTF8' decoding the prefix of the chunk and the
+-- remaining suffix that is either null or contains the incomplete last character of the chunk.
+decode :: ByteString -> (ByteStringUTF8, ByteString)
+decode bs
+   | ByteString.null bs || l < 0x80 = (ByteStringUTF8 bs, mempty)
+   | l >= 0xC0 = (ByteStringUTF8 (ByteString.init bs), ByteString.singleton l)
+   | ByteString.null prefix = (mempty, bs)
+   | otherwise =
+      case toChar (ByteString.last prefix) suffix
+      of Nothing -> (ByteStringUTF8 (ByteString.init prefix), drop (ByteString.length prefix - 1) bs)
+         Just{} -> (ByteStringUTF8 bs, mempty)
+   where (prefix, suffix) = ByteString.breakEnd byteStartsCharacter bs
+         l = ByteString.last bs
 
 instance Monoid ByteStringUTF8 where
    mempty = ByteStringUTF8 ByteString.empty
