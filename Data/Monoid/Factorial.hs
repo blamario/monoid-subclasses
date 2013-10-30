@@ -37,7 +37,7 @@ import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Data.Numbers.Primes (primeFactors)
 
-import Data.Monoid.Null (MonoidNull(null))
+import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 
 -- | Class of monoids that can be split into irreducible (/i.e./, atomic or prime) 'factors' in a unique way. Factors of
 -- a 'Product' are literally its prime factors:
@@ -148,7 +148,7 @@ class MonoidNull m => FactorialMonoid m where
 -- | A subclass of 'FactorialMonoid' whose instances satisfy this additional law:
 --
 -- > factors (a <> b) == factors a <> factors b
-class FactorialMonoid m => StableFactorialMonoid m
+class (FactorialMonoid m, PositiveMonoid m) => StableFactorialMonoid m
 
 instance FactorialMonoid () where
    factors () = []
