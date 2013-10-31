@@ -16,7 +16,6 @@ where
 
 import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap, 
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
-import Control.Applicative (Applicative(..))
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable, traverse)
 import qualified Data.Foldable as Foldable
@@ -205,15 +204,6 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
    break pt pc = Textual.span (not . pt) (not . pc)
 
    find p (Concat x) = getFirst $ Foldable.foldMap (First . find p) x
-
-newtype Pair a = Pair (a, a)
-
-instance Functor Pair where
-   fmap f (Pair (x, y)) = Pair (f x, f y)
-
-instance Applicative Pair where
-   pure x = Pair (x, x)
-   Pair (f, g) <*> Pair (x, y) = Pair (f x, g y)
 
 inject :: (MonoidNull a, PositiveMonoid a) => Seq a -> Concat a
 inject = Concat . filter (not . null)
