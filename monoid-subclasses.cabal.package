@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             0.3.3
+Version:             0.3.4
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -18,11 +18,11 @@ Homepage:            https://github.com/blamario/monoid-subclasses/
 Bug-reports:         https://github.com/blamario/monoid-subclasses/issues
 Source-repository head
   type:              git
-  location:          git://github.com/blamario/monoid-subclasses.git
+  location:          https://github.com/blamario/monoid-subclasses
 
 Library
   Exposed-Modules:   Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
-                     Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.Concat
+                     Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.Concat, Data.Monoid.Instances.Measured
   Build-Depends:     base < 5, bytestring >= 0.9 && < 1.0, containers == 0.5.*, text == 0.11.*, primes == 0.2.*,
                      vector >= 0.9 && < 0.11
   GHC-prof-options:  -auto-all
@@ -37,5 +37,5 @@ test-suite Main
                      test-framework >= 0.4.1, test-framework-quickcheck2
   Main-is:           Test/TestMonoidSubclasses.hs
   Other-Modules:     Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
-                     Data.Monoid.Instances.ByteString.UTF8
+                     Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.Concat, Data.Monoid.Instances.Measured
   default-language:  Haskell2010
