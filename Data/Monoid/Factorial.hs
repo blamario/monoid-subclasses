@@ -197,8 +197,50 @@ instance FactorialMonoid a => FactorialMonoid (Maybe a) where
 
 instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
    factors (a, b) = List.map (\a-> (a, mempty)) (factors a) ++ List.map ((,) mempty) (factors b)
+   primePrefix (a, b) | null a = (a, primePrefix b)
+                      | otherwise = (primePrefix a, mempty)
+   primeSuffix (a, b) | null b = (primeSuffix a, b)
+                      | otherwise = (mempty, primeSuffix b)
+   splitPrimePrefix (a, b) = case (splitPrimePrefix a, splitPrimePrefix b)
+                             of (Just (ap, as), _) -> Just ((ap, mempty), (as, b))
+                                (Nothing, Just (bp, bs)) -> Just ((a, bp), (a, bs))
+                                (Nothing, Nothing) -> Nothing
+   splitPrimeSuffix (a, b) = case (splitPrimeSuffix a, splitPrimeSuffix b)
+                             of (_, Just (bp, bs)) -> Just ((a, bp), (mempty, bs))
+                                (Just (ap, as), Nothing) -> Just ((ap, b), (as, b))
+                                (Nothing, Nothing) -> Nothing
+   foldl f a (x, y) = foldl f2 (foldl f1 a x) y
+      where f1 a = f a . fromFst
+            f2 a = f a . fromSnd
+   foldl' f a (x, y) = a' `seq` foldl f2 a' y
+      where f1 a = f a . fromFst
+            f2 a = f a . fromSnd
+            a' = foldl f1 a x
+   foldr f a (x, y) = foldr (f . fromFst) (foldr (f . fromSnd) a y) x
+   foldMap f (x, y) = foldMap (f . fromFst) x `mappend` foldMap (f . fromSnd) y
    length (a, b) = length a + length b
+   span p (x, y) = ((xp, yp), (xs, ys))
+      where (xp, xs) = span (p . fromFst) x
+            (yp, ys) | null xs = span (p . fromSnd) y
+                     | otherwise = (mempty, y)
+   split p (x, y) = fst $ List.foldr combine (ys, False) xs
+      where xs = List.map fromFst $ split (p . fromFst) x
+            ys = List.map fromSnd $ split (p . fromSnd) y
+            combine x (y:ys, False) = (mappend x y : ys, True)
+            combine x (xs, True) = (x:xs, True)
+   splitAt n (x, y) = ((xp, yp), (xs, ys))
+      where (xp, xs) = splitAt n x
+            (yp, ys) | null xs = splitAt (n - length x) y
+                     | otherwise = (mempty, y)
    reverse (a, b) = (reverse a, reverse b)
+
+{-# INLINE fromFst #-}
+fromFst :: Monoid b => a -> (a, b)
+fromFst a = (a, mempty)
+
+{-# INLINE fromSnd #-}
+fromSnd :: Monoid a => b -> (a, b)
+fromSnd b = (mempty, b)
 
 instance FactorialMonoid [x] where
    factors xs = List.map (:[]) xs
