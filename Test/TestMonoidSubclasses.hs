@@ -15,9 +15,10 @@ import Test.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
                         quickCheck, arbitrary, coarbitrary, property, label, forAll, variant, whenFail, (.&&.))
 import Test.QuickCheck.Instances ()
 
-import Control.Applicative (Applicative(..))
-import Data.Int (Int8, Int32)
+import Control.Applicative (Applicative(..), liftA2)
+import Data.Functor ((<$>))
 import Data.Foldable (toList)
+import Data.Int (Int8, Int32)
 import qualified Data.Foldable as Foldable
 import Data.Traversable (Traversable)
 import Data.List (intersperse, unfoldr)
@@ -48,6 +49,8 @@ import Data.Monoid.Instances.Concat (Concat)
 import qualified Data.Monoid.Instances.Concat as Concat
 import Data.Monoid.Instances.Measured (Measured)
 import qualified Data.Monoid.Instances.Measured as Measured
+import Data.Monoid.Instances.Stateful (Stateful)
+import qualified Data.Monoid.Instances.Stateful as Stateful
 
 import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
@@ -186,7 +189,8 @@ textualInstances = map upcast stableTextualInstances
                        TextualMonoidInstance (mempty :: Text),
                        TextualMonoidInstance (mempty :: Lazy.Text),
                        TextualMonoidInstance (mempty :: Seq Char),
-                       TextualMonoidInstance (mempty :: Vector Char)]
+                       TextualMonoidInstance (mempty :: Vector Char),
+                       TextualMonoidInstance (mempty :: Stateful (IntMap Int) Text)]
    where upcast (StableTextualMonoidInstance i) = TextualMonoidInstance i
 
 stableTextualInstances :: [StableTextualMonoidInstance]
@@ -681,8 +685,11 @@ instance Arbitrary ByteStringUTF8 where
 instance (Arbitrary a, MonoidNull a, PositiveMonoid a) => Arbitrary (Concat a) where
    arbitrary = fmap Concat.inject arbitrary
 
-instance (Arbitrary a, MonoidNull a, FactorialMonoid a) => Arbitrary (Measured a) where
+instance (Arbitrary a, FactorialMonoid a) => Arbitrary (Measured a) where
    arbitrary = fmap Measured.inject arbitrary
+
+instance (Arbitrary a, Arbitrary b) => Arbitrary (Stateful a b) where
+   arbitrary = Stateful.Stateful <$> liftA2 (,) arbitrary arbitrary
 
 instance CoArbitrary All where
    coarbitrary (All p) = coarbitrary p
@@ -716,6 +723,9 @@ instance CoArbitrary a => CoArbitrary (Concat a) where
 
 instance CoArbitrary a => CoArbitrary (Measured a) where
    coarbitrary = coarbitrary . Measured.extract
+
+instance CoArbitrary b => CoArbitrary (Stateful a b) where
+   coarbitrary = coarbitrary . Stateful.extract
 
 instance Show a => Show (a -> Bool) where
    show _ = "predicate"
