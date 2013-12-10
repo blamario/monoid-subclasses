@@ -10,7 +10,7 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Instances.Stateful (
-   Stateful(Stateful), inject, extract, state
+   Stateful(Stateful), inject, extract, state, setState
    )
 where
 
@@ -28,7 +28,9 @@ import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 
--- | @'Stateful' a b@ is a wrapper around the 'Monoid' @b@ that carries a state monoid @a@ along.
+-- | @'Stateful' a b@ is a wrapper around the 'Monoid' @b@ that carries the state @a@ along. The state type @a@ must be
+-- a monoid as well if 'Stateful' is to be of any use. In the 'FactorialMonoid' and 'TextualMonoid' class instances, the
+-- monoid @b@ has the priority and the state @a@ is left for the end.
 data Stateful a b = Stateful (b, a) deriving (Eq, Ord, Show)
 
 inject :: Monoid a => b -> Stateful a b
@@ -39,6 +41,9 @@ extract (Stateful (t, _)) = t
 
 state :: Stateful a b -> a
 state (Stateful (_, x)) = x
+
+setState :: a -> Stateful a b -> Stateful a b
+setState s (Stateful (t, _)) = Stateful (t, s)
 
 instance (Monoid a, Monoid b) => Monoid (Stateful a b) where
    mempty = Stateful mempty
