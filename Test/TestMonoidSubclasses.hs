@@ -51,6 +51,8 @@ import Data.Monoid.Instances.Measured (Measured)
 import qualified Data.Monoid.Instances.Measured as Measured
 import Data.Monoid.Instances.Stateful (Stateful)
 import qualified Data.Monoid.Instances.Stateful as Stateful
+import Data.Monoid.Instances.Positioned (Positioned)
+import qualified Data.Monoid.Instances.Positioned as Positioned
 
 import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
@@ -173,7 +175,7 @@ factorialInstances = map upcast stableFactorialInstances
    where upcast (StableFactorialMonoidInstance i) = FactorialMonoidInstance i
 
 stableFactorialInstances :: [StableFactorialMonoidInstance]
-stableFactorialInstances = stable1 ++ map measure stable1
+stableFactorialInstances = stable1 ++ map measure stable1 ++ map position stable1
    where stable1 = map upcast stableTextualInstances
                    ++ [StableFactorialMonoidInstance (mempty :: ByteString),
                        StableFactorialMonoidInstance (mempty :: Lazy.ByteString),
@@ -182,6 +184,7 @@ stableFactorialInstances = stable1 ++ map measure stable1
                        StableFactorialMonoidInstance (mempty :: Vector Int)]
          upcast (StableTextualMonoidInstance i) = StableFactorialMonoidInstance i
          measure (StableFactorialMonoidInstance i) = StableFactorialMonoidInstance (Measured.inject i)
+         position (StableFactorialMonoidInstance i) = StableFactorialMonoidInstance (Positioned.inject i)
 
 textualInstances :: [TextualMonoidInstance]
 textualInstances = map upcast stableTextualInstances
@@ -194,12 +197,15 @@ textualInstances = map upcast stableTextualInstances
    where upcast (StableTextualMonoidInstance i) = TextualMonoidInstance i
 
 stableTextualInstances :: [StableTextualMonoidInstance]
-stableTextualInstances = [StableTextualMonoidInstance (mempty :: TestString),
-                          StableTextualMonoidInstance (mempty :: String),
-                          StableTextualMonoidInstance (mempty :: Text),
-                          StableTextualMonoidInstance (mempty :: Lazy.Text),
-                          StableTextualMonoidInstance (mempty :: Seq Char),
-                          StableTextualMonoidInstance (mempty :: Vector Char)]
+stableTextualInstances = stable1 ++ map measure stable1 ++ map position stable1
+   where stable1 = [StableTextualMonoidInstance (mempty :: TestString),
+                    StableTextualMonoidInstance (mempty :: String),
+                    StableTextualMonoidInstance (mempty :: Text),
+                    StableTextualMonoidInstance (mempty :: Lazy.Text),
+                    StableTextualMonoidInstance (mempty :: Seq Char),
+                    StableTextualMonoidInstance (mempty :: Vector Char)]
+         measure (StableTextualMonoidInstance i) = StableTextualMonoidInstance (Measured.inject i)
+         position (StableTextualMonoidInstance i) = StableTextualMonoidInstance (Positioned.inject i)
 
 leftReductiveInstances = map upcast leftCancellativeInstances
                          ++ [LeftReductiveMonoidInstance (mempty :: Sum Integer),
@@ -688,6 +694,9 @@ instance (Arbitrary a, MonoidNull a, PositiveMonoid a) => Arbitrary (Concat a) w
 instance (Arbitrary a, FactorialMonoid a) => Arbitrary (Measured a) where
    arbitrary = fmap Measured.inject arbitrary
 
+instance (Arbitrary a, FactorialMonoid a) => Arbitrary (Positioned a) where
+   arbitrary = fmap Positioned.inject arbitrary
+
 instance (Arbitrary a, Arbitrary b) => Arbitrary (Stateful a b) where
    arbitrary = Stateful.Stateful <$> liftA2 (,) arbitrary arbitrary
 
@@ -723,6 +732,9 @@ instance CoArbitrary a => CoArbitrary (Concat a) where
 
 instance CoArbitrary a => CoArbitrary (Measured a) where
    coarbitrary = coarbitrary . Measured.extract
+
+instance CoArbitrary a => CoArbitrary (Positioned a) where
+   coarbitrary = coarbitrary . Positioned.extract
 
 instance CoArbitrary b => CoArbitrary (Stateful a b) where
    coarbitrary = coarbitrary . Stateful.extract
