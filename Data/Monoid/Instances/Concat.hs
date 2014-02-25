@@ -1,5 +1,5 @@
 {- 
-    Copyright 2011-2013 Mario Blazevic
+    Copyright 2011-2014 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -10,7 +10,7 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Instances.Concat (
-   Concat, inject, extract 
+   Concat, concatenate, inject, extract 
    )
 where
 
@@ -40,6 +40,9 @@ import qualified Data.Sequence as Seq
 -- importantly, injecting a monoid into a 'Concat' has the effect of making 'mappend' a constant-time operation.
 --
 newtype Concat a = Concat {extract :: Seq a} deriving Show
+
+concatenate :: (MonoidNull a, PositiveMonoid a) => Seq a -> Concat a
+concatenate = Concat . filter (not . null)
 
 instance (Eq a, Monoid a) => Eq (Concat a) where
    Concat x == Concat y = Foldable.foldMap id x == Foldable.foldMap id y
@@ -206,7 +209,8 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
    find p (Concat x) = getFirst $ Foldable.foldMap (First . find p) x
 
 inject :: (MonoidNull a, PositiveMonoid a) => Seq a -> Concat a
-inject = Concat . filter (not . null)
+inject = concatenate
+{-# DEPRECATED inject "Use concatenate instead." #-}
 
 injectSingleton :: (MonoidNull a, PositiveMonoid a) => a -> Concat a
 injectSingleton a | null a = mempty

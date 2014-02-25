@@ -1,5 +1,5 @@
 {-
-    Copyright 2013 Mario Blazevic
+    Copyright 2013-2014 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -16,6 +16,7 @@ where
 
 import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
+import Control.Applicative (Applicative(..))
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
@@ -34,7 +35,8 @@ import qualified Data.Monoid.Textual as Textual
 newtype Stateful a b = Stateful (b, a) deriving (Eq, Ord, Show)
 
 inject :: Monoid a => b -> Stateful a b
-inject m = Stateful (m, mempty)
+inject = pure
+{-# DEPRECATED inject "Use pure instead." #-}
 
 extract :: Stateful a b -> b
 extract (Stateful (t, _)) = t
@@ -44,6 +46,13 @@ state (Stateful (_, x)) = x
 
 setState :: a -> Stateful a b -> Stateful a b
 setState s (Stateful (t, _)) = Stateful (t, s)
+
+instance Functor (Stateful a) where
+   fmap f (Stateful (x, s)) = Stateful (f x, s)
+
+instance Monoid a => Applicative (Stateful a) where
+   pure m = Stateful (m, mempty)
+   Stateful (f, s1) <*> Stateful (x, s2) = Stateful (f x, s1 <> s2)
 
 instance (Monoid a, Monoid b) => Monoid (Stateful a b) where
    mempty = Stateful mempty

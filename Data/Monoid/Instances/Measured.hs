@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013 Mario Blazevic
+    Copyright 2013-2014 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -10,7 +10,7 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Instances.Measured (
-   Measured, inject, extract 
+   Measured, inject, measure, extract
    )
 where
 
@@ -34,8 +34,13 @@ import qualified Data.Monoid.Textual as Textual
 
 data Measured a = Measured{measuredLength :: Int, extract :: a} deriving (Eq, Show)
 
+-- | Create a new 'Measured' value.
+measure :: FactorialMonoid a => a -> Measured a
+measure x = Measured (length x) x
+
 inject :: FactorialMonoid a => a -> Measured a
-inject x = Measured (length x) x
+inject = measure
+{-# DEPRECATED inject "Use measure instead." #-}
 
 instance Ord a => Ord (Measured a) where
    compare (Measured _ x) (Measured _ y) = compare x y
