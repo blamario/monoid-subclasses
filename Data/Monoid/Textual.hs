@@ -112,7 +112,7 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    -- | Strict version of 'foldl'.
    foldl'  :: (a -> t -> a) -> (a -> Char -> a) -> a -> t -> a
    -- | The first argument folds over the non-character prime factors, the second over characters. Otherwise equivalent
-   -- to 'List.foldr' from "Data.List".
+   -- to 'List.foldl\'' from "Data.List".
    foldr   :: (t -> a -> a) -> (Char -> a -> a) -> a -> t -> a
 
    -- | Equivalent to 'List.scanl' from "Data.List" when applied to a 'String', but preserves all non-character data.
@@ -195,6 +195,21 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
                         of Nothing -> []
                            Just (_, tail) -> split p tail
    find p = foldr (const id) (\c r-> if p c then Just c else r) Nothing
+   {-# INLINE characterPrefix #-}
+   {-# INLINE concatMap #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINE find #-}
+   {-# INLINE fromText #-}
+   {-# INLINE map #-}
+   {-# INLINE mapAccumL #-}
+   {-# INLINE mapAccumR #-}
+   {-# INLINE scanl #-}
+   {-# INLINE scanl1 #-}
+   {-# INLINE scanr #-}
+   {-# INLINE scanr1 #-}
+   {-# INLINE singleton #-}
+   {-# INLINE split #-}
+   {-# INLINE takeWhile #-}
 
 foldlChars f (t, c1) c2 = (mappend t (singleton c'), c')
    where c' = f c1 c2
@@ -231,6 +246,29 @@ instance TextualMonoid String where
    break _ = List.break
    span _ = List.span
    find = List.find
+   {-# INLINE all #-}
+   {-# INLINE any #-}
+   {-# INLINE break #-}
+   {-# INLINE characterPrefix #-}
+   {-# INLINE concatMap #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINE find #-}
+   {-# INLINE foldl   #-}
+   {-# INLINE foldl'  #-}
+   {-# INLINE foldr   #-}
+   {-# INLINE fromText #-}
+   {-# INLINE map #-}
+   {-# INLINE mapAccumL #-}
+   {-# INLINE mapAccumR #-}
+   {-# INLINE scanl #-}
+   {-# INLINE scanl1 #-}
+   {-# INLINE scanr #-}
+   {-# INLINE scanr1 #-}
+   {-# INLINE singleton #-}
+   {-# INLINE span #-}
+   {-# INLINE split #-}
+   {-# INLINE splitCharacterPrefix #-}
+   {-# INLINE takeWhile #-}
 
 instance TextualMonoid Text where
    fromText = id
@@ -259,6 +297,29 @@ instance TextualMonoid Text where
    span _ = Text.span
    split = Text.split
    find = Text.find
+   {-# INLINE all #-}
+   {-# INLINE any #-}
+   {-# INLINE break #-}
+   {-# INLINE characterPrefix #-}
+   {-# INLINE concatMap #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINE find #-}
+   {-# INLINE foldl   #-}
+   {-# INLINE foldl'  #-}
+   {-# INLINE foldr   #-}
+   {-# INLINE fromText #-}
+   {-# INLINE map #-}
+   {-# INLINE mapAccumL #-}
+   {-# INLINE mapAccumR #-}
+   {-# INLINE scanl #-}
+   {-# INLINE scanl1 #-}
+   {-# INLINE scanr #-}
+   {-# INLINE scanr1 #-}
+   {-# INLINE singleton #-}
+   {-# INLINE span #-}
+   {-# INLINE split #-}
+   {-# INLINE splitCharacterPrefix #-}
+   {-# INLINE takeWhile #-}
 
 instance TextualMonoid LazyText.Text where
    fromText = LazyText.fromStrict
@@ -287,6 +348,29 @@ instance TextualMonoid LazyText.Text where
    span _ = LazyText.span
    split = LazyText.split
    find = LazyText.find
+   {-# INLINE all #-}
+   {-# INLINE any #-}
+   {-# INLINE break #-}
+   {-# INLINE characterPrefix #-}
+   {-# INLINE concatMap #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINE find #-}
+   {-# INLINE foldl   #-}
+   {-# INLINE foldl'  #-}
+   {-# INLINE foldr   #-}
+   {-# INLINE fromText #-}
+   {-# INLINE map #-}
+   {-# INLINE mapAccumL #-}
+   {-# INLINE mapAccumR #-}
+   {-# INLINE scanl #-}
+   {-# INLINE scanl1 #-}
+   {-# INLINE scanr #-}
+   {-# INLINE scanr1 #-}
+   {-# INLINE singleton #-}
+   {-# INLINE span #-}
+   {-# INLINE split #-}
+   {-# INLINE splitCharacterPrefix #-}
+   {-# INLINE takeWhile #-}
 
 instance IsString (Sequence.Seq Char) where
    fromString = Sequence.fromList
@@ -320,6 +404,29 @@ instance TextualMonoid (Sequence.Seq Char) where
    break _ = Sequence.breakl
    span _ = Sequence.spanl
    find = Foldable.find
+   {-# INLINE all #-}
+   {-# INLINE any #-}
+   {-# INLINE break #-}
+   {-# INLINE characterPrefix #-}
+   {-# INLINE concatMap #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINE find #-}
+   {-# INLINE foldl   #-}
+   {-# INLINE foldl'  #-}
+   {-# INLINE foldr   #-}
+   {-# INLINE fromText #-}
+   {-# INLINE map #-}
+   {-# INLINE mapAccumL #-}
+   {-# INLINE mapAccumR #-}
+   {-# INLINE scanl #-}
+   {-# INLINE scanl1 #-}
+   {-# INLINE scanr #-}
+   {-# INLINE scanr1 #-}
+   {-# INLINE singleton #-}
+   {-# INLINE span #-}
+   {-# INLINE split #-}
+   {-# INLINE splitCharacterPrefix #-}
+   {-# INLINE takeWhile #-}
 
 instance IsString (Vector.Vector Char) where
    fromString = Vector.fromList
@@ -357,3 +464,26 @@ instance TextualMonoid (Vector.Vector Char) where
    break _ = Vector.break
    span _ = Vector.span
    find = Vector.find
+   {-# INLINE all #-}
+   {-# INLINE any #-}
+   {-# INLINE break #-}
+   {-# INLINE characterPrefix #-}
+   {-# INLINE concatMap #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINE find #-}
+   {-# INLINE foldl   #-}
+   {-# INLINE foldl'  #-}
+   {-# INLINE foldr   #-}
+   {-# INLINE fromText #-}
+   {-# INLINE map #-}
+   {-# INLINE mapAccumL #-}
+   {-# INLINE mapAccumR #-}
+   {-# INLINE scanl #-}
+   {-# INLINE scanl1 #-}
+   {-# INLINE scanr #-}
+   {-# INLINE scanr1 #-}
+   {-# INLINE singleton #-}
+   {-# INLINE span #-}
+   {-# INLINE split #-}
+   {-# INLINE splitCharacterPrefix #-}
+   {-# INLINE takeWhile #-}

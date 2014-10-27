@@ -144,6 +144,7 @@ class MonoidNull m => FactorialMonoid m where
    drop n p = snd (splitAt n p)
    take n p = fst (splitAt n p)
    reverse = mconcat . List.reverse . factors
+   {-# MINIMAL factors | splitPrimePrefix #-}
 
 -- | A subclass of 'FactorialMonoid' whose instances satisfy this additional law:
 --

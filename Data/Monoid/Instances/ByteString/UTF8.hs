@@ -54,20 +54,27 @@ decode bs
 
 instance Monoid ByteStringUTF8 where
    mempty = ByteStringUTF8 ByteString.empty
+   {-# INLINE mempty #-}
    ByteStringUTF8 a `mappend` ByteStringUTF8 b = ByteStringUTF8 (a `mappend` b)
+   {-# INLINE mappend #-}
 
 instance MonoidNull ByteStringUTF8 where
    null (ByteStringUTF8 b) = ByteString.null b
+   {-# INLINE null #-}
 
 instance LeftReductiveMonoid ByteStringUTF8 where
    stripPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = fmap ByteStringUTF8 (stripPrefix a b)
+   {-# INLINE stripPrefix #-}
    ByteStringUTF8 a `isPrefixOf` ByteStringUTF8 b = a `isPrefixOf` b
+   {-# INLINE isPrefixOf #-}
 
 instance LeftCancellativeMonoid ByteStringUTF8
 
 instance LeftGCDMonoid ByteStringUTF8 where
    commonPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = ByteStringUTF8 (commonPrefix a b)
+   {-# INLINE commonPrefix #-}
    stripCommonPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = wrapTriple (stripCommonPrefix a b)
+   {-# INLINE stripCommonPrefix #-}
 
 instance Show ByteStringUTF8 where
    showsPrec _ bs s = '"' : Textual.foldr showsBytes (:) ('"' : s) bs
@@ -75,6 +82,7 @@ instance Show ByteStringUTF8 where
 
 instance IsString ByteStringUTF8 where
    fromString = ByteStringUTF8 . Foldable.foldMap fromChar
+   {-# INLINE fromString #-}
 
 instance PositiveMonoid ByteStringUTF8
 
@@ -85,39 +93,50 @@ instance FactorialMonoid ByteStringUTF8 where
       | otherwise = case ByteString.findIndex byteStartsCharacter (unsafeTail bs)
                     of Just i -> Just (wrapPair $ ByteString.splitAt (succ i) bs)
                        Nothing -> Just (utf8, ByteStringUTF8 $ ByteString.empty)
+   {-# INLINABLE splitPrimePrefix #-}
    splitPrimeSuffix utf8@(ByteStringUTF8 bs)
       | ByteString.null bs = Nothing
       | ByteString.null prefix = Just (wrapPair split)
       | not (ByteString.null suffix) && ByteString.last prefix < 0x80 = Just (wrapPair split)
       | otherwise = Just (wrapPair $ ByteString.splitAt (pred $ ByteString.length prefix) bs)
       where split@(prefix, suffix) = ByteString.breakEnd byteStartsCharacter bs
+   {-# INLINABLE splitPrimeSuffix #-}
    primePrefix utf8@(ByteStringUTF8 bs)
       | ByteString.null bs = utf8
       | unsafeHead bs < 0x80 = ByteStringUTF8 (ByteString.take 1 bs)
       | otherwise = case ByteString.findIndex byteStartsCharacter (unsafeTail bs)
                     of Just i -> ByteStringUTF8 (ByteString.take (succ i) bs)
                        Nothing -> utf8
+   {-# INLINABLE primePrefix #-}
    factors (ByteStringUTF8 bs) = List.map ByteStringUTF8 $ ByteString.groupBy continued bs
       where continued a b = a >= 0x80 && b >= 0x80 && b < 0xC0
+   {-# INLINABLE factors #-}
    length (ByteStringUTF8 bs) = fst (ByteString.foldl' count (0, False) bs)
       where count (n, high) byte | byte < 0x80 = (succ n, False)
                                  | byte < 0xC0 = (if high then n else succ n, True)
                                  | otherwise = (succ n, True)
+   {-# INLINABLE length #-}
    foldl f a0 (ByteStringUTF8 bs) = List.foldl f' a0 (groupASCII bs)
       where f' a b | unsafeHead b < 0x80 = ByteString.foldl f'' a b
                    | otherwise = f a (ByteStringUTF8 b)
             f'' a w = f a (ByteStringUTF8 $ ByteString.singleton w)
+   {-# INLINABLE foldl #-}
    foldl' f a0 (ByteStringUTF8 bs) = List.foldl' f' a0 (groupASCII bs)
       where f' a b | unsafeHead b < 0x80 = ByteString.foldl' f'' a b
                    | otherwise = f a (ByteStringUTF8 b)
             f'' a w = f a (ByteStringUTF8 $ ByteString.singleton w)
+   {-# INLINABLE foldl' #-}
    foldr f a0 (ByteStringUTF8 bs) = List.foldr f' a0 (groupASCII bs)
       where f' b a | unsafeHead b < 0x80 = ByteString.foldr f'' a b
                    | otherwise = f (ByteStringUTF8 b) a
             f'' w a = f (ByteStringUTF8 $ ByteString.singleton w) a
+   {-# INLINABLE foldr #-}
    splitAt n (ByteStringUTF8 bs) = wrapPair (ByteString.splitAt (charStartIndex n bs) bs)
+   {-# INLINE splitAt #-}
    take n (ByteStringUTF8 bs) = ByteStringUTF8 (ByteString.take (charStartIndex n bs) bs)
+   {-# INLINE take #-}
    drop n (ByteStringUTF8 bs) = ByteStringUTF8 (ByteString.drop (charStartIndex n bs) bs)
+   {-# INLINE drop #-}
    dropWhile p (ByteStringUTF8 bs) = dropASCII bs
       where dropASCII bs =
                let suffix = ByteString.dropWhile (\w-> w < 0x80 && p (ByteStringUTF8 $ ByteString.singleton w)) bs
@@ -132,36 +151,46 @@ instance FactorialMonoid ByteStringUTF8 where
                                in if p (ByteStringUTF8 hd)
                                   then dropASCII tl
                                   else utf8
+   {-# INLINE dropWhile #-}
    takeWhile p utf8@(ByteStringUTF8 bs) =
       ByteStringUTF8 $ ByteString.take (ByteString.length bs - ByteString.length s) bs
       where suffix@(ByteStringUTF8 s) = Factorial.dropWhile p utf8
+   {-# INLINE takeWhile #-}
    span p utf8@(ByteStringUTF8 bs) =
       (ByteStringUTF8 $ ByteString.take (ByteString.length bs - ByteString.length s) bs, suffix)
       where suffix@(ByteStringUTF8 s) = Factorial.dropWhile p utf8
+   {-# INLINE span #-}
    break p = Factorial.span (not . p)
+   {-# INLINE break #-}
    reverse (ByteStringUTF8 bs) =
       ByteStringUTF8 (ByteString.concat $ List.reverse $ List.map reverseASCII $ groupASCII bs)
       where reverseASCII b | unsafeHead b < 0x80 = ByteString.reverse b
                            | otherwise = b
+   {-# INLINABLE reverse #-}
 
 instance TextualMonoid ByteStringUTF8 where
    singleton = ByteStringUTF8 . fromChar
+   {-# INLINE singleton #-}
    splitCharacterPrefix (ByteStringUTF8 bs) = ByteString.uncons bs >>= uncurry toChar
+   {-# INLINE splitCharacterPrefix #-}
    foldl ft fc a0 (ByteStringUTF8 bs) = List.foldl f a0 (groupASCII bs)
       where f a b = let hd = unsafeHead b
                     in if hd < 0x80
                        then ByteString.Char8.foldl fc a b
                        else maybe (ft a $ ByteStringUTF8 b) (fc a . fst) (toChar hd $ unsafeTail b)
+   {-# INLINABLE foldl #-}
    foldl' ft fc a0 (ByteStringUTF8 bs) = List.foldl' f a0 (groupASCII bs)
       where f a b = let hd = unsafeHead b
                     in if hd < 0x80
                        then ByteString.Char8.foldl' fc a b
                        else maybe (ft a $ ByteStringUTF8 b) (fc a . fst) (toChar hd $ unsafeTail b)
+   {-# INLINE foldl' #-}
    foldr ft fc a0 (ByteStringUTF8 bs) = List.foldr f a0 (groupASCII bs)
       where f b a = let hd = unsafeHead b
                     in if hd < 0x80
                        then ByteString.Char8.foldr fc a b
                        else maybe (ft (ByteStringUTF8 b) a) (flip fc a . fst) (toChar hd $ unsafeTail b)
+   {-# INLINE foldr #-}
    dropWhile pb pc (ByteStringUTF8 bs) = ByteStringUTF8 $ dropASCII bs
       where dropASCII rest = case ByteString.Char8.findIndex (\c-> c > '\x7f' || not (pc c)) rest
                              of Nothing -> ByteString.empty
@@ -176,16 +205,22 @@ instance TextualMonoid ByteStringUTF8 where
                                                   then dropASCII (unsafeDrop j rest)
                                                   else rest
                                     _ -> rest
+   {-# INLINE dropWhile #-}
    takeWhile pb pc utf8@(ByteStringUTF8 bs) =
       ByteStringUTF8 $ ByteString.take (ByteString.length bs - ByteString.length suffix) bs
       where ByteStringUTF8 suffix = Textual.dropWhile pb pc utf8
+   {-# INLINE takeWhile #-}
    span pb pc utf8@(ByteStringUTF8 bs) =
       wrapPair $ ByteString.splitAt (ByteString.length bs - ByteString.length suffix) bs
       where ByteStringUTF8 suffix = Textual.dropWhile pb pc utf8
+   {-# INLINE span #-}
    break pb pc = Textual.span (not . pb) (not . pc)
+   {-# INLINE break #-}
 
 wrapPair (bs1, bs2) = (ByteStringUTF8 bs1, ByteStringUTF8 bs2)
+{-# INLINE wrapPair #-}
 wrapTriple (bs1, bs2, bs3) = (ByteStringUTF8 bs1, ByteStringUTF8 bs2, ByteStringUTF8 bs3)
+{-# INLINE wrapTriple #-}
 
 fromChar :: Char -> ByteString
 fromChar c | c < '\x80'    = ByteString.Char8.singleton c
@@ -237,6 +272,7 @@ headIndex bs = fromMaybe (ByteString.length bs) $ ByteString.findIndex byteStart
 
 byteStartsCharacter :: Word8 -> Bool
 byteStartsCharacter b = b < 0x80 || b >= 0xC0
+{-# INLINE byteStartsCharacter #-}
 
 charStartIndex :: Int -> ByteString -> Int
 charStartIndex n _ | n <= 0 = 0

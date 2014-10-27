@@ -85,15 +85,19 @@ instance MonoidNull [x] where
 
 instance MonoidNull ByteString.ByteString where
    null = ByteString.null
+   {-# INLINE null #-}
 
 instance MonoidNull LazyByteString.ByteString where
    null = LazyByteString.null
+   {-# INLINE null #-}
 
 instance MonoidNull Text.Text where
    null = Text.null
+   {-# INLINE null #-}
 
 instance MonoidNull LazyText.Text where
    null = LazyText.null
+   {-# INLINE null #-}
 
 instance Ord k => MonoidNull (Map.Map k v) where
    null = Map.null
