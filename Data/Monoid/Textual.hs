@@ -28,6 +28,7 @@ import Data.Monoid (Monoid(mappend, mconcat, mempty))
 import qualified Data.Sequence as Sequence
 import qualified Data.Vector as Vector
 import Data.String (IsString(fromString))
+import Data.Int (Int64)
 
 import Data.Monoid.Null (MonoidNull (null))
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid)
@@ -144,6 +145,10 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    break :: (t -> Bool) -> (Char -> Bool) -> t -> (t, t)
    -- | 'span pt pc t' is equivalent to |(takeWhile pt pc t, dropWhile pt pc t)|.
    span :: (t -> Bool) -> (Char -> Bool) -> t -> (t, t)
+   -- | A stateful variant of 'span', threading the result of the test function as long as it returns 'Just'.
+   spanMaybe :: s -> (s -> t -> Maybe s) -> (s -> Char -> Maybe s) -> t -> (t, t, s)
+   -- | Strict version of 'spanMaybe'.
+   spanMaybe' :: s -> (s -> t -> Maybe s) -> (s -> Char -> Maybe s) -> t -> (t, t, s)
    -- | Splits the monoid into components delimited by character separators satisfying the given predicate. The
    -- characters satisfying the predicate are not a part of the result.
    --
@@ -189,6 +194,19 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    dropWhile pt pc = snd . span pt pc
    span pt pc = Factorial.span (\prime-> maybe (pt prime) pc (characterPrefix prime))
    break pt pc = Factorial.break (\prime-> maybe (pt prime) pc (characterPrefix prime))
+   spanMaybe s0 ft fc t0 = spanAfter id s0 t0
+      where spanAfter g s t = case Factorial.splitPrimePrefix t
+                              of Just (prime, rest) | Just s' <- maybe (ft s prime) (fc s) (characterPrefix prime) ->
+                                                        spanAfter (g . mappend prime) s' rest
+                                                    | otherwise -> (g mempty, t, s)
+                                 Nothing -> (t0, t, s)
+   spanMaybe' s0 ft fc t0 = spanAfter id s0 t0
+      where spanAfter g s t = seq s $
+                              case Factorial.splitPrimePrefix t
+                              of Just (prime, rest) | Just s' <- maybe (ft s prime) (fc s) (characterPrefix prime) ->
+                                                        spanAfter (g . mappend prime) s' rest
+                                                    | otherwise -> (g mempty, t, s)
+                                 Nothing -> (t0, t, s)
    split p m = prefix : splitRest
       where (prefix, rest) = break (const False) p m
             splitRest = case splitCharacterPrefix rest
@@ -208,6 +226,8 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    {-# INLINE scanr #-}
    {-# INLINE scanr1 #-}
    {-# INLINE singleton #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
    {-# INLINE split #-}
    {-# INLINE takeWhile #-}
 
@@ -245,6 +265,14 @@ instance TextualMonoid String where
    dropWhile _ = List.dropWhile
    break _ = List.break
    span _ = List.span
+   spanMaybe s0 ft fc l = (prefix' [], suffix' [], s')
+      where (prefix', suffix', s', live') = List.foldl' g (id, id, s0, True) l
+            g (prefix, suffix, s, live) c | live, Just s' <- fc s c = (prefix . (c:), id, s', True)
+                                          | otherwise = (prefix, suffix . (c:), s, False)
+   spanMaybe' s0 ft fc l = (prefix' [], suffix' [], s')
+      where (prefix', suffix', s', live') = List.foldl' g (id, id, s0, True) l
+            g (prefix, suffix, s, live) c | live, Just s' <- fc s c = seq s' (prefix . (c:), id, s', True)
+                                          | otherwise = (prefix, suffix . (c:), s, False)
    find = List.find
    {-# INLINE all #-}
    {-# INLINE any #-}
@@ -266,6 +294,8 @@ instance TextualMonoid String where
    {-# INLINE scanr1 #-}
    {-# INLINE singleton #-}
    {-# INLINE span #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
    {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
@@ -295,6 +325,14 @@ instance TextualMonoid Text where
    dropWhile _ = Text.dropWhile
    break _ = Text.break
    span _ = Text.span
+   spanMaybe s0 ft fc t = case Text.foldr g id t (0, s0)
+                          of (i, s') | (prefix, suffix) <- Text.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 ft fc t = case Text.foldr g id t (0, s0)
+                           of (i, s') | (prefix, suffix) <- Text.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    split = Text.split
    find = Text.find
    {-# INLINE all #-}
@@ -317,6 +355,8 @@ instance TextualMonoid Text where
    {-# INLINE scanr1 #-}
    {-# INLINE singleton #-}
    {-# INLINE span #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
    {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
@@ -346,6 +386,14 @@ instance TextualMonoid LazyText.Text where
    dropWhile _ = LazyText.dropWhile
    break _ = LazyText.break
    span _ = LazyText.span
+   spanMaybe s0 ft fc t = case LazyText.foldr g id t (0, s0)
+                          of (i, s') | (prefix, suffix) <- LazyText.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int64 in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 ft fc t = case LazyText.foldr g id t (0, s0)
+                           of (i, s') | (prefix, suffix) <- LazyText.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int64 in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    split = LazyText.split
    find = LazyText.find
    {-# INLINE all #-}
@@ -368,6 +416,8 @@ instance TextualMonoid LazyText.Text where
    {-# INLINE scanr1 #-}
    {-# INLINE singleton #-}
    {-# INLINE span #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
    {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
@@ -403,6 +453,14 @@ instance TextualMonoid (Sequence.Seq Char) where
    dropWhile _ = Sequence.dropWhileL
    break _ = Sequence.breakl
    span _ = Sequence.spanl
+   spanMaybe s0 ft fc b = case Foldable.foldr g id b (0, s0)
+                          of (i, s') | (prefix, suffix) <- Sequence.splitAt i b -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 ft fc b = case Foldable.foldr g id b (0, s0)
+                           of (i, s') | (prefix, suffix) <- Sequence.splitAt i b -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    find = Foldable.find
    {-# INLINE all #-}
    {-# INLINE any #-}
@@ -424,6 +482,8 @@ instance TextualMonoid (Sequence.Seq Char) where
    {-# INLINE scanr1 #-}
    {-# INLINE singleton #-}
    {-# INLINE span #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
    {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
@@ -463,6 +523,16 @@ instance TextualMonoid (Vector.Vector Char) where
    dropWhile _ = Vector.dropWhile
    break _ = Vector.break
    span _ = Vector.span
+   spanMaybe s0 ft fc v = case Vector.ifoldr g Left v s0
+                          of Left s' -> (v, Vector.empty, s')
+                             Right (i, s') | (prefix, suffix) <- Vector.splitAt i v -> (prefix, suffix, s')
+      where g i c cont s | Just s' <- fc s c = cont s'
+                         | otherwise = Right (i, s)
+   spanMaybe' s0 ft fc v = case Vector.ifoldr' g Left v s0
+                           of Left s' -> (v, Vector.empty, s')
+                              Right (i, s') | (prefix, suffix) <- Vector.splitAt i v -> (prefix, suffix, s')
+      where g i c cont s | Just s' <- fc s c = seq s' (cont s')
+                         | otherwise = Right (i, s)
    find = Vector.find
    {-# INLINE all #-}
    {-# INLINE any #-}
@@ -484,6 +554,8 @@ instance TextualMonoid (Vector.Vector Char) where
    {-# INLINE scanr1 #-}
    {-# INLINE singleton #-}
    {-# INLINE span #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
    {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}

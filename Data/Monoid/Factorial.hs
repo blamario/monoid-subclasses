@@ -1,5 +1,5 @@
 {- 
-    Copyright 2011-2013 Mario Blazevic
+    Copyright 2011-2014 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -35,6 +35,8 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
+import Data.Int (Int64)
+import Data.Word (Word8)
 import Data.Numbers.Primes (primeFactors)
 
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -57,6 +59,8 @@ import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 -- > reverse == mconcat . List.reverse . factors
 -- > primePrefix == maybe mempty fst . splitPrimePrefix
 -- > primeSuffix == maybe mempty snd . splitPrimeSuffix
+-- > inits == List.map mconcat . List.tails . factors
+-- > tails == List.map mconcat . List.tails . factors
 -- > foldl f a == List.foldl f a . factors
 -- > foldl' f a == List.foldl' f a . factors
 -- > foldr f a == List.foldr f a . factors
@@ -64,6 +68,15 @@ import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 -- > List.all (List.all (not . pred) . factors) . split pred
 -- > mconcat . intersperse prime . split (== prime) == id
 -- > splitAt i m == (mconcat l, mconcat r) where (l, r) = List.splitAt i (factors m)
+-- > spanMaybe () (const $ bool Nothing (Maybe ()) . p) m == (takeWhile p m, dropWhile p m, ())
+-- > spanMaybe s0 (\s m-> Just $ f s m) m0 == (m0, mempty, foldl f s0 m0)
+-- > let (prefix, suffix, s') = spanMaybe s f m
+-- >     foldMaybe = foldl g (Just s)
+-- >     g s m = s >>= flip f m
+-- > in all ((Nothing ==) . foldMaybe) (inits prefix)
+-- >    && prefix == last (filter (isJust . foldMaybe) $ inits m)
+-- >    && Just s' == foldMaybe prefix
+-- >    && m == prefix <> suffix
 --
 -- A minimal instance definition must implement 'factors' or 'splitPrimePrefix'. Other methods are provided and should
 -- be implemented only for performance reasons.
@@ -78,6 +91,10 @@ class MonoidNull m => FactorialMonoid m where
    splitPrimePrefix :: m -> Maybe (m, m)
    -- | Splits the argument into its prime suffix and the remaining prefix. Returns 'Nothing' for 'mempty'.
    splitPrimeSuffix :: m -> Maybe (m, m)
+   -- | Returns the list of all prefixes of the argument, 'mempty' first.
+   inits :: m -> [m]
+   -- | Returns the list of all suffixes of the argument, 'mempty' last.
+   tails :: m -> [m]
    -- | Like 'List.foldl' from "Data.List" on the list of 'primes'.
    foldl :: (a -> m -> a) -> a -> m -> a
    -- | Like 'List.foldl'' from "Data.List" on the list of 'primes'.
@@ -88,26 +105,30 @@ class MonoidNull m => FactorialMonoid m where
    length :: m -> Int
    -- | Generalizes 'foldMap' from "Data.Foldable", except the function arguments are prime factors rather than the
    -- structure elements.
-   foldMap :: (FactorialMonoid m, Monoid n) => (m -> n) -> m -> n
+   foldMap :: Monoid n => (m -> n) -> m -> n
    -- | Like 'List.span' from "Data.List" on the list of 'primes'.
    span :: (m -> Bool) -> m -> (m, m)
    -- | Equivalent to 'List.break' from "Data.List".
-   break :: FactorialMonoid m => (m -> Bool) -> m -> (m, m)
+   break :: (m -> Bool) -> m -> (m, m)
    -- | Splits the monoid into components delimited by prime separators satisfying the given predicate. The primes
    -- satisfying the predicate are not a part of the result.
    split :: (m -> Bool) -> m -> [m]
    -- | Equivalent to 'List.takeWhile' from "Data.List".
-   takeWhile :: FactorialMonoid m => (m -> Bool) -> m -> m
+   takeWhile :: (m -> Bool) -> m -> m
    -- | Equivalent to 'List.dropWhile' from "Data.List".
-   dropWhile :: FactorialMonoid m => (m -> Bool) -> m -> m
+   dropWhile :: (m -> Bool) -> m -> m
+   -- | A stateful variant of 'span', threading the result of the test function as long as it returns 'Just'.
+   spanMaybe :: s -> (s -> m -> Maybe s) -> m -> (m, m, s)
+   -- | Strict version of 'spanMaybe'.
+   spanMaybe' :: s -> (s -> m -> Maybe s) -> m -> (m, m, s)
    -- | Like 'List.splitAt' from "Data.List" on the list of 'primes'.
    splitAt :: Int -> m -> (m, m)
    -- | Equivalent to 'List.drop' from "Data.List".
-   drop :: FactorialMonoid m => Int -> m -> m
+   drop :: Int -> m -> m
    -- | Equivalent to 'List.take' from "Data.List".
-   take :: FactorialMonoid m => Int -> m -> m
+   take :: Int -> m -> m
    -- | Equivalent to 'List.reverse' from "Data.List".
-   reverse :: FactorialMonoid m => m -> m
+   reverse :: m -> m
 
    factors = List.unfoldr splitPrimePrefix
    primePrefix = maybe mempty fst . splitPrimePrefix
@@ -118,6 +139,8 @@ class MonoidNull m => FactorialMonoid m where
    splitPrimeSuffix x = case factors x
                         of [] -> Nothing
                            fs -> Just (mconcat (List.init fs), List.last fs)
+   inits = foldr (\m l-> mempty : List.map (mappend m) l) [mempty]
+   tails m = m : maybe [] (tails . snd) (splitPrimePrefix m)
    foldl f f0 = List.foldl f f0 . factors
    foldl' f f0 = List.foldl' f f0 . factors
    foldr f f0 = List.foldr f f0 . factors
@@ -128,6 +151,17 @@ class MonoidNull m => FactorialMonoid m where
                             of Just (prime, rest) | p prime -> spanAfter (f . mappend prime) rest
                                _ -> (f mempty, m)
    break = span . (not .)
+   spanMaybe s0 f m0 = spanAfter id s0 m0
+      where spanAfter g s m = case splitPrimePrefix m
+                              of Just (prime, rest) | Just s' <- f s prime -> spanAfter (g . mappend prime) s' rest
+                                                    | otherwise -> (g mempty, m, s)
+                                 Nothing -> (m0, m, s)
+   spanMaybe' s0 f m0 = spanAfter id s0 m0
+      where spanAfter g s m = seq s $
+                              case splitPrimePrefix m
+                              of Just (prime, rest) | Just s' <- f s prime -> spanAfter (g . mappend prime) s' rest
+                                                    | otherwise -> (g mempty, m, s)
+                                 Nothing -> (m0, m, s)
    split p m = prefix : splitRest
       where (prefix, rest) = break p m
             splitRest = case splitPrimePrefix rest
@@ -171,6 +205,8 @@ instance FactorialMonoid a => FactorialMonoid (Dual a) where
    splitPrimeSuffix (Dual a) = case splitPrimePrefix a
                                of Nothing -> Nothing
                                   Just (p, s) -> Just (Dual s, Dual p)
+   inits (Dual a) = fmap Dual (reverse $ tails a)
+   tails (Dual a) = fmap Dual (reverse $ inits a)
    reverse (Dual a) = Dual (reverse a)
 
 instance (Integral a, Eq a) => FactorialMonoid (Sum a) where
@@ -210,6 +246,8 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
                              of (_, Just (bp, bs)) -> Just ((a, bp), (mempty, bs))
                                 (Just (ap, as), Nothing) -> Just ((ap, b), (as, b))
                                 (Nothing, Nothing) -> Nothing
+   inits (a, b) = List.map (flip (,) mempty) (inits a) ++ List.map ((,) a) (List.tail $ inits b)
+   tails (a, b) = List.map (flip (,) b) (tails a) ++ List.map ((,) mempty) (List.tail $ tails b)
    foldl f a (x, y) = foldl f2 (foldl f1 a x) y
       where f1 a = f a . fromFst
             f2 a = f a . fromSnd
@@ -224,6 +262,14 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
       where (xp, xs) = span (p . fromFst) x
             (yp, ys) | null xs = span (p . fromSnd) y
                      | otherwise = (mempty, y)
+   spanMaybe s0 f (x, y) | null xs = ((xp, yp), (xs, ys), s2)
+                         | otherwise = ((xp, mempty), (xs, y), s1)
+     where (xp, xs, s1) = spanMaybe s0 (\s-> f s . fromFst) x
+           (yp, ys, s2) = spanMaybe s1 (\s-> f s . fromSnd) y
+   spanMaybe' s0 f (x, y) | null xs = ((xp, yp), (xs, ys), s2)
+                          | otherwise = ((xp, mempty), (xs, y), s1)
+     where (xp, xs, s1) = spanMaybe' s0 (\s-> f s . fromFst) x
+           (yp, ys, s2) = spanMaybe' s1 (\s-> f s . fromSnd) y
    split p (x, y) = fst $ List.foldr combine (ys, False) xs
       where xs = List.map fromFst $ split (p . fromFst) x
             ys = List.map fromSnd $ split (p . fromSnd) y
@@ -255,6 +301,8 @@ instance FactorialMonoid [x] where
    splitPrimeSuffix xs = Just (split id xs)
       where split f last@[x] = (f [], last)
             split f (x:xs) = split (f . (x:)) xs
+   inits = List.inits
+   tails = List.tails
    foldl _ a [] = a
    foldl f a (x:xs) = foldl f (f a [x]) xs
    foldl' _ a [] = a
@@ -267,6 +315,14 @@ instance FactorialMonoid [x] where
    span f = List.span (f . (:[]))
    dropWhile f = List.dropWhile (f . (:[]))
    takeWhile f = List.takeWhile (f . (:[]))
+   spanMaybe s0 f l = (prefix' [], suffix' [], s')
+      where (prefix', suffix', s', live') = List.foldl' g (id, id, s0, True) l
+            g (prefix, suffix, s, live) x | live, Just s' <- f s [x] = (prefix . (x:), id, s', True)
+                                          | otherwise = (prefix, suffix . (x:), s, False)
+   spanMaybe' s0 f l = (prefix' [], suffix' [], s')
+      where (prefix', suffix', s', live') = List.foldl' g (id, id, s0, True) l
+            g (prefix, suffix, s, live) x | live, Just s' <- f s [x] = seq s' $ (prefix . (x:), id, s', True)
+                                          | otherwise = (prefix, suffix . (x:), s, False)
    splitAt = List.splitAt
    drop = List.drop
    take = List.take
@@ -281,6 +337,8 @@ instance FactorialMonoid ByteString.ByteString where
    primeSuffix x = ByteString.drop (ByteString.length x - 1) x
    splitPrimePrefix x = if ByteString.null x then Nothing else Just (ByteString.splitAt 1 x)
    splitPrimeSuffix x = if ByteString.null x then Nothing else Just (ByteString.splitAt (ByteString.length x - 1) x)
+   inits = ByteString.inits
+   tails = ByteString.tails
    foldl f = ByteString.foldl f'
       where f' a byte = f a (ByteString.singleton byte)
    foldl' f = ByteString.foldl' f'
@@ -288,6 +346,14 @@ instance FactorialMonoid ByteString.ByteString where
    foldr f = ByteString.foldr (f . ByteString.singleton)
    break f = ByteString.break (f . ByteString.singleton)
    span f = ByteString.span (f . ByteString.singleton)
+   spanMaybe s0 f b = case ByteString.foldr g id b (0, s0)
+                      of (i, s') | (prefix, suffix) <- ByteString.splitAt i b -> (prefix, suffix, s')
+      where g w cont (i, s) | Just s' <- f s (ByteString.singleton w) = let i' = succ i :: Int in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 f b = case ByteString.foldr g id b (0, s0)
+                       of (i, s') | (prefix, suffix) <- ByteString.splitAt i b -> (prefix, suffix, s')
+      where g w cont (i, s) | Just s' <- f s (ByteString.singleton w) = let i' = succ i :: Int in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    dropWhile f = ByteString.dropWhile (f . ByteString.singleton)
    takeWhile f = ByteString.takeWhile (f . ByteString.singleton)
    length = ByteString.length
@@ -309,6 +375,8 @@ instance FactorialMonoid LazyByteString.ByteString where
                         else Just (LazyByteString.splitAt 1 x)
    splitPrimeSuffix x = if LazyByteString.null x then Nothing 
                         else Just (LazyByteString.splitAt (LazyByteString.length x - 1) x)
+   inits = LazyByteString.inits
+   tails = LazyByteString.tails
    foldl f = LazyByteString.foldl f'
       where f' a byte = f a (LazyByteString.singleton byte)
    foldl' f = LazyByteString.foldl' f'
@@ -318,6 +386,15 @@ instance FactorialMonoid LazyByteString.ByteString where
    length = fromIntegral . LazyByteString.length
    break f = LazyByteString.break (f . LazyByteString.singleton)
    span f = LazyByteString.span (f . LazyByteString.singleton)
+   spanMaybe s0 f b = case LazyByteString.foldr g id b (0, s0)
+                      of (i, s') | (prefix, suffix) <- LazyByteString.splitAt i b -> (prefix, suffix, s')
+      where g w cont (i, s) | Just s' <- f s (LazyByteString.singleton w) = let i' = succ i :: Int64 in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 f b = case LazyByteString.foldr g id b (0, s0)
+                       of (i, s') | (prefix, suffix) <- LazyByteString.splitAt i b -> (prefix, suffix, s')
+      where g w cont (i, s)
+              | Just s' <- f s (LazyByteString.singleton w) = let i' = succ i :: Int64 in seq i' $ seq s' $ cont (i', s')
+              | otherwise = (i, s)
    dropWhile f = LazyByteString.dropWhile (f . LazyByteString.singleton)
    takeWhile f = LazyByteString.takeWhile (f . LazyByteString.singleton)
    split f = LazyByteString.splitWith f'
@@ -333,6 +410,8 @@ instance FactorialMonoid Text.Text where
    primeSuffix x = if Text.null x then Text.empty else Text.singleton (Text.last x)
    splitPrimePrefix = fmap (first Text.singleton) . Text.uncons
    splitPrimeSuffix x = if Text.null x then Nothing else Just (Text.init x, Text.singleton (Text.last x))
+   inits = Text.inits
+   tails = Text.tails
    foldl f = Text.foldl f'
       where f' a char = f a (Text.singleton char)
    foldl' f = Text.foldl' f'
@@ -344,6 +423,14 @@ instance FactorialMonoid Text.Text where
    break f = Text.break (f . Text.singleton)
    dropWhile f = Text.dropWhile (f . Text.singleton)
    takeWhile f = Text.takeWhile (f . Text.singleton)
+   spanMaybe s0 f t = case Text.foldr g id t (0, s0)
+                      of (i, s') | (prefix, suffix) <- Text.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- f s (Text.singleton c) = let i' = succ i :: Int in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 f t = case Text.foldr g id t (0, s0)
+                       of (i, s') | (prefix, suffix) <- Text.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- f s (Text.singleton c) = let i' = succ i :: Int in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    split f = Text.split f'
       where f' = f . Text.singleton
    splitAt = Text.splitAt
@@ -359,6 +446,8 @@ instance FactorialMonoid LazyText.Text where
    splitPrimeSuffix x = if LazyText.null x
                         then Nothing
                         else Just (LazyText.init x, LazyText.singleton (LazyText.last x))
+   inits = LazyText.inits
+   tails = LazyText.tails
    foldl f = LazyText.foldl f'
       where f' a char = f a (LazyText.singleton char)
    foldl' f = LazyText.foldl' f'
@@ -370,6 +459,14 @@ instance FactorialMonoid LazyText.Text where
    break f = LazyText.break (f . LazyText.singleton)
    dropWhile f = LazyText.dropWhile (f . LazyText.singleton)
    takeWhile f = LazyText.takeWhile (f . LazyText.singleton)
+   spanMaybe s0 f t = case LazyText.foldr g id t (0, s0)
+                      of (i, s') | (prefix, suffix) <- LazyText.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- f s (LazyText.singleton c) = let i' = succ i :: Int64 in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 f t = case LazyText.foldr g id t (0, s0)
+                       of (i, s') | (prefix, suffix) <- LazyText.splitAt i t -> (prefix, suffix, s')
+      where g c cont (i, s) | Just s' <- f s (LazyText.singleton c) = let i' = succ i :: Int64 in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    split f = LazyText.split f'
       where f' = f . LazyText.singleton
    splitAt = LazyText.splitAt . fromIntegral
@@ -444,6 +541,8 @@ instance FactorialMonoid (Sequence.Seq a) where
    splitPrimeSuffix seq = case Sequence.viewr seq
                           of Sequence.EmptyR -> Nothing
                              rest Sequence.:> last -> Just (rest, Sequence.singleton last)
+   inits = Foldable.toList . Sequence.inits
+   tails = Foldable.toList . Sequence.tails
    foldl f = Foldable.foldl f'
       where f' a b = f a (Sequence.singleton b)
    foldl' f = Foldable.foldl' f'
@@ -454,6 +553,14 @@ instance FactorialMonoid (Sequence.Seq a) where
    break f = Sequence.breakl (f . Sequence.singleton)
    dropWhile f = Sequence.dropWhileL (f . Sequence.singleton)
    takeWhile f = Sequence.takeWhileL (f . Sequence.singleton)
+   spanMaybe s0 f b = case Foldable.foldr g id b (0, s0)
+                      of (i, s') | (prefix, suffix) <- Sequence.splitAt i b -> (prefix, suffix, s')
+      where g x cont (i, s) | Just s' <- f s (Sequence.singleton x) = let i' = succ i :: Int in seq i' $ cont (i', s')
+                            | otherwise = (i, s)
+   spanMaybe' s0 f b = case Foldable.foldr g id b (0, s0)
+                       of (i, s') | (prefix, suffix) <- Sequence.splitAt i b -> (prefix, suffix, s')
+      where g x cont (i, s) | Just s' <- f s (Sequence.singleton x) = let i' = succ i :: Int in seq i' $ seq s' $ cont (i', s')
+                            | otherwise = (i, s)
    splitAt = Sequence.splitAt
    drop = Sequence.drop
    take = Sequence.take
@@ -483,11 +590,15 @@ instance FactorialMonoid (Vector.Vector a) where
    factors x = factorize (Vector.length x) x
       where factorize 0 xs = []
             factorize n xs = x : factorize (pred n) xs'
-              where (x, xs') = Vector.splitAt 1 xs
+               where (x, xs') = Vector.splitAt 1 xs
    primePrefix = Vector.take 1
    primeSuffix x = Vector.drop (Vector.length x - 1) x
    splitPrimePrefix x = if Vector.null x then Nothing else Just (Vector.splitAt 1 x)
    splitPrimeSuffix x = if Vector.null x then Nothing else Just (Vector.splitAt (Vector.length x - 1) x)
+   inits x = initsWith x []
+      where initsWith x rest | Vector.null x = x:rest
+                             | otherwise = initsWith (Vector.unsafeInit x) (x:rest)
+   tails x = x : if Vector.null x then [] else tails (Vector.unsafeTail x)
    foldl f = Vector.foldl f'
       where f' a byte = f a (Vector.singleton byte)
    foldl' f = Vector.foldl' f'
@@ -498,6 +609,16 @@ instance FactorialMonoid (Vector.Vector a) where
    span f = Vector.span (f . Vector.singleton)
    dropWhile f = Vector.dropWhile (f . Vector.singleton)
    takeWhile f = Vector.takeWhile (f . Vector.singleton)
+   spanMaybe s0 f v = case Vector.ifoldr g Left v s0
+                      of Left s' -> (v, Vector.empty, s')
+                         Right (i, s') | (prefix, suffix) <- Vector.splitAt i v -> (prefix, suffix, s')
+      where g i x cont s | Just s' <- f s (Vector.singleton x) = cont s'
+                         | otherwise = Right (i, s)
+   spanMaybe' s0 f v = case Vector.ifoldr' g Left v s0
+                       of Left s' -> (v, Vector.empty, s')
+                          Right (i, s') | (prefix, suffix) <- Vector.splitAt i v -> (prefix, suffix, s')
+      where g i x cont s | Just s' <- f s (Vector.singleton x) = seq s' (cont s')
+                         | otherwise = Right (i, s)
    splitAt = Vector.splitAt
    drop = Vector.drop
    take = Vector.take

@@ -12,7 +12,7 @@ module Main where
 import Prelude hiding (foldl, foldr, gcd, length, null, reverse, span, splitAt, takeWhile)
 
 import Test.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
-                        quickCheck, arbitrary, coarbitrary, property, label, forAll, variant, whenFail, (.&&.))
+                        quickCheck, arbitrary, coarbitrary, property, label, forAll, mapSize, variant, whenFail, (.&&.))
 import Test.QuickCheck.Instances ()
 
 import Control.Applicative (Applicative(..), liftA2)
@@ -58,8 +58,8 @@ import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual
                     First(First), Last(Last), Sum(Sum), Product(Product))
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid, 
-                              factors, splitPrimePrefix, splitPrimeSuffix, primePrefix, primeSuffix,
-                              foldl, foldl', foldr, length, reverse, span, split, splitAt)
+                              factors, splitPrimePrefix, splitPrimeSuffix, primePrefix, primeSuffix, inits, tails,
+                              foldl, foldl', foldr, length, reverse, span, spanMaybe, split, splitAt)
 import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
@@ -344,11 +344,14 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("splitPrimeSuffix", FactorialTest checkSplitPrimeSuffix),
          ("primePrefix", FactorialTest checkPrimePrefix),
          ("primeSuffix", FactorialTest checkPrimeSuffix),
+         ("inits", FactorialTest checkInits),
+         ("tails", FactorialTest checkTails),
          ("foldl", FactorialTest checkLeftFold),
          ("foldl'", FactorialTest checkLeftFold'),
          ("foldr", FactorialTest checkRightFold),
          ("length", FactorialTest checkLength),
          ("span", FactorialTest checkSpan),
+         ("spanMaybe", FactorialTest checkSpanMaybe),
          ("split", FactorialTest checkSplit),
          ("splitAt", FactorialTest checkSplitAt),
          ("reverse", FactorialTest checkReverse),
@@ -420,6 +423,12 @@ checkPrimePrefix (FactorialMonoidInstance (_ :: a)) =
 checkPrimeSuffix (FactorialMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) (\a-> primeSuffix a == maybe mempty snd (splitPrimeSuffix a))
 
+checkInits (FactorialMonoidInstance (_ :: a)) =
+   mapSize (`div` 5) $ forAll (arbitrary :: Gen a) (\a-> inits a == List.map mconcat (List.inits $ factors a))
+
+checkTails (FactorialMonoidInstance (_ :: a)) =
+   mapSize (`div` 5) $ forAll (arbitrary :: Gen a) (\a-> tails a == List.map mconcat (List.tails $ factors a))
+
 checkLeftFold (FactorialMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) (\a-> foldl (flip (:)) [] a == List.foldl (flip (:)) [] (factors a))
 
@@ -435,6 +444,14 @@ checkLength (FactorialMonoidInstance (_ :: a)) =
 checkSpan (FactorialMonoidInstance (_ :: a)) = property $ \p-> forAll (arbitrary :: Gen a) (check p)
    where check p a = span p a == (mconcat l, mconcat r)
             where (l, r) = List.span p (factors a)
+
+checkSpanMaybe (FactorialMonoidInstance (_ :: a)) = property $ \(f, s)-> forAll (arbitrary :: Gen a) (check f (s :: Bool))
+   where check f s0 a = a == prefix <> suffix
+                        && foldMaybe prefix == Just s'
+                        && (null suffix || f s' (primePrefix suffix) == Nothing)
+            where (prefix, suffix, s') = spanMaybe s0 f a
+                  foldMaybe = foldl g (Just s0)
+                  g s m = s >>= flip f m
 
 checkSplit (FactorialMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
    where check a = property (\pred-> all (all (not . pred) . factors) (split pred a))
@@ -750,6 +767,9 @@ instance CoArbitrary b => CoArbitrary (Stateful a b) where
 
 instance Show a => Show (a -> Bool) where
    show _ = "predicate"
+
+instance Show a => Show (Bool -> a -> Maybe Bool) where
+   show _ = "stateful predicate"
 
 instance (PositiveMonoid a, MonoidNull b) => PositiveMonoid (a, b)
 
