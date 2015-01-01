@@ -14,7 +14,7 @@ module Data.Monoid.Instances.Stateful (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
+import Prelude hiding (all, any, break, elem, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 import Control.Applicative (Applicative(..))
 import Data.Functor ((<$>))
@@ -145,6 +145,7 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
             restore f [t] = f [Stateful (t, x)]
             restore f (hd:tl) = restore (f . (Stateful (hd, mempty):)) tl
    find p = find p . extract
+   elem c = elem c . extract
 
 {-# INLINE fromFst #-}
 fromFst :: Monoid b => a -> Stateful b a

@@ -14,8 +14,8 @@ module Data.Monoid.Textual (
    )
 where
 
-import Prelude hiding (foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1, map, concatMap,
-                       break, span, dropWhile, takeWhile)
+import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, foldr, foldr1, map, scanl, scanl1, scanr, scanr1,
+                       span, takeWhile)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Traversable as Traversable
@@ -60,6 +60,7 @@ import qualified Data.Monoid.Factorial as Factorial
 -- >
 -- > mconcat . intersperse (singleton c) . split (== c) == id
 -- > find p . fromString == List.find p
+-- > elem c . fromString == List.elem c
 --
 -- A 'TextualMonoid' may contain non-character data insterspersed between its characters. Every class method that
 -- returns a modified 'TextualMonoid' instance generally preserves this non-character data. Methods like 'foldr' can
@@ -161,6 +162,8 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    split :: (Char -> Bool) -> t -> [t]
    -- | Like 'List.find' from "Data.List" when applied to a 'String'. Ignores non-character data.
    find :: (Char -> Bool) -> t -> Maybe Char
+   -- | Like 'List.elem' from "Data.List" when applied to a 'String'. Ignores non-character data.
+   elem :: Char -> t -> Bool
 
    -- | > foldl_ = foldl const
    foldl_   :: (a -> Char -> a) -> a -> t -> a
@@ -245,11 +248,11 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
                         of Nothing -> []
                            Just (_, tail) -> split p tail
    find p = foldr (const id) (\c r-> if p c then Just c else r) Nothing
+   elem c = any (== c)
 
    {-# INLINE characterPrefix #-}
    {-# INLINE concatMap #-}
    {-# INLINE dropWhile #-}
-   {-# INLINE find #-}
    {-# INLINE fromText #-}
    {-# INLINE map #-}
    {-# INLINE mapAccumL #-}
@@ -316,12 +319,15 @@ instance TextualMonoid String where
             g (prefix, suffix, s, live) c | live, Just s' <- fc s c = seq s' (prefix . (c:), id, s', True)
                                           | otherwise = (prefix, suffix . (c:), s, False)
    find = List.find
+   elem = List.elem
+
    {-# INLINE all #-}
    {-# INLINE any #-}
    {-# INLINE break #-}
    {-# INLINE characterPrefix #-}
    {-# INLINE concatMap #-}
    {-# INLINE dropWhile #-}
+   {-# INLINE elem #-}
    {-# INLINE find #-}
    {-# INLINE foldl   #-}
    {-# INLINE foldl'  #-}
@@ -377,6 +383,7 @@ instance TextualMonoid Text where
                             | otherwise = (i, s)
    split = Text.split
    find = Text.find
+
    {-# INLINE all #-}
    {-# INLINE any #-}
    {-# INLINE break #-}
@@ -504,12 +511,15 @@ instance TextualMonoid (Sequence.Seq Char) where
       where g c cont (i, s) | Just s' <- fc s c = let i' = succ i :: Int in seq i' $ seq s' $ cont (i', s')
                             | otherwise = (i, s)
    find = Foldable.find
+   elem = Foldable.elem
+
    {-# INLINE all #-}
    {-# INLINE any #-}
    {-# INLINE break #-}
    {-# INLINE characterPrefix #-}
    {-# INLINE concatMap #-}
    {-# INLINE dropWhile #-}
+   {-# INLINE elem #-}
    {-# INLINE find #-}
    {-# INLINE foldl   #-}
    {-# INLINE foldl'  #-}
@@ -576,12 +586,15 @@ instance TextualMonoid (Vector.Vector Char) where
       where g i c cont s | Just s' <- fc s c = seq s' (cont s')
                          | otherwise = Right (i, s)
    find = Vector.find
+   elem = Vector.elem
+
    {-# INLINE all #-}
    {-# INLINE any #-}
    {-# INLINE break #-}
    {-# INLINE characterPrefix #-}
    {-# INLINE concatMap #-}
    {-# INLINE dropWhile #-}
+   {-# INLINE elem #-}
    {-# INLINE find #-}
    {-# INLINE foldl   #-}
    {-# INLINE foldl'  #-}

@@ -15,7 +15,7 @@ module Data.Monoid.Instances.ByteString.UTF8 (
    )
 where
 
-import Prelude hiding (drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1,
+import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1,
                        map, concatMap, break, span)
 
 import Control.Exception (assert)
@@ -24,7 +24,7 @@ import Data.Char (chr, ord)
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.Functor ((<$>))
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.String (IsString(fromString))
 import Data.Word (Word8)
 import Data.ByteString (ByteString)
@@ -334,6 +334,14 @@ instance TextualMonoid ByteStringUTF8 where
                                                                             | otherwise -> loop rest
                                               Nothing -> loop (ByteString.dropWhile (not . byteStartsCharacter) bs')
    {-# INLINE find #-}
+   any p utf8 = isJust (find p utf8)
+   {-# INLINE any #-}
+   all p utf8 = isNothing (find (not . p) utf8)
+   {-# INLINE all #-}
+   elem c utf8@(ByteStringUTF8 bs)
+     | c < '\x80' = ByteString.Char8.elem c bs
+     | otherwise = any (== c) utf8
+   {-# INLINE elem #-}
 
 reverseBytesToChar :: (ByteString -> a) -> (Char -> a) -> [Word8] -> a
 reverseBytesToChar ft fc [w] = if w < 0x80 then fc (w2c w) else ft (ByteString.singleton w)
