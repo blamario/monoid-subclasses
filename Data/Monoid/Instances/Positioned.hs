@@ -61,7 +61,7 @@ instance Applicative OffsetPositioned where
    OffsetPositioned _ f <*> OffsetPositioned p c = OffsetPositioned p (f c)
 
 instance Applicative LinePositioned where
-   pure = LinePositioned 1 1 0
+   pure = LinePositioned 0 0 0
    LinePositioned _ _ _ f <*> LinePositioned p l lp c = LinePositioned p l lp (f c)
 
 instance Positioned OffsetPositioned where
@@ -94,20 +94,22 @@ instance Show m => Show (LinePositioned m) where
 instance StableFactorialMonoid m => Monoid (OffsetPositioned m) where
    mempty = pure mempty
    mappend (OffsetPositioned p1 c1) (OffsetPositioned p2 c2) =
-      OffsetPositioned (max p1 (p2 - length c1)) (mappend c1 c2)
+      OffsetPositioned (if p1 /= 0 || p2 == 0 then p1 else max 0 $ p2 - length c1) (mappend c1 c2)
    {-# INLINE mempty #-}
    {-# INLINE mappend #-}
 
 instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m) where
    mempty = pure mempty
-   mappend (LinePositioned p1 l1 lp1 c1) (LinePositioned p2 l2 lp2 c2) =
-      let p2' = p2 - length c1
-          l2' = l2 - lines
-          (lines, _) = linesColumns' c1
-          c = mappend c1 c2
-      in if p1 >= p2' || l1 > l2' || lp1 > lp2
-         then LinePositioned p1 l1 lp1 c
-         else LinePositioned p2' l2' (if lines == 0 then lp2 else lp1) c
+   mappend (LinePositioned p1 l1 lp1 c1) (LinePositioned p2 l2 lp2 c2)
+     | p1 /= 0 || p2 == 0 = LinePositioned p1 l1 lp1 c
+     | otherwise = LinePositioned p2' l2' lp2' c
+     where c = mappend c1 c2
+           p2' = max 0 $ p2 - length c1
+           lp2' = min p2' lp2
+           l2' = if l2 == 0 then 0 else max 0 $ l2 - Textual.foldl_' countLines 0 c1
+           countLines :: Int -> Char -> Int
+           countLines n '\n' = succ n
+           countLines n _ = n
    {-# INLINE mempty #-}
    {-# INLINE mappend #-}
 
