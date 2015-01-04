@@ -20,7 +20,7 @@ import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl
 
 import Control.Exception (assert)
 import Data.Bits ((.&.), (.|.), shiftL, shiftR)
-import Data.Char (chr, ord)
+import Data.Char (chr, ord, isDigit, isPrint)
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.Functor ((<$>))
@@ -82,8 +82,12 @@ instance LeftGCDMonoid ByteStringUTF8 where
    {-# INLINE stripCommonPrefix #-}
 
 instance Show ByteStringUTF8 where
-   showsPrec _ bs s = '"' : Textual.foldr showsBytes (:) ('"' : s) bs
+   showsPrec _ bs s = '"' : Textual.foldr showsBytes showsChar ('"' : s) bs
       where showsBytes (ByteStringUTF8 b) s = '\\' : shows (ByteString.unpack b) s
+            showsChar c s
+              | isPrint c = c : s
+              | h:_ <- s, isDigit h = "\\" ++ show (ord c) ++ "\\&" ++ s
+              | otherwise = "\\" ++ show (ord c) ++ s
 
 instance IsString ByteStringUTF8 where
    fromString = ByteStringUTF8 . Foldable.foldMap fromChar
@@ -245,17 +249,17 @@ instance TextualMonoid ByteStringUTF8 where
                          | c < '\xC0' = (a, fromIntegral (ord c) : acc)
                          | otherwise = let a' = multiByte a acc in seq a' (a', [fromIntegral $ ord c])
             multiByte a acc = reverseBytesToChar (ft a . ByteStringUTF8) (fc a) acc
-                                                                  
    {-# INLINE foldl' #-}
    foldr ft fc a0 (ByteStringUTF8 bs) = case ByteString.Char8.foldr f (a0, []) bs
                                         of (a, []) -> a
                                            (a, acc) -> multiByte a acc
       where f c (a, []) | c < '\x80' = (fc c a, [])
-                        | otherwise = (a, [fromIntegral $ ord c])
-            f c (a, acc) | c < '\x80' = (fc c (multiByte a acc), [])
+                        | c < '\xC0' = (a, [fromIntegral $ ord c])
+                        | otherwise = (ft (ByteStringUTF8 $ ByteString.Char8.singleton c) a, [])
+            f c (a, acc) | c < '\x80' = (fc c (ft (ByteStringUTF8 $ ByteString.pack acc) a), [])
                          | c < '\xC0' = (a, fromIntegral (ord c) : acc)
-                         | otherwise = (multiByte a acc, [fromIntegral $ ord c])
-            multiByte a acc = reverseBytesToChar ((`ft` a) . ByteStringUTF8) (`fc` a) acc
+                         | otherwise = (multiByte a (fromIntegral (ord c) : acc), [])
+            multiByte a acc = bytesToChar ((`ft` a) . ByteStringUTF8) (`fc` a) acc
    {-# INLINE foldr #-}
    dropWhile pb pc (ByteStringUTF8 bs) = ByteStringUTF8 $ dropASCII bs
       where dropASCII rest = case ByteString.Char8.findIndex (\c-> c > '\x7f' || not (pc c)) rest
@@ -347,7 +351,7 @@ reverseBytesToChar :: (ByteString -> a) -> (Char -> a) -> [Word8] -> a
 reverseBytesToChar ft fc [w] = if w < 0x80 then fc (w2c w) else ft (ByteString.singleton w)
 reverseBytesToChar ft fc [b0, b1] =
   assert (0x80 <= b0 && b0 < 0xC0 && 0xC0 <= b1) $
-  if b1 < 0xE0
+  if 0xC2 <= b1 && b1 < 0xE0
   then fc (chr (shiftL (fromIntegral b1 .&. 0x1F) 6 .|. fromIntegral b0 .&. 0x3F))
   else ft (ByteString.pack [b1, b0])
 reverseBytesToChar ft fc [b0, b1, b2] =
@@ -365,6 +369,31 @@ reverseBytesToChar ft fc [b0, b1, b2, b3] =
                 .|. shiftL (fromIntegral b1 .&. 0x3F) 6
                 .|. fromIntegral b0 .&. 0x3F))
   else ft (ByteString.pack [b3, b2, b1, b0])
+reverseBytesToChar ft fc bytes = ft (ByteString.reverse $ ByteString.pack bytes)
+
+bytesToChar :: (ByteString -> a) -> (Char -> a) -> [Word8] -> a
+bytesToChar ft fc [w] = if w < 0x80 then fc (w2c w) else ft (ByteString.singleton w)
+bytesToChar ft fc bytes@[b1, b0] =
+  assert (0x80 <= b0 && b0 < 0xC0) $
+  if 0xC2 <= b1 && b1 < 0xE0
+  then fc (chr (shiftL (fromIntegral b1 .&. 0x1F) 6 .|. fromIntegral b0 .&. 0x3F))
+  else ft (ByteString.pack bytes)
+bytesToChar ft fc bytes@[b2, b1, b0] =
+  assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0) $
+  if (0xE0 < b2 || 0xE0 == b2 && 0xA0 <= b1) && 0xC0 <= b2 && b2 < 0xF0
+  then fc (chr (shiftL (fromIntegral b2 .&. 0xF) 12
+                .|. shiftL (fromIntegral b1 .&. 0x3F) 6
+                .|. fromIntegral b0 .&. 0x3F))
+  else ft (ByteString.pack bytes)
+bytesToChar ft fc bytes@[b3, b2, b1, b0] =
+  assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0 && 0x80 <= b2 && b2 < 0xC0) $
+  if (0xF0 < b3 || 0xF0 == b3 && 0xA0 <= b2) && 0xC0 <= b3 && b3 < 0xF4
+  then fc (chr (shiftL (fromIntegral b3 .&. 0x7) 18
+                .|. shiftL (fromIntegral b2 .&. 0x3F) 12
+                .|. shiftL (fromIntegral b1 .&. 0x3F) 6
+                .|. fromIntegral b0 .&. 0x3F))
+  else ft (ByteString.pack bytes)
+bytesToChar ft fc bytes = ft (ByteString.pack bytes)
 
 wrapPair (bs1, bs2) = (ByteStringUTF8 bs1, ByteStringUTF8 bs2)
 {-# INLINE wrapPair #-}
