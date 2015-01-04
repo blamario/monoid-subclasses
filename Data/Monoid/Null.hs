@@ -1,5 +1,5 @@
 {- 
-    Copyright 2011-2013 Mario Blazevic
+    Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -7,7 +7,7 @@
 -- | This module defines the MonoidNull class and some of its instances.
 -- 
 
-{-# LANGUAGE Haskell2010 #-}
+{-# LANGUAGE Haskell2010, Trustworthy #-}
 
 module Data.Monoid.Null (
    MonoidNull(..), PositiveMonoid

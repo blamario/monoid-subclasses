@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             0.3.6.2
+Version:             0.4
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -11,7 +11,7 @@ Description:
   
 License:             BSD3
 License-file:        BSD3-LICENSE.txt
-Copyright:           (c) 2013-2014 Mario Blazevic
+Copyright:           (c) 2013-2015 Mario Blazevic
 Author:              Mario Blazevic
 Maintainer:          Mario Blazevic <blamario@yahoo.com>
 Homepage:            https://github.com/blamario/monoid-subclasses/
