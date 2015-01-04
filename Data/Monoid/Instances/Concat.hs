@@ -1,5 +1,5 @@
 {- 
-    Copyright 2011-2014 Mario Blazevic
+    Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -10,12 +10,13 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Instances.Concat (
-   Concat, concatenate, inject, extract 
+   Concat, concatenate, extract
    )
 where
 
 import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap, 
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
+import Control.Applicative (Applicative(..))
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable, traverse)
 import qualified Data.Foldable as Foldable
@@ -34,7 +35,7 @@ import Data.Sequence (Seq, empty, filter, (<|), (|>), ViewL((:<)), ViewR((:>)))
 import qualified Data.Sequence as Seq
 
 -- | @'Concat' a@ is a @newtype@ wrapper around @'Seq' a@. The behaviour of the @'Concat' a@ instances of monoid
--- subclasses is identical to the behaviour of their @a@ instances, up to the @'inject' . 'singleton'@ isomorphism.
+-- subclasses is identical to the behaviour of their @a@ instances, up to the 'pure' isomorphism.
 --
 -- The only purpose of 'Concat' then is to change the performance characteristics of various operations. Most
 -- importantly, injecting a monoid into a 'Concat' has the effect of making 'mappend' a constant-time operation.
@@ -49,6 +50,14 @@ instance (Eq a, Monoid a) => Eq (Concat a) where
 
 instance (Ord a, Monoid a) => Ord (Concat a) where
    compare (Concat x) (Concat y) = compare (Foldable.foldMap id x) (Foldable.foldMap id y)
+
+instance Functor Concat where
+   fmap f (Concat x) = Concat (fmap f x)
+
+instance Applicative Concat where
+   pure a = Concat (Seq.singleton a)
+   Concat x <*> Concat y = Concat (x <*> y)
+   Concat x *> Concat y = Concat (x *> y)
 
 instance Monoid (Concat a) where
    mempty = Concat Seq.empty
@@ -207,10 +216,6 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
    break pt pc = Textual.span (not . pt) (not . pc)
 
    find p (Concat x) = getFirst $ Foldable.foldMap (First . find p) x
-
-inject :: (MonoidNull a, PositiveMonoid a) => Seq a -> Concat a
-inject = concatenate
-{-# DEPRECATED inject "Use concatenate instead." #-}
 
 injectSingleton :: (MonoidNull a, PositiveMonoid a) => a -> Concat a
 injectSingleton a | null a = mempty

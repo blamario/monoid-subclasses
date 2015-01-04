@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2014 Mario Blazevic
+    Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -10,7 +10,7 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Instances.Measured (
-   Measured, inject, measure, extract
+   Measured, measure, extract
    )
 where
 
@@ -38,10 +38,6 @@ data Measured a = Measured{measuredLength :: Int, extract :: a} deriving (Eq, Sh
 measure :: FactorialMonoid a => a -> Measured a
 measure x = Measured (length x) x
 
-inject :: FactorialMonoid a => a -> Measured a
-inject = measure
-{-# DEPRECATED inject "Use measure instead." #-}
-
 instance Ord a => Ord (Measured a) where
    compare (Measured _ x) (Measured _ y) = compare x y
 
@@ -61,10 +57,10 @@ instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMono
    stripSuffix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripSuffix x y)
 
 instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Measured a) where
-   commonPrefix (Measured _ x) (Measured _ y) = inject (commonPrefix x y)
+   commonPrefix (Measured _ x) (Measured _ y) = measure (commonPrefix x y)
 
 instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Measured a) where
-   commonSuffix (Measured _ x) (Measured _ y) = inject (commonSuffix x y)
+   commonSuffix (Measured _ x) (Measured _ y) = measure (commonSuffix x y)
 
 instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
    factors (Measured _ x) = List.map (Measured 1) (factors x)
@@ -86,9 +82,9 @@ instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
    foldMap f (Measured _ x) = Factorial.foldMap (f . Measured 1) x
    span p (Measured n x) = (xp', xs')
       where (xp, xs) = Factorial.span (p . Measured 1) x
-            xp' = inject xp
+            xp' = measure xp
             xs' = Measured (n - length xp') xs
-   split p (Measured _ x) = inject <$> Factorial.split (p . Measured 1) x
+   split p (Measured _ x) = measure <$> Factorial.split (p . Measured 1) x
    splitAt m (Measured n x) | m <= 0 = (mempty, Measured n x)
                             | m >= n = (Measured n x, mempty)
                             | otherwise = (Measured m xp, Measured (n - m) xs)
@@ -98,10 +94,10 @@ instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
 instance StableFactorialMonoid a => StableFactorialMonoid (Measured a)
 
 instance (FactorialMonoid a, IsString a) => IsString (Measured a) where
-   fromString = inject . fromString
+   fromString = measure . fromString
 
 instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Measured a) where
-   fromText = inject . fromText
+   fromText = measure . fromText
    singleton = Measured 1 . singleton
    splitCharacterPrefix (Measured n x) = (Measured (n - 1) <$>) <$> splitCharacterPrefix x
    characterPrefix (Measured _ x) = characterPrefix x
@@ -115,7 +111,7 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Meas
 
    span pt pc (Measured n x) = (xp', xs')
       where (xp, xs) = Textual.span (pt . Measured 1) pc x
-            xp' = inject xp
+            xp' = measure xp
             xs' = Measured (n - length xp') xs
    break pt pc = Textual.span (not . pt) (not . pc)
 
