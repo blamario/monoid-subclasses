@@ -1,5 +1,5 @@
 {-
-    Copyright 2014 Mario Blazevic
+    Copyright 2014-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -10,6 +10,13 @@
 -- base monoid of 'LinePositioned' must be a 'TextualMonoid', but for the price it will keep track of the current line
 -- and column numbers as well.
 --
+-- All positions are zero-based:
+--
+-- >> let p = pure "abcd\nefgh\nijkl\nmnop\n" :: LinePositioned String
+-- >> p
+-- >Line 0, column 0: "abcd\nefgh\nijkl\nmnop\n"
+-- >> Data.Monoid.Factorial.drop 13 p
+-- >Line 2, column 3: "l\nmnop\n"
 
 {-# LANGUAGE Haskell2010 #-}
 

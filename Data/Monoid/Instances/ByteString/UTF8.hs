@@ -1,12 +1,36 @@
 {- 
-    Copyright 2013 Mario Blazevic
+    Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
 -- | This module defines the 'ByteStringUTF8' newtype wrapper around 'ByteString', together with its 'TextualMonoid'
--- instance.
+-- instance. The 'FactorialMonoid' instance of a wrapped 'ByteStringUTF8' value differs from the original 'ByteString':
+-- the prime 'factors' of the original value are bytes, while UTF8 character byte sequences make up the wrapped value's
+-- prime 'factors'. The following example session demonstrates the relationship:
 -- 
+-- >> let utf8@(ByteStringUTF8 bs) = fromString "E=mc\xb2"
+-- >> bs
+-- >"E=mc\194\178"
+-- >> factors bs
+-- >["E","=","m","c","\194","\178"]
+-- >> utf8
+-- >"E=mc²"
+-- >> factors utf8
+-- >["E","=","m","c","²"]
+--
+-- The 'TextualMonoid' instance follows the same logic, but it also decodes all valid UTF8 sequences into
+-- characters. Any invalid UTF8 byte sequence from the original 'ByteString' is preserved as a single prime factor:
+--
+-- >> let utf8'@(ByteStringUTF8 bs') = ByteStringUTF8 (Data.ByteString.map pred bs)
+-- >> bs'
+-- >"D<lb\193\177"
+-- >> factors bs'
+-- >["D","<","l","b","\193","\177"]
+-- >> utf8'
+-- >"D<lb\[193,177]"
+-- >> factors utf8'
+-- >["D","<","l","b","\[193,177]"]
 
 {-# LANGUAGE Haskell2010 #-}
 

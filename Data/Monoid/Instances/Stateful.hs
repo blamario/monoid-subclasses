@@ -6,6 +6,11 @@
 
 -- | This module defines the monoid transformer data type 'Stateful'.
 --
+-- >> let s = setState [4] $ pure "data" :: Stateful [Int] String
+-- >> s
+-- >Stateful ("data",[4])
+-- >> factors s
+-- >[Stateful ("d",[]),Stateful ("a",[]),Stateful ("t",[]),Stateful ("a",[]),Stateful ("",[4])]
 
 {-# LANGUAGE Haskell2010 #-}
 
