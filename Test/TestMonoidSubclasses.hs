@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013 Mario Blazevic
+    Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -11,8 +11,9 @@ module Main where
 
 import Prelude hiding (foldl, foldr, gcd, length, null, reverse, span, splitAt, takeWhile)
 
-import Test.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
-                        quickCheck, arbitrary, coarbitrary, property, label, forAll, mapSize, variant, whenFail, (.&&.))
+import Test.Tasty (defaultMain, testGroup)
+import Test.Tasty.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
+                              arbitrary, coarbitrary, property, label, forAll, mapSize, testProperty, variant, whenFail, (.&&.))
 import Test.QuickCheck.Instances ()
 
 import Control.Applicative (Applicative(..), liftA2)
@@ -310,29 +311,26 @@ cancellativeGCDInstances = [CancellativeGCDMonoidInstance (),
                             CancellativeGCDMonoidInstance (mempty :: Dual (Sum Integer)),
                             CancellativeGCDMonoidInstance (mempty :: (Sum Integer, Sum Int))]
 
-main = mapM_ (quickCheck . uncurry checkInstances) tests
+main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
+  where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
 
-checkInstances :: String -> Test -> Property
-checkInstances name (CommutativeTest checkType) = label name $ foldr1 (.&&.) (map checkType commutativeInstances)
-checkInstances name (NullTest checkType) = label name $ foldr1 (.&&.) (map checkType nullInstances)
-checkInstances name (PositiveTest checkType) = label name $ foldr1 (.&&.) (map checkType positiveInstances)
-checkInstances name (FactorialTest checkType) = label name $ foldr1 (.&&.) (map checkType factorialInstances)
-checkInstances name (StableFactorialTest checkType) =
-   label name $ foldr1 (.&&.) (map checkType stableFactorialInstances)
-checkInstances name (TextualTest checkType) = label name $ foldr1 (.&&.) (map checkType textualInstances)
-checkInstances name (LeftReductiveTest checkType) = label name $ foldr1 (.&&.) (map checkType leftReductiveInstances)
-checkInstances name (RightReductiveTest checkType) = label name $ foldr1 (.&&.) (map checkType rightReductiveInstances)
-checkInstances name (ReductiveTest checkType) = label name $ foldr1 (.&&.) (map checkType reductiveInstances)
-checkInstances name (LeftCancellativeTest checkType) =
-   label name $ foldr1 (.&&.) (map checkType leftCancellativeInstances) 
-checkInstances name (RightCancellativeTest checkType) =
-   label name $ foldr1 (.&&.) (map checkType rightCancellativeInstances) 
-checkInstances name (CancellativeTest checkType) = label name $ foldr1 (.&&.) (map checkType cancellativeInstances) 
-checkInstances name (LeftGCDTest checkType) = label name $ foldr1 (.&&.) (map checkType leftGCDInstances) 
-checkInstances name (RightGCDTest checkType) = label name $ foldr1 (.&&.) (map checkType rightGCDInstances) 
-checkInstances name (GCDTest checkType) = label name $ foldr1 (.&&.) (map checkType gcdInstances)  
-checkInstances name (CancellativeGCDTest checkType) = 
-   label name $ foldr1 (.&&.) (map checkType cancellativeGCDInstances) 
+checkInstances :: Test -> [Property]
+checkInstances (CommutativeTest checkType) = (map checkType commutativeInstances)
+checkInstances (NullTest checkType) = (map checkType nullInstances)
+checkInstances (PositiveTest checkType) = (map checkType positiveInstances)
+checkInstances (FactorialTest checkType) = (map checkType factorialInstances)
+checkInstances (StableFactorialTest checkType) = (map checkType stableFactorialInstances)
+checkInstances (TextualTest checkType) = (map checkType textualInstances)
+checkInstances (LeftReductiveTest checkType) = (map checkType leftReductiveInstances)
+checkInstances (RightReductiveTest checkType) = (map checkType rightReductiveInstances)
+checkInstances (ReductiveTest checkType) = (map checkType reductiveInstances)
+checkInstances (LeftCancellativeTest checkType) = (map checkType leftCancellativeInstances) 
+checkInstances (RightCancellativeTest checkType) = (map checkType rightCancellativeInstances) 
+checkInstances (CancellativeTest checkType) = (map checkType cancellativeInstances) 
+checkInstances (LeftGCDTest checkType) = (map checkType leftGCDInstances) 
+checkInstances (RightGCDTest checkType) = (map checkType rightGCDInstances) 
+checkInstances (GCDTest checkType) = (map checkType gcdInstances)  
+checkInstances (CancellativeGCDTest checkType) = (map checkType cancellativeGCDInstances) 
 
 tests :: [(String, Test)]
 tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
@@ -521,7 +519,7 @@ checkTextualFoldr (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.foldr (\a l-> Left a : l) (\c l-> Right c : l) [] a == textualFactors a
                     && Textual.foldr (<>) ((<>) . Textual.singleton) mempty a == a
-         check2 s = Textual.foldr undefined (:) [] s == s
+         check2 s = Textual.foldr undefined (:) [] (fromString s :: a) == s
 
 checkTextualFoldl' (TextualMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
