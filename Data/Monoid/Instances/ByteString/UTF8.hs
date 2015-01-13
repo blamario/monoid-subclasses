@@ -6,8 +6,8 @@
 
 -- | This module defines the 'ByteStringUTF8' newtype wrapper around 'ByteString', together with its 'TextualMonoid'
 -- instance. The 'FactorialMonoid' instance of a wrapped 'ByteStringUTF8' value differs from the original 'ByteString':
--- the prime 'factors' of the original value are bytes, while UTF8 character byte sequences make up the wrapped value's
--- prime 'factors'. The following example session demonstrates the relationship:
+-- the prime 'factors' of the original value are its bytes, and for the wrapped value the prime 'factors' are its valid
+-- UTF8 byte sequences. The following example session demonstrates the relationship:
 -- 
 -- >> let utf8@(ByteStringUTF8 bs) = fromString "E=mc\xb2"
 -- >> bs

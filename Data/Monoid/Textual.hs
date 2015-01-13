@@ -4,7 +4,7 @@
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
--- | This module defines the 'TextualMonoid' class and its most important instances for 'String' and 'Text'.
+-- | This module defines the 'TextualMonoid' class and several of its instances.
 -- 
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
