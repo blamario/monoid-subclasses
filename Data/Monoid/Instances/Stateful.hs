@@ -19,8 +19,8 @@ module Data.Monoid.Instances.Stateful (
    )
 where
 
-import Prelude hiding (all, any, break, elem, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
-                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
+import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
+                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, take)
 import Control.Applicative (Applicative(..))
 import Data.Functor ((<$>))
 import qualified Data.List as List
@@ -58,23 +58,37 @@ instance Monoid a => Applicative (Stateful a) where
 instance (Monoid a, Monoid b) => Monoid (Stateful a b) where
    mempty = Stateful mempty
    mappend (Stateful x) (Stateful y) = Stateful (x <> y)
+   {-# INLINE mempty #-}
+   {-# INLINE mappend #-}
 
 instance (MonoidNull a, MonoidNull b) => MonoidNull (Stateful a b) where
    null (Stateful x) = null x
+   {-# INLINE null #-}
 
 instance (PositiveMonoid a, PositiveMonoid b) => PositiveMonoid (Stateful a b)
 
 instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (Stateful a b) where
+   isPrefixOf (Stateful x) (Stateful x') = isPrefixOf x x'
    stripPrefix (Stateful x) (Stateful x') = Stateful <$> stripPrefix x x'
+   {-# INLINE isPrefixOf #-}
+   {-# INLINE stripPrefix #-}
 
 instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (Stateful a b) where
+   isSuffixOf (Stateful x) (Stateful x') = isSuffixOf x x'
    stripSuffix (Stateful x) (Stateful x') = Stateful <$> stripSuffix x x'
+   {-# INLINE stripSuffix #-}
+   {-# INLINE isSuffixOf #-}
 
 instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (Stateful a b) where
    commonPrefix (Stateful x) (Stateful x') = Stateful (commonPrefix x x')
+   stripCommonPrefix (Stateful x) (Stateful x') = (Stateful prefix, Stateful suffix1, Stateful suffix2)
+      where (prefix, suffix1, suffix2) = stripCommonPrefix x x'
+   {-# INLINE commonPrefix #-}
+   {-# INLINE stripCommonPrefix #-}
 
 instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (Stateful a b) where
    commonSuffix (Stateful x) (Stateful x') = Stateful (commonSuffix x x')
+   {-# INLINE commonSuffix #-}
 
 instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b) where
    factors (Stateful x) = List.map Stateful (factors x)
@@ -94,9 +108,31 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b
    foldMap f (Stateful x) = Factorial.foldMap (f . Stateful) x
    span p (Stateful x) = (Stateful xp, Stateful xs)
       where (xp, xs) = Factorial.span (p . Stateful) x
+   spanMaybe s0 f (Stateful x) = (Stateful xp, Stateful xs, s')
+      where (xp, xs, s') = Factorial.spanMaybe s0 f' x
+            f' s x1 = f s (Stateful x1)
+   spanMaybe' s0 f (Stateful x) = (Stateful xp, Stateful xs, s')
+      where (xp, xs, s') = Factorial.spanMaybe' s0 f' x
+            f' s x1 = f s (Stateful x1)
    split p (Stateful x) = List.map Stateful (Factorial.split (p . Stateful) x)
-   splitAt m (Stateful x) = (Stateful xp, Stateful xs)
-      where (xp, xs) = splitAt m x
+   splitAt n (Stateful x) = (Stateful xp, Stateful xs)
+      where (xp, xs) = splitAt n x
+   take n (Stateful x) = Stateful (take n x)
+   drop n (Stateful x) = Stateful (drop n x)
+   {-# INLINE primePrefix #-}
+   {-# INLINE primeSuffix #-}
+   {-# INLINE splitPrimePrefix #-}
+   {-# INLINE splitPrimeSuffix #-}
+   {-# INLINE foldl' #-}
+   {-# INLINE foldr #-}
+   {-# INLINE foldMap #-}
+   {-# INLINE length #-}
+   {-# INLINE span #-}
+   {-# INLINE spanMaybe #-}
+   {-# INLINE spanMaybe' #-}
+   {-# INLINE splitAt #-}
+   {-# INLINE take #-}
+   {-# INLINE drop #-}
 
 instance (StableFactorialMonoid a, StableFactorialMonoid b) => StableFactorialMonoid (Stateful a b)
 
@@ -112,8 +148,8 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
                                                return (c, Stateful (t', x))
 
    map f (Stateful (t, x)) = Stateful (Textual.map f t, x)
-   all p = Textual.all p . extract
-   any p = Textual.any p . extract
+   all p = all p . extract
+   any p = any p . extract
 
    foldl fx fc a (Stateful (t, x)) = Factorial.foldl f2 (Textual.foldl f1 fc a t) x
       where f1 a = fx a . fromFst
@@ -123,6 +159,8 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
       where a' = Textual.foldl' f1 fc a t
             f1 a = fx a . fromFst
             f2 a = fx a . fromSnd
+   foldl_' fc a (Stateful (t, _)) = foldl_' fc a t
+   foldr_ fc a (Stateful (t, _)) = Textual.foldr_ fc a t
 
    scanl f c (Stateful (t, x)) = Stateful (Textual.scanl f c t, x)
    scanl1 f (Stateful (t, x)) = Stateful (Textual.scanl1 f t, x)
@@ -137,9 +175,27 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
       where (tp, ts) = Textual.span (pt . fromFst) pc t
             (xp, xs) | null ts = Factorial.span (pt . fromSnd) x
                      | otherwise = (mempty, x)
+   span_ bt pc (Stateful (t, x)) = (Stateful (tp, xp), Stateful (ts, xs))
+      where (tp, ts) = Textual.span_ bt pc t
+            (xp, xs) | null ts && bt = (x, mempty)
+                     | otherwise = (mempty, x)
    break pt pc (Stateful (t, x)) = (Stateful (tp, xp), Stateful (ts, xs))
       where (tp, ts) = Textual.break (pt . fromFst) pc t
             (xp, xs) | null ts = Factorial.break (pt . fromSnd) x
+                     | otherwise = (mempty, x)
+   spanMaybe s0 ft fc (Stateful (t, x)) = (Stateful (tp, xp), Stateful (ts, xs), s'')
+      where (tp, ts, s') = Textual.spanMaybe s0 ft' fc t
+            (xp, xs, s'') = Factorial.spanMaybe s' ft'' x
+            ft' s t1 = ft s (Stateful (t1, mempty))
+            ft'' s x1 = ft s (Stateful (mempty, x1))
+   spanMaybe' s0 ft fc (Stateful (t, x)) = (Stateful (tp, xp), Stateful (ts, xs), s'')
+      where (tp, ts, s') = Textual.spanMaybe' s0 ft' fc t
+            (xp, xs, s'') = Factorial.spanMaybe' s' ft'' x
+            ft' s t1 = ft s (Stateful (t1, mempty))
+            ft'' s x1 = ft s (Stateful (mempty, x1))
+   spanMaybe_' s0 fc (Stateful (t, x)) = (Stateful (tp, xp), Stateful (ts, xs), s')
+      where (tp, ts, s') = Textual.spanMaybe_' s0 fc t
+            (xp, xs) | null ts = (x, mempty)
                      | otherwise = (mempty, x)
    split p (Stateful (t, x)) = restore id ts
       where ts = Textual.split p t
@@ -147,6 +203,21 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
             restore f (hd:tl) = restore (f . (Stateful (hd, mempty):)) tl
    find p = find p . extract
    elem c = elem c . extract
+
+   {-# INLINE characterPrefix #-}
+   {-# INLINE splitCharacterPrefix #-}
+   {-# INLINE map #-}
+   {-# INLINE foldl' #-}
+   {-# INLINE foldr #-}
+   {-# INLINE spanMaybe' #-}
+   {-# INLINE span #-}
+   {-# INLINE spanMaybe_' #-}
+   {-# INLINE span_ #-}
+   {-# INLINE any #-}
+   {-# INLINE all #-}
+   {-# INLINE split #-}
+   {-# INLINE find #-}
+   {-# INLINE elem #-}
 
 {-# INLINE fromFst #-}
 fromFst :: Monoid b => a -> Stateful b a

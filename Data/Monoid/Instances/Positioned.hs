@@ -449,6 +449,8 @@ instance (StableFactorialMonoid m, TextualMonoid m) => TextualMonoid (OffsetPosi
    {-# INLINE span #-}
    {-# INLINE foldl_' #-}
    {-# INLINE foldr_ #-}
+   {-# INLINE any #-}
+   {-# INLINE all #-}
    {-# INLINE spanMaybe_' #-}
    {-# INLINE span_ #-}
    {-# INLINE break_ #-}
@@ -576,6 +578,8 @@ instance (StableFactorialMonoid m, TextualMonoid m) => TextualMonoid (LinePositi
    {-# INLINE find #-}
    {-# INLINE foldl_' #-}
    {-# INLINE foldr_ #-}
+   {-# INLINE any #-}
+   {-# INLINE all #-}
    {-# INLINE spanMaybe_' #-}
    {-# INLINE span_ #-}
    {-# INLINE break_ #-}
