@@ -593,7 +593,7 @@ linesColumns t = Textual.foldl (const . fmap succ) fc (0, 0) t
 linesColumns' :: TextualMonoid m => m -> (Int, Int)
 linesColumns' t = Textual.foldl' (const . fmap succ) fc (0, 0) t
    where fc (l, _) '\n' = let l' = succ l in seq l' (l', 0)
-         fc (l, c) _ = let c' = succ c in seq c' (l, c)
+         fc (l, c) _ = let c' = succ c in seq c' (l, c')
 {-# INLINE linesColumns #-}
 {-# INLINE linesColumns' #-}
 
