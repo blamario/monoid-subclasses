@@ -378,8 +378,18 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("Textual.dropWhile", TextualTest checkTextualDropWhile),
          ("Textual.span", TextualTest checkTextualSpan),
          ("Textual.break", TextualTest checkTextualBreak),
+         ("Textual.spanMaybe", TextualTest checkTextualSpanMaybe),
          ("Textual.split", TextualTest checkTextualSplit),
          ("Textual.find", TextualTest checkTextualFind),
+         ("Textual.foldl_", TextualTest checkTextualFoldl_),
+         ("Textual.foldr_", TextualTest checkTextualFoldr_),
+         ("Textual.foldl_'", TextualTest checkTextualFoldl_'),
+         ("Textual.span_", TextualTest checkTextualSpan_),
+         ("Textual.break_", TextualTest checkTextualBreak_),
+         ("Textual.spanMaybe_", TextualTest checkTextualSpanMaybe_),
+         ("Textual.spanMaybe_'", TextualTest checkTextualSpanMaybe_'),
+         ("Textual.takeWhile_", TextualTest checkTextualTakeWhile_),
+         ("Textual.dropWhile_", TextualTest checkTextualDropWhile_),
          ("stripPrefix", LeftReductiveTest checkStripPrefix),
          ("isPrefixOf", LeftReductiveTest checkIsPrefixOf),
          ("stripSuffix", RightReductiveTest checkStripSuffix),
@@ -527,7 +537,22 @@ checkTextualFoldl' (TextualMonoidInstance (_ :: a)) =
                     && Textual.foldl' (<>) (\a-> (a <>) . Textual.singleton) mempty a == a
          check2 s = Textual.foldl' undefined (flip (:)) [] s == List.foldl' (flip (:)) [] s
 
-checkTextualScanl (TextualMonoidInstance (_ :: a)) = 
+checkTextualFoldl_ (TextualMonoidInstance (_ :: a)) =
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+   where check1 a = Textual.foldl_ (\l c-> c : l) [] a == List.reverse (rights $ textualFactors a)
+         check2 s = Textual.foldl_ (flip (:)) [] s == List.foldl (flip (:)) [] s
+
+checkTextualFoldr_ (TextualMonoidInstance (_ :: a)) =
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+   where check1 a = Textual.foldr_ (\c l-> c : l) [] a == rights (textualFactors a)
+         check2 s = Textual.foldr_ (:) [] (fromString s :: a) == s
+
+checkTextualFoldl_' (TextualMonoidInstance (_ :: a)) =
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+   where check1 a = Textual.foldl_' (\l c-> c : l) [] a == List.reverse (rights $ textualFactors a)
+         check2 s = Textual.foldl_' (flip (:)) [] s == List.foldl (flip (:)) [] s
+
+checkTextualScanl (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = (rights . textualFactors . Textual.scanl f 'Z') a == (List.scanl f 'Z' . rights . textualFactors) a
                     && (lefts . textualFactors . Textual.scanl f 'Y') a == (lefts . textualFactors) a
@@ -535,7 +560,7 @@ checkTextualScanl (TextualMonoidInstance (_ :: a)) =
          check2 s = Textual.scanl f 'X' (fromString s :: a) == fromString (List.scanl f 'X' s)
          f c1 c2 = min c1 c2
 
-checkTextualScanr (TextualMonoidInstance (_ :: a)) = 
+checkTextualScanr (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = (rights . textualFactors . Textual.scanr f 'Z') a == (List.scanr f 'Z' . rights . textualFactors) a
                     && (lefts . textualFactors . Textual.scanr f 'Y') a == (lefts . textualFactors) a
@@ -543,7 +568,7 @@ checkTextualScanr (TextualMonoidInstance (_ :: a)) =
          check2 s = Textual.scanr f 'X' (fromString s :: a) == fromString (List.scanr f 'X' s)
          f c1 c2 = min c1 c2
 
-checkTextualScanl1 (TextualMonoidInstance (_ :: a)) = 
+checkTextualScanl1 (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.scanl1 (const id) a == a
          check2 s = Textual.scanl1 f (fromString s :: a) == fromString (List.scanl1 f s)
@@ -592,6 +617,56 @@ checkTextualBreak (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a)
    where check a = Textual.break pt pc a == Textual.span (not . pt) (not . pc) a
             where pt = (/= primePrefix a)
          pc = isLetter
+
+checkTextualSpanMaybe (TextualMonoidInstance (_ :: a)) =
+   property $ \(ft, fc, s)-> forAll (arbitrary :: Gen a) (check ft fc (s :: Bool))
+   where check ft fc s0 a = a == prefix <> suffix
+                            && foldMaybe prefix == Just s'
+                            && (null suffix
+                                || maybe (ft s' (primePrefix suffix)) (fc s') (Textual.characterPrefix suffix) == Nothing)
+            where (prefix, suffix, s') = Textual.spanMaybe s0 ft fc a
+                  foldMaybe = Textual.foldl gt gc (Just s0)
+                  gt s m = s >>= flip ft m
+                  gc s c = s >>= flip fc c
+
+checkTextualSpan_ (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, Bool)) check
+   where check (a, bt) = Textual.span_ bt isLetter a == (Textual.takeWhile_ bt isLetter a, Textual.dropWhile_ bt isLetter a)
+
+checkTextualBreak_ (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, Bool)) check
+   where check (a, bt) = Textual.break_ bt isLetter a == Textual.span_ (not bt) (not . isLetter) a
+
+checkTextualSpanMaybe_ (TextualMonoidInstance (_ :: a)) =
+   property $ \(fc, s)-> forAll (arbitrary :: Gen a) (check fc (s :: Bool))
+   where check fc s0 a = a == prefix <> suffix
+                         && foldMaybe prefix == Just s'
+                         && (null suffix || (Textual.characterPrefix suffix >>= fc s') == Nothing)
+            where (prefix, suffix, s') = Textual.spanMaybe_ s0 fc a
+                  foldMaybe = Textual.foldl_ gc (Just s0)
+                  gc s c = s >>= flip fc c
+
+checkTextualSpanMaybe_' (TextualMonoidInstance (_ :: a)) =
+   property $ \(fc, s)-> forAll (arbitrary :: Gen a) (check fc (s :: Bool))
+   where check fc s0 a = a == prefix <> suffix
+                         && foldMaybe prefix == Just s'
+                         && (null suffix || (Textual.characterPrefix suffix >>= fc s') == Nothing)
+            where (prefix, suffix, s') = Textual.spanMaybe_' s0 fc a
+                  foldMaybe = Textual.foldl_' gc (Just s0)
+                  gc s c = s >>= flip fc c
+
+checkTextualTakeWhile_ (TextualMonoidInstance (_ :: a)) = 
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+   where check1 a = textualFactors (Textual.takeWhile_ True isLetter a)
+                    == List.takeWhile (either (const True) isLetter) (textualFactors a)
+                    && Textual.takeWhile_ True (const True) a == a
+         check2 s = Textual.takeWhile_ undefined isLetter (fromString s :: a) == fromString (List.takeWhile isLetter s)
+
+checkTextualDropWhile_ (TextualMonoidInstance (_ :: a)) = 
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+   where check1 a = textualFactors (Textual.dropWhile_ True isLetter a)
+                    == List.dropWhile (either (const True) isLetter) (textualFactors a)
+                    && Textual.dropWhile_ False (const False) a == a
+         check2 s = Textual.dropWhile_ undefined isLetter (fromString s :: a)
+                    == fromString (List.dropWhile isLetter s)
 
 checkTextualSplit (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
    where check a = List.all (List.all isLetter . rights . textualFactors) (Textual.split (not . isLetter) a)
