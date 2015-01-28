@@ -25,7 +25,7 @@ module Data.Monoid.Instances.Positioned (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, lines, map, concatMap,
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, lines, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 import Control.Applicative (Applicative(..))
 import qualified Data.List as List

@@ -39,7 +39,7 @@ module Data.Monoid.Instances.ByteString.UTF8 (
    )
 where
 
-import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1,
+import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldMap, foldr, foldr1, scanl, scanr, scanl1, scanr1,
                        map, concatMap, break, span)
 
 import Control.Exception (assert)

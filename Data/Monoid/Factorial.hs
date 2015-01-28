@@ -17,7 +17,7 @@ module Data.Monoid.Factorial (
    )
 where
 
-import Prelude hiding (break, drop, dropWhile, foldl, foldr, length, map, mapM, mapM_, null,
+import Prelude hiding (break, drop, dropWhile, foldl, foldl', foldMap, foldr, length, map, mapM, mapM_, null,
                        reverse, span, splitAt, take, takeWhile)
    
 import Control.Arrow (first)

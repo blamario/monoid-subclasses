@@ -14,7 +14,7 @@ module Data.Monoid.Instances.Measured (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap, 
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap, 
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 import Data.Functor ((<$>))
 import qualified Data.List as List

@@ -19,7 +19,7 @@ module Data.Monoid.Instances.Stateful (
    )
 where
 
-import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
+import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, take)
 import Control.Applicative (Applicative(..))
 import Data.Functor ((<$>))
