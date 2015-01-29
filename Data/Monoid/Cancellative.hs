@@ -20,13 +20,13 @@
 -- All monoid subclasses listed above are for Abelian, /i.e./, commutative or symmetric monoids. Since most practical
 -- monoids in Haskell are not Abelian, each of the these classes has two symmetric superclasses:
 -- 
--- * 'LeftReductiveMonoid' 
+-- * 'LeftReductiveMonoid'
 -- 
--- * 'LeftCancellativeMonoid' 
+-- * 'LeftCancellativeMonoid'
 -- 
--- * 'LeftGCDMonoid' 
+-- * 'LeftGCDMonoid'
 -- 
--- * 'RightReductiveMonoid' 
+-- * 'RightReductiveMonoid'
 -- 
 -- * 'RightCancellativeMonoid'
 -- 
@@ -542,8 +542,8 @@ instance RightCancellativeMonoid ByteString.ByteString
 instance LeftGCDMonoid ByteString.ByteString where
    stripCommonPrefix x y = (xp, xs, ByteString.unsafeDrop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (ByteString.length x `min` ByteString.length y)
-            prefixLength n len | n < len, 
-                                 ByteString.unsafeIndex x n == ByteString.unsafeIndex y n = 
+            prefixLength n len | n < len,
+                                 ByteString.unsafeIndex x n == ByteString.unsafeIndex y n =
                                     prefixLength (succ n) len
                                | otherwise = n
             (xp, xs) = ByteString.splitAt maxPrefixLength x
@@ -577,7 +577,7 @@ instance RightCancellativeMonoid LazyByteString.ByteString
 instance LeftGCDMonoid LazyByteString.ByteString where
    stripCommonPrefix x y = (xp, xs, LazyByteString.drop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (LazyByteString.length x `min` LazyByteString.length y)
-            prefixLength n len | n < len && LazyByteString.index x n == LazyByteString.index y n = 
+            prefixLength n len | n < len && LazyByteString.index x n == LazyByteString.index y n =
                prefixLength (succ n) len
             prefixLength n _ = n
             (xp, xs) = LazyByteString.splitAt maxPrefixLength x

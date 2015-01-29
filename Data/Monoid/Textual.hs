@@ -302,7 +302,7 @@ instance TextualMonoid String where
    scanl = List.scanl
    scanl1 = List.scanl1
    scanr = List.scanr
-   scanr1 = List.scanr1 
+   scanr1 = List.scanr1
    mapAccumL = List.mapAccumL
    mapAccumR = List.mapAccumR
 
@@ -365,7 +365,7 @@ instance TextualMonoid Text where
    scanl = Text.scanl
    scanl1 = Text.scanl1
    scanr = Text.scanr
-   scanr1 = Text.scanr1 
+   scanr1 = Text.scanr1
    mapAccumL = Text.mapAccumL
    mapAccumR = Text.mapAccumR
 

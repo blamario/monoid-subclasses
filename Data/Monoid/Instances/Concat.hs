@@ -14,7 +14,7 @@ module Data.Monoid.Instances.Concat (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap, 
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 import Control.Applicative (Applicative(..))
 import Data.Foldable (Foldable)
@@ -171,7 +171,7 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
          xp :< xs | k < n -> (Concat (xp <| xsp), xss)
                   | otherwise -> (Concat $ Seq.singleton xpp, Concat (if null xps then xs else xps <| xs))
             where k = length xp
-                  (Concat xsp, xss) = splitAt (n - k) (Concat xs) 
+                  (Concat xsp, xss) = splitAt (n - k) (Concat xs)
                   (xpp, xps) = splitAt n xp
    reverse (Concat x) = Concat (fmap reverse $ reverse x)
 

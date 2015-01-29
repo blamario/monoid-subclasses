@@ -19,7 +19,7 @@ where
 
 import Prelude hiding (break, drop, dropWhile, foldl, foldl', foldMap, foldr, length, map, mapM, mapM_, null,
                        reverse, span, splitAt, take, takeWhile)
-   
+
 import Control.Arrow (first)
 import qualified Control.Monad as Monad
 import Data.Monoid (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
@@ -44,7 +44,7 @@ import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 -- | Class of monoids that can be split into irreducible (/i.e./, atomic or prime) 'factors' in a unique way. Factors of
 -- a 'Product' are literally its prime factors:
 --
--- prop> factors (Product 12) == [Product 2, Product 2, Product 3] 
+-- prop> factors (Product 12) == [Product 2, Product 2, Product 3]
 --
 -- Factors of a list are /not/ its elements but all its single-item sublists:
 --
@@ -371,9 +371,9 @@ instance FactorialMonoid LazyByteString.ByteString where
               where (x, xs') = LazyByteString.splitAt 1 xs
    primePrefix = LazyByteString.take 1
    primeSuffix x = LazyByteString.drop (LazyByteString.length x - 1) x
-   splitPrimePrefix x = if LazyByteString.null x then Nothing 
+   splitPrimePrefix x = if LazyByteString.null x then Nothing
                         else Just (LazyByteString.splitAt 1 x)
-   splitPrimeSuffix x = if LazyByteString.null x then Nothing 
+   splitPrimeSuffix x = if LazyByteString.null x then Nothing
                         else Just (LazyByteString.splitAt (LazyByteString.length x - 1) x)
    inits = LazyByteString.inits
    tails = LazyByteString.tails
