@@ -17,11 +17,7 @@ where
 import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 import Control.Applicative (Applicative(..))
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable, traverse)
 import qualified Data.Foldable as Foldable
-import qualified Data.Traversable as Traversable
-import Data.Maybe (fromMaybe)
 import Data.String (IsString(..))
 import Data.Monoid (Monoid(..), (<>), First(..), Sum(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
@@ -69,7 +65,7 @@ instance MonoidNull (Concat a) where
 instance PositiveMonoid (Concat a)
 
 instance (LeftReductiveMonoid a, MonoidNull a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a) where
-   stripPrefix (Concat x) (Concat y) = fmap Concat $ strip1 x y
+   stripPrefix c1 c2 = fmap Concat $ strip1 (extract c1) (extract c2)
       where strip1 x y = strip2 (Seq.viewl x) y
             strip2 Seq.EmptyL y = Just y
             strip2 (xp :< xs) y = strip3 xp xs (Seq.viewl y)
@@ -81,7 +77,7 @@ instance (LeftReductiveMonoid a, MonoidNull a, StableFactorialMonoid a) => LeftR
                   (Nothing, Just xps) -> strip3 xps xs (Seq.viewl ys)
 
 instance (MonoidNull a, RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Concat a) where
-   stripSuffix (Concat x) (Concat y) = fmap Concat $ strip1 x y
+   stripSuffix c1 c2 = fmap Concat $ strip1 (extract c1) (extract c2)
       where strip1 x y = strip2 (Seq.viewr x) y
             strip2 Seq.EmptyR y = Just y
             strip2 (xp :> xs) y = strip3 xp xs (Seq.viewr y)
@@ -142,11 +138,11 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
               xp :> xs -> Just (Concat xp', Concat $ Seq.singleton xss)
                  where Just (xsp, xss) = splitPrimeSuffix xs
                        xp' = if null xsp then xp else xp |> xsp
-   foldl f a (Concat x) = Foldable.foldl g a x
+   foldl f a0 (Concat x) = Foldable.foldl g a0 x
       where g = Factorial.foldl (\a-> f a . Concat . Seq.singleton)
-   foldl' f a (Concat x) = Foldable.foldl' g a x
+   foldl' f a0 (Concat x) = Foldable.foldl' g a0 x
       where g = Factorial.foldl' (\a-> f a . Concat . Seq.singleton)
-   foldr f a (Concat x) = Foldable.foldr g a x
+   foldr f a0 (Concat x) = Foldable.foldr g a0 x
       where g a b = Factorial.foldr (f . Concat . Seq.singleton) b a
    length (Concat x) = getSum $ Foldable.foldMap (Sum . length) x
    foldMap f (Concat x) = Foldable.foldMap (foldMap (f . Concat . Seq.singleton)) x
@@ -159,7 +155,7 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
             where (xpp, xps) = Factorial.span (p . Concat . Seq.singleton) xp
                   (Concat xsp, xss) = Factorial.span p (Concat xs)
    split p (Concat x) = Foldable.foldr splitNext [mempty] x
-      where splitNext a (xp:xs) =
+      where splitNext a ~(xp:xs) =
                let as = fmap (Concat . Seq.singleton) (Factorial.split (p . Concat . Seq.singleton) a)
                in if null xp
                   then as ++ xs
@@ -198,11 +194,11 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
    any p (Concat x) = Foldable.any (any p) x
    all p (Concat x) = Foldable.all (all p) x
 
-   foldl ft fc a (Concat x) = Foldable.foldl g a x
+   foldl ft fc a0 (Concat x) = Foldable.foldl g a0 x
       where g = Textual.foldl (\a-> ft a . Concat . Seq.singleton) fc
-   foldl' ft fc a (Concat x) = Foldable.foldl' g a x
+   foldl' ft fc a0 (Concat x) = Foldable.foldl' g a0 x
       where g = Textual.foldl' (\a-> ft a . Concat . Seq.singleton) fc
-   foldr ft fc a (Concat x) = Foldable.foldr g a x
+   foldr ft fc a0 (Concat x) = Foldable.foldr g a0 x
       where g a b = Textual.foldr (ft . Concat . Seq.singleton) fc b a
 
    span pt pc (Concat x) =
@@ -216,7 +212,3 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
    break pt pc = Textual.span (not . pt) (not . pc)
 
    find p (Concat x) = getFirst $ Foldable.foldMap (First . find p) x
-
-injectSingleton :: (MonoidNull a, PositiveMonoid a) => a -> Concat a
-injectSingleton a | null a = mempty
-                  | otherwise = Concat (Seq.singleton a)

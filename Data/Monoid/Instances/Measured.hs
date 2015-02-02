@@ -19,7 +19,7 @@ import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, f
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Monoid (Monoid(..), (<>), First(..), Sum(..))
+import Data.Monoid (Monoid(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -32,7 +32,7 @@ import qualified Data.Monoid.Textual as Textual
 -- constant-time operation. The parameter is restricted to the 'StableFactorialMonoid' class, which guarantees that
 -- @'length' (a <> b) == 'length' a + 'length' b@.
 
-data Measured a = Measured{measuredLength :: Int, extract :: a} deriving (Eq, Show)
+data Measured a = Measured{_measuredLength :: Int, extract :: a} deriving (Eq, Show)
 
 -- | Create a new 'Measured' value.
 measure :: FactorialMonoid a => a -> Measured a
@@ -46,7 +46,7 @@ instance StableFactorialMonoid a => Monoid (Measured a) where
    mappend (Measured m a) (Measured n b) = Measured (m + n) (mappend a b)
 
 instance StableFactorialMonoid a => MonoidNull (Measured a) where
-   null (Measured n x) = n == 0
+   null (Measured n _) = n == 0
 
 instance StableFactorialMonoid a => PositiveMonoid (Measured a)
 
@@ -72,11 +72,11 @@ instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
    splitPrimeSuffix (Measured n x) = case splitPrimeSuffix x
                                      of Nothing -> Nothing
                                         Just (p, s) -> Just (Measured (n - 1) p, Measured 1 s)
-   foldl f a (Measured _ x) = Factorial.foldl g a x
+   foldl f a0 (Measured _ x) = Factorial.foldl g a0 x
       where g a = f a . Measured 1
-   foldl' f a (Measured _ x) = Factorial.foldl' g a x
+   foldl' f a0 (Measured _ x) = Factorial.foldl' g a0 x
       where g a = f a . Measured 1
-   foldr f a (Measured _ x) = Factorial.foldr g a x
+   foldr f a0 (Measured _ x) = Factorial.foldr g a0 x
       where g = f . Measured 1
    length (Measured n _) = n
    foldMap f (Measured _ x) = Factorial.foldMap (f . Measured 1) x
@@ -105,9 +105,9 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Meas
    any p (Measured _ x) = any p x
    all p (Measured _ x) = all p x
 
-   foldl ft fc a (Measured _ x) = Textual.foldl (\a-> ft a . Measured 1) fc a x
-   foldl' ft fc a (Measured _ x) = Textual.foldl' (\a-> ft a . Measured 1) fc a x
-   foldr ft fc a (Measured _ x) = Textual.foldr (ft . Measured 1) fc a x
+   foldl ft fc a0 (Measured _ x) = Textual.foldl (\a-> ft a . Measured 1) fc a0 x
+   foldl' ft fc a0 (Measured _ x) = Textual.foldl' (\a-> ft a . Measured 1) fc a0 x
+   foldr ft fc a0 (Measured _ x) = Textual.foldr (ft . Measured 1) fc a0 x
 
    span pt pc (Measured n x) = (xp', xs')
       where (xp, xs) = Textual.span (pt . Measured 1) pc x

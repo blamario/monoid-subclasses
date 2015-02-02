@@ -16,9 +16,8 @@ where
 
 import Prelude hiding (null)
    
-import Data.Monoid (Monoid(mempty), First(..), Last(..), Dual(..), Sum(..), Product(..), All(getAll), Any(getAny))
+import Data.Monoid (Monoid, First(..), Last(..), Dual(..), Sum(..), Product(..), All(getAll), Any(getAny))
 import qualified Data.List as List
-import Data.Ord (Ordering(EQ))
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
@@ -38,8 +37,8 @@ import qualified Data.Vector as Vector
 class Monoid m => MonoidNull m where
    null :: m -> Bool
 
--- | Subclass of 'Monoid' for types whose values have no inverse, with the exception of 'mempty'. More formally, the
--- class instances must satisfy the following law:
+-- | Subclass of 'Monoid' for types whose values have no inverse, with the exception of 'Data.Monoid.mempty'. More
+-- formally, the class instances must satisfy the following law:
 -- 
 -- prop> null (x <> y) == (null x && null y)
 class MonoidNull m => PositiveMonoid m

@@ -19,15 +19,14 @@ module Data.Monoid.Instances.Stateful (
    )
 where
 
-import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
+import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldMap, foldr, foldr1, gcd, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, take)
 import Control.Applicative (Applicative(..))
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Monoid (Monoid(..), (<>), First(..), Sum(..))
-import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..), ReductiveMonoid(..),
-                                 LeftGCDMonoid(..), RightGCDMonoid(..), GCDMonoid(..))
+import Data.Monoid (Monoid(..), (<>))
+import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftGCDMonoid(..), RightReductiveMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -100,10 +99,10 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b
                                       return (Stateful xp, Stateful xs)
    splitPrimeSuffix (Stateful x) = do (xp, xs) <- splitPrimeSuffix x
                                       return (Stateful xp, Stateful xs)
-   foldl f a (Stateful x) = Factorial.foldl f' a x
-      where f' a x = f a (Stateful x)
-   foldl' f a (Stateful x) = Factorial.foldl' f' a x
-      where f' a x = f a (Stateful x)
+   foldl f a0 (Stateful x) = Factorial.foldl f' a0 x
+      where f' a x1 = f a (Stateful x1)
+   foldl' f a0 (Stateful x) = Factorial.foldl' f' a0 x
+      where f' a x1 = f a (Stateful x1)
    foldr f a (Stateful x) = Factorial.foldr (f . Stateful) a x
    foldMap f (Stateful x) = Factorial.foldMap (f . Stateful) x
    span p (Stateful x) = (Stateful xp, Stateful xs)
@@ -151,12 +150,12 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
    all p = all p . extract
    any p = any p . extract
 
-   foldl fx fc a (Stateful (t, x)) = Factorial.foldl f2 (Textual.foldl f1 fc a t) x
+   foldl fx fc a0 (Stateful (t, x)) = Factorial.foldl f2 (Textual.foldl f1 fc a0 t) x
       where f1 a = fx a . fromFst
             f2 a = fx a . fromSnd
    foldr fx fc a (Stateful (t, x)) = Textual.foldr (fx . fromFst) fc (Factorial.foldr (fx . fromSnd) a x) t
-   foldl' fx fc a (Stateful (t, x)) = a' `seq` Factorial.foldl' f2 a' x
-      where a' = Textual.foldl' f1 fc a t
+   foldl' fx fc a0 (Stateful (t, x)) = a' `seq` Factorial.foldl' f2 a' x
+      where a' = Textual.foldl' f1 fc a0 t
             f1 a = fx a . fromFst
             f2 a = fx a . fromSnd
    foldl_' fc a (Stateful (t, _)) = foldl_' fc a t
@@ -201,8 +200,8 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
                      | otherwise = (mempty, x)
    split p (Stateful (t, x)) = restore id ts
       where ts = Textual.split p t
-            restore f [t] = f [Stateful (t, x)]
-            restore f (hd:tl) = restore (f . (Stateful (hd, mempty):)) tl
+            restore f [t1] = f [Stateful (t1, x)]
+            restore f ~(hd:tl) = restore (f . (Stateful (hd, mempty):)) tl
    find p = find p . extract
    elem c = elem c . extract
 

@@ -36,10 +36,10 @@
 
 module Data.Monoid.Cancellative (
    -- * Symmetric, commutative monoid classes
-   CommutativeMonoid, ReductiveMonoid(..), CancellativeMonoid(..), GCDMonoid(..),
+   CommutativeMonoid, ReductiveMonoid(..), CancellativeMonoid, GCDMonoid(..),
    -- * Asymmetric monoid classes
    LeftReductiveMonoid(..), RightReductiveMonoid(..),
-   LeftCancellativeMonoid(..), RightCancellativeMonoid(..),
+   LeftCancellativeMonoid, RightCancellativeMonoid,
    LeftGCDMonoid(..), RightGCDMonoid(..)
    )
 where
@@ -47,7 +47,7 @@ where
 import Prelude hiding (gcd)
 import qualified Prelude
 
-import Data.Monoid (Monoid (mappend), Dual(..), Sum(..), Product(..))
+import Data.Monoid (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.List as List
 import Data.Maybe (isJust)
 import qualified Data.ByteString as ByteString
@@ -99,7 +99,7 @@ class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) =
 class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
--- | Class of monoids with a left inverse of 'mappend', satisfying the following law:
+-- | Class of monoids with a left inverse of 'Data.Monoid.mappend', satisfying the following law:
 -- 
 -- > isPrefixOf a b == isJust (stripPrefix a b)
 -- > maybe b (a <>) (stripPrefix a b) == b
@@ -113,7 +113,7 @@ class Monoid m => LeftReductiveMonoid m where
 
    isPrefixOf a b = isJust (stripPrefix a b)
 
--- | Class of monoids with a right inverse of 'mappend', satisfying the following law:
+-- | Class of monoids with a right inverse of 'Data.Monoid.mappend', satisfying the following law:
 -- 
 -- > isSuffixOf a b == isJust (stripSuffix a b)
 -- > maybe b (<> a) (stripSuffix a b) == b
@@ -273,7 +273,7 @@ instance Num a => CommutativeMonoid (Product a)
 
 instance Integral a => ReductiveMonoid (Product a) where
    Product 0 </> Product 0 = Just (Product 0)
-   Product a </> Product 0 = Nothing
+   Product _ </> Product 0 = Nothing
    Product a </> Product b = if remainder == 0 then Just (Product quotient) else Nothing
       where (quotient, remainder) = quotRem a b
 
@@ -414,7 +414,7 @@ instance Ord k => LeftReductiveMonoid (Map.Map k a) where
                    | otherwise = Nothing
 
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
-   commonPrefix = Map.mergeWithKey (\k a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
+   commonPrefix = Map.mergeWithKey (\_ a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
 
 -- IntMap instances
 
@@ -424,7 +424,7 @@ instance LeftReductiveMonoid (IntMap.IntMap a) where
                    | otherwise = Nothing
 
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
-   commonPrefix = IntMap.mergeWithKey (\k a b -> if a == b then Just a else Nothing)
+   commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
                                       (const IntMap.empty) (const IntMap.empty)
 
 -- List instances
@@ -439,7 +439,7 @@ instance Eq x => LeftGCDMonoid [x] where
    commonPrefix (x:xs) (y:ys) | x == y = x : commonPrefix xs ys
    commonPrefix _ _ = []
 
-   stripCommonPrefix x y = strip' id x y
+   stripCommonPrefix x0 y0 = strip' id x0 y0
       where strip' f (x:xs) (y:ys) | x == y = strip' (f . (x :)) xs ys
             strip' f x y = (f [], x, y)
 

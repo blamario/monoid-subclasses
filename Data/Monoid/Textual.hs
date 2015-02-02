@@ -19,19 +19,17 @@ import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, fol
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Traversable as Traversable
-import Data.Maybe (fromJust)
-import Data.Either (rights)
+import Data.Functor ((<$>))
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
 import Data.Text (Text)
-import Data.Monoid (Monoid(mappend, mconcat, mempty))
+import Data.Monoid (Monoid(mappend, mempty))
 import qualified Data.Sequence as Sequence
 import qualified Data.Vector as Vector
 import Data.String (IsString(fromString))
 import Data.Int (Int64)
 
-import Data.Monoid.Null (MonoidNull (null))
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid)
 import Data.Monoid.Factorial (FactorialMonoid)
 import qualified Data.Monoid.Factorial as Factorial
@@ -246,7 +244,7 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
       where (prefix, rest) = break (const False) p m
             splitRest = case splitCharacterPrefix rest
                         of Nothing -> []
-                           Just (_, tail) -> split p tail
+                           Just (_, tl) -> split p tl
    find p = foldr (const id) (\c r-> if p c then Just c else r) Nothing
    elem c = any (== c)
 
@@ -276,6 +274,10 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    {-# INLINE takeWhile_ #-}
    {-# INLINE dropWhile_ #-}
 
+foldlChars :: TextualMonoid t => (Char -> Char -> Char) -> (t, Char) -> Char -> (t, Char)
+foldlOther :: Monoid t => (t, Char) -> t -> (t, Char)
+foldrChars :: TextualMonoid t => (Char -> Char -> Char) -> Char -> (t, Char) -> (t, Char)
+foldrOther :: Monoid t => t -> (t, a) -> (t, a)
 foldlChars f (t, c1) c2 = (mappend t (singleton c'), c')
    where c' = f c1 c2
 foldlOther (t1, c) t2 = (mappend t1 t2, c)
@@ -311,12 +313,12 @@ instance TextualMonoid String where
    break _ = List.break
    span _ = List.span
    spanMaybe s0 _ft fc l = (prefix' [], suffix' [], s')
-      where (prefix', suffix', s', live') = List.foldl' g (id, id, s0, True) l
-            g (prefix, suffix, s, live) c | live, Just s' <- fc s c = (prefix . (c:), id, s', True)
+      where (prefix', suffix', s', _) = List.foldl' g (id, id, s0, True) l
+            g (prefix, suffix, s, live) c | live, Just s1 <- fc s c = (prefix . (c:), id, s1, True)
                                           | otherwise = (prefix, suffix . (c:), s, False)
    spanMaybe' s0 _ft fc l = (prefix' [], suffix' [], s')
-      where (prefix', suffix', s', live') = List.foldl' g (id, id, s0, True) l
-            g (prefix, suffix, s, live) c | live, Just s' <- fc s c = seq s' (prefix . (c:), id, s', True)
+      where (prefix', suffix', s', _) = List.foldl' g (id, id, s0, True) l
+            g (prefix, suffix, s, live) c | live, Just s1 <- fc s c = seq s1 (prefix . (c:), id, s1, True)
                                           | otherwise = (prefix, suffix . (c:), s, False)
    find = List.find
    elem = List.elem
@@ -481,7 +483,7 @@ instance TextualMonoid (Sequence.Seq Char) where
                                c Sequence.:< rest -> Just (c, rest)
    characterPrefix s = case Sequence.viewl s
                        of Sequence.EmptyL -> Nothing
-                          c Sequence.:< rest -> Just c
+                          c Sequence.:< _ -> Just c
    map = Traversable.fmapDefault
    concatMap = Foldable.foldMap
    any = Foldable.any
@@ -562,14 +564,12 @@ instance TextualMonoid (Vector.Vector Char) where
    scanr = Vector.scanr
    scanr1 f v | Vector.null v = Vector.empty
               | otherwise = Vector.scanr1 f v
-   mapAccumL f a0 t = (a, Vector.reverse $ Vector.fromList l)
-      where (a, l) = Vector.foldl fc (a0, []) t
-            fc (a, l) c = (a', c':l)
-               where (a', c') = f a c
-   mapAccumR f a0 t = (a, Vector.fromList l)
-      where (a, l) = Vector.foldr fc (a0, []) t
-            fc c (a, l) = (a',  c':l)
-               where (a', c') = f a c
+   mapAccumL f a0 t = (a', Vector.reverse $ Vector.fromList l')
+      where (a', l') = Vector.foldl fc (a0, []) t
+            fc (a, l) c = (:l) <$> f a c
+   mapAccumR f a0 t = (a', Vector.fromList l')
+      where (a', l') = Vector.foldr fc (a0, []) t
+            fc c (a, l) = (:l) <$> f a c
 
    takeWhile _ = Vector.takeWhile
    dropWhile _ = Vector.dropWhile
