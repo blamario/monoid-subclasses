@@ -1,43 +1,49 @@
-{- 
+{-
     Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
 -- | This module defines the 'TextualMonoid' class and several of its instances.
--- 
+--
 
-{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE Haskell2010       #-}
+{-# LANGUAGE Trustworthy       #-}
 
 module Data.Monoid.Textual (
-   TextualMonoid(..)
+   TextualMonoid(..),
+   toString
    )
 where
 
-import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, foldr, foldr1, map, scanl, scanl1, scanr, scanr1,
-                       span, takeWhile)
+import           Prelude                  hiding (all, any, break, concatMap,
+                                           dropWhile, foldl, foldl1, foldr,
+                                           foldr1, map, scanl, scanl1, scanr,
+                                           scanr1, span, takeWhile)
 
-import qualified Data.Foldable as Foldable
-import qualified Data.Traversable as Traversable
-import Data.Functor ((<$>))
-import qualified Data.List as List
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as LazyText
-import Data.Text (Text)
-import Data.Monoid (Monoid(mappend, mempty))
-import qualified Data.Sequence as Sequence
-import qualified Data.Vector as Vector
-import Data.String (IsString(fromString))
-import Data.Int (Int64)
+import qualified Data.Foldable            as Foldable
+import           Data.Function
+import           Data.Functor             ((<$>))
+import           Data.Int                 (Int64)
+import qualified Data.List                as List
+import           Data.Monoid              (Monoid (mappend, mempty))
+import qualified Data.Sequence            as Sequence
+import           Data.String              (IsString (fromString))
+import           Data.Text                (Text)
+import qualified Data.Text                as Text
+import qualified Data.Text.Lazy           as LazyText
+import qualified Data.Traversable         as Traversable
+import qualified Data.Vector              as Vector
 
-import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid)
-import Data.Monoid.Factorial (FactorialMonoid)
-import qualified Data.Monoid.Factorial as Factorial
+import           Data.Monoid.Cancellative (LeftGCDMonoid, LeftReductiveMonoid)
+import           Data.Monoid.Factorial    (FactorialMonoid)
+import qualified Data.Monoid.Factorial    as Factorial
 
 -- | The 'TextualMonoid' class is an extension of 'FactorialMonoid' specialized for monoids that can contain
 -- characters. Its methods are generally equivalent to their namesake functions from "Data.List" and "Data.Text", and
 -- they satisfy the following laws:
--- 
+--
 -- > unfoldr splitCharacterPrefix . fromString == id
 -- > splitCharacterPrefix . primePrefix == fmap (\(c, t)-> (c, mempty)) . splitCharacterPrefix
 -- >
@@ -614,3 +620,9 @@ instance TextualMonoid (Vector.Vector Char) where
    {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
+
+-- | O(n) transformation into a 'String'.
+toString :: (TextualMonoid t) => t -> String
+toString = flip fix mempty $ \recurse output input -> case splitCharacterPrefix input of
+  Just (char, suffix) -> recurse (output ++ [char]) suffix
+  _ -> output
