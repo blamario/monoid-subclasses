@@ -17,12 +17,9 @@ module Data.Monoid.Factorial (
    )
 where
 
-import Prelude hiding (break, drop, dropWhile, foldl, foldMap, foldr, last, length, map, mapM, mapM_, max, min,
-                       null, reverse, span, splitAt, take, takeWhile)
-
 import Control.Arrow (first)
 import qualified Control.Monad as Monad
-import Data.Monoid (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
+import Data.Monoid -- (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.ByteString as ByteString
@@ -39,6 +36,10 @@ import Data.Int (Int64)
 import Data.Numbers.Primes (primeFactors)
 
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
+
+import Prelude hiding (break, drop, dropWhile, foldl, foldMap, foldr, last, length, map, mapM, mapM_, max, min,
+                       null, reverse, span, splitAt, take, takeWhile)
+
 
 -- | Class of monoids that can be split into irreducible (/i.e./, atomic or prime) 'factors' in a unique way. Factors of
 -- a 'Product' are literally its prime factors:

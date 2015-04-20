@@ -13,10 +13,8 @@ module Data.Monoid.Null (
    MonoidNull(..), PositiveMonoid
    )
 where
-
-import Prelude hiding (null)
    
-import Data.Monoid (Monoid, First(..), Last(..), Dual(..), Sum(..), Product(..), All(getAll), Any(getAny))
+import Data.Monoid -- (Monoid, First(..), Last(..), Dual(..), Sum(..), Product(..), All(getAll), Any(getAny))
 import qualified Data.List as List
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
@@ -28,6 +26,8 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
+
+import Prelude hiding (null)
 
 -- | Extension of 'Monoid' that allows testing a value for equality with 'mempty'. The following law must hold:
 -- 

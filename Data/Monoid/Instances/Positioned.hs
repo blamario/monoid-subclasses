@@ -25,19 +25,20 @@ module Data.Monoid.Instances.Positioned (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, lines, map, concatMap,
-                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
-import Control.Applicative (Applicative(..))
+import Control.Applicative -- (Applicative(..))
 import qualified Data.List as List
 import Data.String (IsString(..))
 
-import Data.Monoid (Monoid(..), (<>), Endo(..))
+import Data.Monoid -- (Monoid(..), (<>), Endo(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..), LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
+
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, lines, map, concatMap,
+                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 
 class Positioned p where
    extract :: p a -> a

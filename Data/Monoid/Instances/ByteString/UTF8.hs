@@ -39,9 +39,6 @@ module Data.Monoid.Instances.ByteString.UTF8 (
    )
 where
 
-import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldMap, foldr, foldr1, scanl, scanr, scanl1, scanr1,
-                       map, concatMap, break, span)
-
 import Control.Exception (assert)
 import Data.Bits ((.&.), (.|.), shiftL, shiftR)
 import Data.Char (chr, ord, isDigit, isPrint)
@@ -56,13 +53,16 @@ import qualified Data.ByteString.Char8 as ByteString.Char8
 import Data.ByteString.Internal (w2c)
 import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, unsafeIndex)
 
-import Data.Monoid (Monoid(mempty, mappend))
+import Data.Monoid -- (Monoid(mempty, mappend))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftCancellativeMonoid, LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial (FactorialMonoid(..))
 import qualified Data.Monoid.Textual as Textual (TextualMonoid(..))
+
+import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldMap, foldr, foldr1, scanl, scanr, scanl1, scanr1,
+                       map, concatMap, break, span)
 
 newtype ByteStringUTF8 = ByteStringUTF8 ByteString deriving (Eq, Ord)
 

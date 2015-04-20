@@ -14,12 +14,10 @@ module Data.Monoid.Instances.Measured (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
-                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
-import Data.Functor ((<$>))
+import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Monoid (Monoid(..))
+import Data.Monoid -- (Monoid(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -27,6 +25,9 @@ import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
+
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
+                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 
 -- | @'Measured' a@ is a wrapper around the 'FactorialMonoid' @a@ that memoizes the monoid's 'length' so it becomes a
 -- constant-time operation. The parameter is restricted to the 'StableFactorialMonoid' class, which guarantees that

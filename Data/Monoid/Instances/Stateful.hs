@@ -19,19 +19,20 @@ module Data.Monoid.Instances.Stateful (
    )
 where
 
-import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldMap, foldr, foldr1, gcd, map, concatMap,
-                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, take)
-import Control.Applicative (Applicative(..))
-import Data.Functor ((<$>))
+import Control.Applicative -- (Applicative(..))
+import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Monoid (Monoid(..), (<>))
+import Data.Monoid -- (Monoid(..), (<>))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftGCDMonoid(..), RightReductiveMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
+
+import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldMap, foldr, foldr1, gcd, map, concatMap,
+                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, take)
 
 -- | @'Stateful' a b@ is a wrapper around the 'Monoid' @b@ that carries the state @a@ along. The state type @a@ must be
 -- a monoid as well if 'Stateful' is to be of any use. In the 'FactorialMonoid' and 'TextualMonoid' class instances, the

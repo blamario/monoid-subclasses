@@ -14,12 +14,10 @@ module Data.Monoid.Instances.Concat (
    )
 where
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
-                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
-import Control.Applicative (Applicative(..))
+import Control.Applicative -- (Applicative(..))
 import qualified Data.Foldable as Foldable
 import Data.String (IsString(..))
-import Data.Monoid (Monoid(..), (<>), First(..), Sum(..))
+import Data.Monoid -- (Monoid(..), (<>), First(..), Sum(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -27,8 +25,11 @@ import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
-import Data.Sequence (Seq, empty, filter, (<|), (|>), ViewL((:<)), ViewR((:>)))
+import Data.Sequence (Seq, filter, (<|), (|>), ViewL((:<)), ViewR((:>)))
 import qualified Data.Sequence as Seq
+
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
+                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 
 -- | @'Concat' a@ is a @newtype@ wrapper around @'Seq' a@. The behaviour of the @'Concat' a@ instances of monoid
 -- subclasses is identical to the behaviour of their @a@ instances, up to the 'pure' isomorphism.
@@ -173,11 +174,11 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
 
 
 instance (IsString a) => IsString (Concat a) where
-   fromString "" = Concat empty
+   fromString "" = Concat Seq.empty
    fromString s = Concat (Seq.singleton $ fromString s)
 
 instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Concat a) where
-   fromText t | null t = Concat empty
+   fromText t | null t = Concat Seq.empty
               | otherwise = Concat (Seq.singleton $ fromText t)
    singleton = Concat . Seq.singleton . singleton
    splitCharacterPrefix (Concat x) =

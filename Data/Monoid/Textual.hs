@@ -14,17 +14,14 @@ module Data.Monoid.Textual (
    )
 where
 
-import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, foldr, foldr1, map, scanl, scanl1, scanr, scanr1,
-                       span, takeWhile)
-
 import qualified Data.Foldable as Foldable
 import qualified Data.Traversable as Traversable
-import Data.Functor ((<$>))
+import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
 import Data.Text (Text)
-import Data.Monoid (Monoid(mappend, mempty))
+import Data.Monoid -- (Monoid(mappend, mempty))
 import qualified Data.Sequence as Sequence
 import qualified Data.Vector as Vector
 import Data.String (IsString(fromString))
@@ -33,6 +30,9 @@ import Data.Int (Int64)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid)
 import Data.Monoid.Factorial (FactorialMonoid)
 import qualified Data.Monoid.Factorial as Factorial
+
+import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, foldr, foldr1, map, scanl, scanl1, scanr, scanr1,
+                       span, takeWhile)
 
 -- | The 'TextualMonoid' class is an extension of 'FactorialMonoid' specialized for monoids that can contain
 -- characters. Its methods are generally equivalent to their namesake functions from "Data.List" and "Data.Text", and

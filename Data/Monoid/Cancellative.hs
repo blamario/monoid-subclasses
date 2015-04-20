@@ -44,10 +44,9 @@ module Data.Monoid.Cancellative (
    )
 where
 
-import Prelude hiding (gcd)
 import qualified Prelude
 
-import Data.Monoid (Monoid, Dual(..), Sum(..), Product(..))
+import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.List as List
 import Data.Maybe (isJust)
 import qualified Data.ByteString as ByteString
@@ -62,6 +61,8 @@ import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import Data.Sequence (ViewL((:<)), ViewR((:>)), (<|), (|>))
 import qualified Data.Vector as Vector
+
+import Prelude hiding (gcd)
 
 -- | Class of all Abelian ({i.e.}, commutative) monoids that satisfy the commutativity property:
 -- 
