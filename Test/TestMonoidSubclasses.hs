@@ -44,6 +44,7 @@ import Data.Map (Map)
 import Data.Sequence (Seq)
 import Data.Set (Set)
 import Data.Vector (Vector, fromList)
+import Text.Show.Functions
 
 import Data.Monoid.Instances.ByteString.UTF8 (ByteStringUTF8(ByteStringUTF8))
 import Data.Monoid.Instances.Concat (Concat)
@@ -837,12 +838,6 @@ instance CoArbitrary a => CoArbitrary (LinePositioned a) where
 
 instance CoArbitrary b => CoArbitrary (Stateful a b) where
    coarbitrary = coarbitrary . Stateful.extract
-
-instance Show a => Show (a -> Bool) where
-   show _ = "predicate"
-
-instance Show a => Show (Bool -> a -> Maybe Bool) where
-   show _ = "stateful predicate"
 
 instance (PositiveMonoid a, MonoidNull b) => PositiveMonoid (a, b)
 
