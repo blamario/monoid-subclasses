@@ -373,6 +373,7 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("Textual.scanr", TextualTest checkTextualScanr),
          ("Textual.scanl1", TextualTest checkTextualScanl1),
          ("Textual.scanr1", TextualTest checkTextualScanr1),
+         ("Textual.toString", TextualTest checkToString),
          ("Textual.mapAccumL", TextualTest checkTextualMapAccumL),
          ("Textual.mapAccumR", TextualTest checkTextualMapAccumR),
          ("Textual.takeWhile", TextualTest checkTextualTakeWhile),
@@ -575,10 +576,16 @@ checkTextualScanl1 (TextualMonoidInstance (_ :: a)) =
          check2 s = Textual.scanl1 f (fromString s :: a) == fromString (List.scanl1 f s)
          f c1 c2 = min c1 c2
 
-checkTextualScanr1 (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+checkTextualScanr1 (TextualMonoidInstance (_ :: a)) =
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.scanr1 const a == a
          check2 s = Textual.scanr1 f (fromString s :: a) == fromString (List.scanr1 f s)
          f c1 c2 = min c1 c2
+
+checkToString (TextualMonoidInstance (_ :: a)) =
+   forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
+   where check1 a = forAll arbitrary $ \f-> Textual.toString f a == Textual.foldr (\t s-> f t ++ s) (:) "" a
+         check2 s = Textual.toString undefined (fromString s :: a) == s
 
 checkTextualMapAccumL (TextualMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2

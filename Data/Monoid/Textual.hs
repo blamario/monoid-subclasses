@@ -79,6 +79,7 @@ import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, fol
 -- > uncurry (mapAccumR (,))
 -- > takeWhile (const True) (const True)
 -- > dropWhile (const False) (const False)
+-- > toString undefined . fromString
 --
 -- A minimal instance definition must implement 'splitCharacterPrefix'.
 
@@ -106,6 +107,9 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    -- | Equivalent to 'List.concatMap' from "Data.List" with a @Char -> String@ function. Preserves all non-character
    -- data.
    concatMap :: (Char -> t) -> t -> t
+   -- | Returns the list of characters the monoid contains, after having the argument function convert all its
+   -- non-character factors into characters.
+   toString :: (t -> String) -> t -> String
    -- | Equivalent to 'List.any' from "Data.List". Ignores all non-character data.
    any :: (Char -> Bool) -> t -> Bool
    -- | Equivalent to 'List.all' from "Data.List". Ignores all non-character data.
@@ -187,6 +191,7 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
 
    map f = concatMap (singleton . f)
    concatMap f = foldr mappend (mappend . f) mempty
+   toString f = foldr (mappend . f) (:) []
    all p = foldr (const id) ((&&) . p) True
    any p = foldr (const id) ((||) . p) False
 
@@ -294,6 +299,7 @@ instance TextualMonoid String where
    characterPrefix [] = Nothing
    map = List.map
    concatMap = List.concatMap
+   toString = const id
    any = List.any
    all = List.all
 
@@ -357,6 +363,7 @@ instance TextualMonoid Text where
    characterPrefix t = if Text.null t then Nothing else Just (Text.head t)
    map = Text.map
    concatMap = Text.concatMap
+   toString = const Text.unpack
    any = Text.any
    all = Text.all
 
@@ -419,6 +426,7 @@ instance TextualMonoid LazyText.Text where
    characterPrefix t = if LazyText.null t then Nothing else Just (LazyText.head t)
    map = LazyText.map
    concatMap = LazyText.concatMap
+   toString = const LazyText.unpack
    any = LazyText.any
    all = LazyText.all
 
@@ -486,6 +494,7 @@ instance TextualMonoid (Sequence.Seq Char) where
                           c Sequence.:< _ -> Just c
    map = Traversable.fmapDefault
    concatMap = Foldable.foldMap
+   toString = const Foldable.toList
    any = Foldable.any
    all = Foldable.all
 
@@ -551,6 +560,7 @@ instance TextualMonoid (Vector.Vector Char) where
    characterPrefix = (Vector.!? 0)
    map = Vector.map
    concatMap = Vector.concatMap
+   toString = const Vector.toList
    any = Vector.any
    all = Vector.all
 

@@ -201,6 +201,7 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
       where g = Textual.foldl' (\a-> ft a . Concat . Seq.singleton) fc
    foldr ft fc a0 (Concat x) = Foldable.foldr g a0 x
       where g a b = Textual.foldr (ft . Concat . Seq.singleton) fc b a
+   toString ft (Concat x) = Foldable.foldMap (toString $ ft . Concat . Seq.singleton) x
 
    span pt pc (Concat x) =
       case Seq.viewl x

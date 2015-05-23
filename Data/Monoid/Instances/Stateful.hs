@@ -161,6 +161,7 @@ instance (LeftGCDMonoid a, FactorialMonoid a, TextualMonoid b) => TextualMonoid 
             f2 a = fx a . fromSnd
    foldl_' fc a (Stateful (t, _)) = foldl_' fc a t
    foldr_ fc a (Stateful (t, _)) = Textual.foldr_ fc a t
+   toString fx (Stateful (t, x)) = toString (fx . fromFst) t ++ Factorial.foldMap (fx . fromSnd) x
 
    scanl f c (Stateful (t, x)) = Stateful (Textual.scanl f c t, x)
    scanl1 f (Stateful (t, x)) = Stateful (Textual.scanl1 f t, x)

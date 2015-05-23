@@ -109,6 +109,7 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Meas
    foldl ft fc a0 (Measured _ x) = Textual.foldl (\a-> ft a . Measured 1) fc a0 x
    foldl' ft fc a0 (Measured _ x) = Textual.foldl' (\a-> ft a . Measured 1) fc a0 x
    foldr ft fc a0 (Measured _ x) = Textual.foldr (ft . Measured 1) fc a0 x
+   toString ft (Measured _ x) = toString (ft . Measured 1) x
 
    span pt pc (Measured n x) = (xp', xs')
       where (xp, xs) = Textual.span (pt . Measured 1) pc x
