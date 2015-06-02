@@ -113,6 +113,7 @@ class Monoid m => LeftReductiveMonoid m where
    stripPrefix :: m -> m -> Maybe m
 
    isPrefixOf a b = isJust (stripPrefix a b)
+   {-# MINIMAL stripPrefix #-}
 
 -- | Class of monoids with a right inverse of 'Data.Monoid.mappend', satisfying the following law:
 -- 
@@ -127,6 +128,7 @@ class Monoid m => RightReductiveMonoid m where
    stripSuffix :: m -> m -> Maybe m
 
    isSuffixOf a b = isJust (stripSuffix a b)
+   {-# MINIMAL stripSuffix #-}
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
 -- additional law:
@@ -160,6 +162,7 @@ class LeftReductiveMonoid m => LeftGCDMonoid m where
       where p = commonPrefix x y
             Just x' = stripPrefix p x
             Just y' = stripPrefix p y
+   {-# MINIMAL commonPrefix | stripCommonPrefix #-}
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the right side of two monoidal
 -- values. The methods' complexity must be no worse than linear in the length of the common suffix. The following laws
@@ -181,6 +184,7 @@ class RightReductiveMonoid m => RightGCDMonoid m where
       where s = commonSuffix x y
             Just x' = stripSuffix s x
             Just y' = stripSuffix s y
+   {-# MINIMAL commonSuffix | stripCommonSuffix #-}
 
 -- Unit instances
 

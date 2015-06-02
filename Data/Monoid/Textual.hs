@@ -80,8 +80,6 @@ import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, fol
 -- > takeWhile (const True) (const True)
 -- > dropWhile (const False) (const False)
 -- > toString undefined . fromString
---
--- A minimal instance definition must implement 'splitCharacterPrefix'.
 
 class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) => TextualMonoid t where
    -- | Contructs a new data type instance Like 'fromString', but from a 'Text' input instead of 'String'.
@@ -278,6 +276,7 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    {-# INLINE break_ #-}
    {-# INLINE takeWhile_ #-}
    {-# INLINE dropWhile_ #-}
+   {-# MINIMAL splitCharacterPrefix #-}
 
 foldlChars :: TextualMonoid t => (Char -> Char -> Char) -> (t, Char) -> Char -> (t, Char)
 foldlOther :: Monoid t => (t, Char) -> t -> (t, Char)
