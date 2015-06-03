@@ -37,7 +37,7 @@ import Data.Numbers.Primes (primeFactors)
 
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 
-import Prelude hiding (break, drop, dropWhile, foldl, foldMap, foldr, last, length, map, mapM, mapM_, max, min,
+import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, mapM, mapM_, max, min,
                        null, reverse, span, splitAt, take, takeWhile)
 
 
@@ -256,7 +256,7 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
             f2 a = f a . fromSnd
             a' = foldl' f1 a0 x
    foldr f a (x, y) = foldr (f . fromFst) (foldr (f . fromSnd) a y) x
-   foldMap f (x, y) = foldMap (f . fromFst) x `mappend` foldMap (f . fromSnd) y
+   foldMap f (x, y) = Data.Monoid.Factorial.foldMap (f . fromFst) x `mappend` Data.Monoid.Factorial.foldMap (f . fromSnd) y
    length (a, b) = length a + length b
    span p (x, y) = ((xp, yp), (xs, ys))
       where (xp, xs) = span (p . fromFst) x
@@ -637,7 +637,7 @@ instance StableFactorialMonoid (Vector.Vector a)
 
 -- | A 'Monad.mapM' equivalent.
 mapM :: (FactorialMonoid a, Monoid b, Monad m) => (a -> m b) -> a -> m b
-mapM f = ($ return mempty) . appEndo . foldMap (Endo . Monad.liftM2 mappend . f)
+mapM f = ($ return mempty) . appEndo . Data.Monoid.Factorial.foldMap (Endo . Monad.liftM2 mappend . f)
 
 -- | A 'Monad.mapM_' equivalent.
 mapM_ :: (FactorialMonoid a, Monad m) => (a -> m b) -> a -> m ()

@@ -37,7 +37,7 @@ import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, lines, map, concatMap,
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, lines, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 
 class Positioned p where

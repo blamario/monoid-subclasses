@@ -31,7 +31,7 @@ import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 
-import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldMap, foldr, foldr1, gcd, map, concatMap,
+import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldr, foldr1, gcd, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, take)
 
 -- | @'Stateful' a b@ is a wrapper around the 'Monoid' @b@ that carries the state @a@ along. The state type @a@ must be

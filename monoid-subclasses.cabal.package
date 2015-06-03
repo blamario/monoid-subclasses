@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             0.4.0.4
+Version:             0.4.0.5
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -24,7 +24,8 @@ Library
   Exposed-Modules:   Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
                      Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.Concat,
                      Data.Monoid.Instances.Measured, Data.Monoid.Instances.Positioned, Data.Monoid.Instances.Stateful
-  Build-Depends:     base >= 4 && < 5, bytestring >= 0.9 && < 1.0, containers >= 0.5.2.0 && < 0.6, text >= 0.11 && < 1.3,
+  Build-Depends:     base >= 4.5 && < 5,
+                     bytestring >= 0.9 && < 1.0, containers >= 0.5.2.0 && < 0.6, text >= 0.11 && < 1.3,
                      primes == 0.2.*, vector >= 0.9 && < 0.11
   GHC-options:       -Wall
   GHC-prof-options:  -auto-all
@@ -32,7 +33,8 @@ Library
 
 test-suite Main
   Type:              exitcode-stdio-1.0
-  Build-Depends:     base >= 4 && < 5, bytestring >= 0.9 && < 1.0, containers >= 0.5.2.0 && < 0.6, text >= 0.11 && < 1.3,
+  Build-Depends:     base >= 4.5 && < 5,
+                     bytestring >= 0.9 && < 1.0, containers >= 0.5.2.0 && < 0.6, text >= 0.11 && < 1.3,
                      vector >= 0.9 && < 0.11, primes == 0.2.*,
                      QuickCheck == 2.*, quickcheck-instances == 0.3.*, tasty >= 0.7, tasty-quickcheck >= 0.7,
                      monoid-subclasses

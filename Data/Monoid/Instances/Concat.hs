@@ -16,6 +16,7 @@ where
 
 import Control.Applicative -- (Applicative(..))
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Monoid -- (Monoid(..), (<>), First(..), Sum(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
@@ -28,14 +29,14 @@ import qualified Data.Monoid.Textual as Textual
 import Data.Sequence (Seq, filter, (<|), (|>), ViewL((:<)), ViewR((:>)))
 import qualified Data.Sequence as Seq
 
-import Prelude hiding (all, any, break, filter, foldl, foldl1, foldMap, foldr, foldr1, map, concatMap,
+import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 
 -- | @'Concat' a@ is a @newtype@ wrapper around @'Seq' a@. The behaviour of the @'Concat' a@ instances of monoid
 -- subclasses is identical to the behaviour of their @a@ instances, up to the 'pure' isomorphism.
 --
 -- The only purpose of 'Concat' then is to change the performance characteristics of various operations. Most
--- importantly, injecting a monoid into a 'Concat' has the effect of making 'mappend' a constant-time operation.
+-- importantly, injecting a monoid into a 'Concat' has the effect of making 'mappend' a logarithmic-time operation.
 --
 newtype Concat a = Concat {extract :: Seq a} deriving Show
 
@@ -146,7 +147,7 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
    foldr f a0 (Concat x) = Foldable.foldr g a0 x
       where g a b = Factorial.foldr (f . Concat . Seq.singleton) b a
    length (Concat x) = getSum $ Foldable.foldMap (Sum . length) x
-   foldMap f (Concat x) = Foldable.foldMap (foldMap (f . Concat . Seq.singleton)) x
+   foldMap f (Concat x) = Foldable.foldMap (Factorial.foldMap (f . Concat . Seq.singleton)) x
    span p (Concat x) =
       case Seq.viewl x
       of Seq.EmptyL -> (mempty, mempty)
@@ -155,6 +156,23 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
                   | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
             where (xpp, xps) = Factorial.span (p . Concat . Seq.singleton) xp
                   (Concat xsp, xss) = Factorial.span p (Concat xs)
+   spanMaybe s0 f (Concat x) =
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty, s0)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
+                  | null xpp -> (mempty, Concat x, s')
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
+            where (xpp, xps, s') = Factorial.spanMaybe s0 (\s-> f s . Concat . Seq.singleton) xp
+                  (Concat xsp, xss, s'') = Factorial.spanMaybe s' f (Concat xs)
+   spanMaybe' s0 f (Concat x) =
+      seq s0 $
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty, s0)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
+                  | null xpp -> (mempty, Concat x, s')
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
+            where (xpp, xps, s') = Factorial.spanMaybe' s0 (\s-> f s . Concat . Seq.singleton) xp
+                  (Concat xsp, xss, s'') = Factorial.spanMaybe' s' f (Concat xs)
    split p (Concat x) = Foldable.foldr splitNext [mempty] x
       where splitNext a ~(xp:xs) =
                let as = fmap (Concat . Seq.singleton) (Factorial.split (p . Concat . Seq.singleton) a)
@@ -170,7 +188,7 @@ instance FactorialMonoid a => FactorialMonoid (Concat a) where
             where k = length xp
                   (Concat xsp, xss) = splitAt (n - k) (Concat xs)
                   (xpp, xps) = splitAt n xp
-   reverse (Concat x) = Concat (fmap reverse $ reverse x)
+   reverse (Concat x) = Concat (reverse <$> reverse x)
 
 
 instance (IsString a) => IsString (Concat a) where
@@ -201,7 +219,7 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
       where g = Textual.foldl' (\a-> ft a . Concat . Seq.singleton) fc
    foldr ft fc a0 (Concat x) = Foldable.foldr g a0 x
       where g a b = Textual.foldr (ft . Concat . Seq.singleton) fc b a
-   toString ft (Concat x) = Foldable.foldMap (toString $ ft . Concat . Seq.singleton) x
+   toString ft (Concat x) = List.concatMap (toString $ ft . Concat . Seq.singleton) (Foldable.toList x)
 
    span pt pc (Concat x) =
       case Seq.viewl x
@@ -211,6 +229,59 @@ instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Conc
                   | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
             where (xpp, xps) = Textual.span (pt . Concat . Seq.singleton) pc xp
                   (Concat xsp, xss) = Textual.span pt pc (Concat xs)
+   span_ bt pc (Concat x) =
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss)
+                  | null xpp -> (mempty, Concat x)
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
+            where (xpp, xps) = Textual.span_ bt pc xp
+                  (Concat xsp, xss) = Textual.span_ bt pc (Concat xs)
    break pt pc = Textual.span (not . pt) (not . pc)
+   takeWhile_ bt pc = fst . span_ bt pc
+   dropWhile_ bt pc = snd . span_ bt pc
+   break_ bt pc = span_ (not bt) (not . pc)
 
+   spanMaybe s0 ft fc (Concat x) =
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty, s0)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
+                  | null xpp -> (mempty, Concat x, s')
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
+            where (xpp, xps, s') = Textual.spanMaybe s0 (\s-> ft s . Concat . Seq.singleton) fc xp
+                  (Concat xsp, xss, s'') = Textual.spanMaybe s' ft fc (Concat xs)
+   spanMaybe' s0 ft fc (Concat x) =
+      seq s0 $
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty, s0)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
+                  | null xpp -> (mempty, Concat x, s')
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
+            where (xpp, xps, s') = Textual.spanMaybe' s0 (\s-> ft s . Concat . Seq.singleton) fc xp
+                  (Concat xsp, xss, s'') = Textual.spanMaybe' s' ft fc (Concat xs)
+   spanMaybe_ s0 fc (Concat x) =
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty, s0)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
+                  | null xpp -> (mempty, Concat x, s')
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
+            where (xpp, xps, s') = Textual.spanMaybe_ s0 fc xp
+                  (Concat xsp, xss, s'') = Textual.spanMaybe_ s' fc (Concat xs)
+   spanMaybe_' s0 fc (Concat x) =
+      seq s0 $
+      case Seq.viewl x
+      of Seq.EmptyL -> (mempty, mempty, s0)
+         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
+                  | null xpp -> (mempty, Concat x, s')
+                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
+            where (xpp, xps, s') = Textual.spanMaybe_' s0 fc xp
+                  (Concat xsp, xss, s'') = Textual.spanMaybe_' s' fc (Concat xs)
+
+   split p (Concat x) = Foldable.foldr splitNext [mempty] x
+      where splitNext a ~(xp:xs) =
+               let as = fmap (Concat . Seq.singleton) (Textual.split p a)
+               in if null xp
+                  then as ++ xs
+                  else init as ++ (last as <> xp):xs
    find p (Concat x) = getFirst $ Foldable.foldMap (First . find p) x
+   elem c (Concat x) = Foldable.any (Textual.elem c) x

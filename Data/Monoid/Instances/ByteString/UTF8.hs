@@ -61,7 +61,7 @@ import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial (FactorialMonoid(..))
 import qualified Data.Monoid.Textual as Textual (TextualMonoid(..))
 
-import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldMap, foldr, foldr1, scanl, scanr, scanl1, scanr1,
+import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1,
                        map, concatMap, break, span)
 
 newtype ByteStringUTF8 = ByteStringUTF8 ByteString deriving (Eq, Ord)
