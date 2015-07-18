@@ -373,19 +373,19 @@ instance TextualMonoid ByteStringUTF8 where
 reverseBytesToChar :: (ByteString -> a) -> (Char -> a) -> [Word8] -> a
 reverseBytesToChar ft fc [w] = if w < 0x80 then fc (w2c w) else ft (ByteString.singleton w)
 reverseBytesToChar ft fc [b0, b1] =
-  assert (0x80 <= b0 && b0 < 0xC0 && 0xC0 <= b1) $
+  assert (0x80 <= b0 && b0 < 0xC0) $
   if 0xC2 <= b1 && b1 < 0xE0
   then fc (chr (shiftL (fromIntegral b1 .&. 0x1F) 6 .|. fromIntegral b0 .&. 0x3F))
   else ft (ByteString.pack [b1, b0])
 reverseBytesToChar ft fc [b0, b1, b2] =
-  assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0 && 0xC0 <= b2) $
+  assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0) $
   if (0xE0 < b2 || 0xE0 == b2 && 0xA0 <= b1) && b2 < 0xF0
   then fc (chr (shiftL (fromIntegral b2 .&. 0xF) 12
                 .|. shiftL (fromIntegral b1 .&. 0x3F) 6
                 .|. fromIntegral b0 .&. 0x3F))
   else ft (ByteString.pack [b2, b1, b0])
 reverseBytesToChar ft fc [b0, b1, b2, b3] =
-  assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0 && 0x80 <= b2 && b2 < 0xC0 && 0xC0 <= b3) $
+  assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0 && 0x80 <= b2 && b2 < 0xC0) $
   if (0xF0 < b3 || 0xF0 == b3 && 0x90 <= b2) && b3 < 0xF4
   then fc (chr (shiftL (fromIntegral b3 .&. 0x7) 18
                 .|. shiftL (fromIntegral b2 .&. 0x3F) 12
