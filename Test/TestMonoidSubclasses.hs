@@ -783,9 +783,6 @@ instance Arbitrary a => Arbitrary (Product a) where
 instance Arbitrary a => Arbitrary (Sum a) where
    arbitrary = fmap Sum arbitrary
 
-instance Arbitrary a => Arbitrary (Vector a) where
-   arbitrary = fmap fromList arbitrary
-
 instance Arbitrary ByteStringUTF8 where
    arbitrary = fmap ByteStringUTF8 arbitrary
 
