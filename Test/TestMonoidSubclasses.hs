@@ -822,9 +822,6 @@ instance CoArbitrary a => CoArbitrary (Product a) where
 instance CoArbitrary a => CoArbitrary (Sum a) where
    coarbitrary (Sum a) = coarbitrary a
 
-instance CoArbitrary a => CoArbitrary (Vector a) where
-   coarbitrary = coarbitrary . toList
-
 instance CoArbitrary ByteStringUTF8 where
    coarbitrary (ByteStringUTF8 bs) = coarbitrary bs
 
