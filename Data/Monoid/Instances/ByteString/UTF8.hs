@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2016 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -218,7 +218,8 @@ instance FactorialMonoid ByteStringUTF8 where
                                of Just s1 -> dropASCII s1 tl
                                   Nothing -> (bs, s)
    {-# INLINE spanMaybe #-}
-   spanMaybe' s0 f (ByteStringUTF8 bs0) = (ByteStringUTF8 $ ByteString.take (ByteString.length bs0 - ByteString.length dropped) bs0,
+   spanMaybe' s0 f (ByteStringUTF8 bs0) = (ByteStringUTF8 $
+                                           ByteString.take (ByteString.length bs0 - ByteString.length dropped) bs0,
                                            ByteStringUTF8 dropped,
                                            s')
       where (dropped, s') = dropASCII s0 bs0
@@ -484,8 +485,9 @@ byteStartsCharacter b = b < 0x80 || b >= 0xC0
 
 charStartIndex :: Int -> ByteString -> Int
 charStartIndex n _ | n <= 0 = 0
-charStartIndex n bs =
-   case List.drop (pred n) (ByteString.findIndices byteStartsCharacter $ ByteString.drop 1 bs)
-   of [] -> ByteString.length bs
-      k:_ -> succ k
+charStartIndex n0 bs = ByteString.foldr count (const $ ByteString.length bs) bs (n0, False, 0)
+      where count byte _    (0, high, i) | byte < 0x80 || byte >= 0xC0 || not high = i
+            count byte cont (n, high, i) | byte < 0x80 = cont (pred n, False, succ i)
+                                         | byte < 0xC0 = cont (if high then n else pred n, True, succ i)
+                                         | otherwise = cont (pred n, True, succ i)
 {-# INLINE charStartIndex #-}
