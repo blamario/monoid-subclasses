@@ -59,7 +59,7 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 -- > reverse == mconcat . List.reverse . factors
 -- > primePrefix == maybe mempty fst . splitPrimePrefix
 -- > primeSuffix == maybe mempty snd . splitPrimeSuffix
--- > inits == List.map mconcat . List.tails . factors
+-- > inits == List.map mconcat . List.inits . factors
 -- > tails == List.map mconcat . List.tails . factors
 -- > foldl f a == List.foldl f a . factors
 -- > foldl' f a == List.foldl' f a . factors
