@@ -346,7 +346,6 @@ instance (StableFactorialMonoid m, TextualMonoid m) => FactorialMonoid (LinePosi
    {-# INLINE span #-}
    {-# INLINE splitAt #-}
    {-# INLINE take #-}
-   {-# INLINE drop #-}
    {-# INLINE reverse #-}
 
 instance StableFactorialMonoid m => StableFactorialMonoid (OffsetPositioned m)

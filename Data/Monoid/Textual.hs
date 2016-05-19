@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2016 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -351,7 +351,6 @@ instance TextualMonoid String where
    {-# INLINE span #-}
    {-# INLINE spanMaybe #-}
    {-# INLINE spanMaybe' #-}
-   {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
 
@@ -480,9 +479,6 @@ instance TextualMonoid LazyText.Text where
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
 
-instance IsString (Sequence.Seq Char) where
-   fromString = Sequence.fromList
-
 instance TextualMonoid (Sequence.Seq Char) where
    singleton = Sequence.singleton
    splitCharacterPrefix s = case Sequence.viewl s
@@ -534,10 +530,7 @@ instance TextualMonoid (Sequence.Seq Char) where
    {-# INLINE foldl   #-}
    {-# INLINE foldl'  #-}
    {-# INLINE foldr   #-}
-   {-# INLINE fromText #-}
    {-# INLINE map #-}
-   {-# INLINE mapAccumL #-}
-   {-# INLINE mapAccumR #-}
    {-# INLINE scanl #-}
    {-# INLINE scanl1 #-}
    {-# INLINE scanr #-}
@@ -546,7 +539,6 @@ instance TextualMonoid (Sequence.Seq Char) where
    {-# INLINE span #-}
    {-# INLINE spanMaybe #-}
    {-# INLINE spanMaybe' #-}
-   {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
 
@@ -608,7 +600,6 @@ instance TextualMonoid (Vector.Vector Char) where
    {-# INLINE foldl   #-}
    {-# INLINE foldl'  #-}
    {-# INLINE foldr   #-}
-   {-# INLINE fromText #-}
    {-# INLINE map #-}
    {-# INLINE mapAccumL #-}
    {-# INLINE mapAccumR #-}
@@ -620,6 +611,5 @@ instance TextualMonoid (Vector.Vector Char) where
    {-# INLINE span #-}
    {-# INLINE spanMaybe #-}
    {-# INLINE spanMaybe' #-}
-   {-# INLINE split #-}
    {-# INLINE splitCharacterPrefix #-}
    {-# INLINE takeWhile #-}
