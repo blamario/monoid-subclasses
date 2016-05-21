@@ -40,7 +40,7 @@ import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, ma
 --
 newtype Concat a = Concat {extract :: Seq a} deriving Show
 
-concatenate :: (MonoidNull a, PositiveMonoid a) => Seq a -> Concat a
+concatenate :: PositiveMonoid a => Seq a -> Concat a
 concatenate = Concat . filter (not . null)
 
 instance (Eq a, Monoid a) => Eq (Concat a) where
