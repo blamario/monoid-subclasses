@@ -79,6 +79,12 @@ instance Monoid a => MonoidNull (Maybe a) where
 instance (MonoidNull a, MonoidNull b) => MonoidNull (a, b) where
    null (a, b) = null a && null b
 
+instance (MonoidNull a, MonoidNull b, MonoidNull c) => MonoidNull (a, b, c) where
+   null (a, b, c) = null a && null b && null c
+
+instance (MonoidNull a, MonoidNull b, MonoidNull c, MonoidNull d) => MonoidNull (a, b, c, d) where
+   null (a, b, c, d) = null a && null b && null c && null d
+
 instance MonoidNull [x] where
    null = List.null
 
@@ -136,7 +142,7 @@ instance PositiveMonoid (Sequence.Seq a)
 instance Ord a => PositiveMonoid (Set.Set a)
 instance PositiveMonoid (Vector.Vector a)
 
--- Both instances are not allowed, so we leave the choice to the user.
+-- The possible tuple instances would be overlapping, so we leave the choice to the user.
 --
 -- instance (PositiveMonoid a, Monoid b) => PositiveMonoid (a, b)
 -- instance (Monoid a, PositiveMonoid b) => PositiveMonoid (a, b)

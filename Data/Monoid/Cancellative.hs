@@ -333,6 +333,82 @@ instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (a, b) where
 instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (a, b) where
    commonSuffix (a, b) (c, d) = (commonSuffix a c, commonSuffix b d)
 
+-- Triple instances
+
+instance (CommutativeMonoid a, CommutativeMonoid b, CommutativeMonoid c) => CommutativeMonoid (a, b, c)
+
+instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c) => ReductiveMonoid (a, b, c) where
+   (a1, b1, c1) </> (a2, b2, c2) = (,,) <$> (a1 </> a2) <*> (b1 </> b2) <*> (c1 </> c2)
+
+instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c) => CancellativeMonoid (a, b, c)
+
+instance (GCDMonoid a, GCDMonoid b, GCDMonoid c) => GCDMonoid (a, b, c) where
+   gcd (a1, b1, c1) (a2, b2, c2) = (gcd a1 a2, gcd b1 b2, gcd c1 c2)
+
+instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c) => LeftReductiveMonoid (a, b, c) where
+   stripPrefix (a1, b1, c1) (a2, b2, c2) = (,,) <$> stripPrefix a1 a2 <*> stripPrefix b1 b2 <*> stripPrefix c1 c2
+   isPrefixOf (a1, b1, c1) (a2, b2, c2) = isPrefixOf a1 a2 && isPrefixOf b1 b2 && isPrefixOf c1 c2
+
+instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c) =>
+         RightReductiveMonoid (a, b, c) where
+   stripSuffix (a1, b1, c1) (a2, b2, c2) = (,,) <$> stripSuffix a1 a2 <*> stripSuffix b1 b2 <*> stripSuffix c1 c2
+   isSuffixOf (a1, b1, c1) (a2, b2, c2) = isSuffixOf a1 a2 && isSuffixOf b1 b2 && isSuffixOf c1 c2
+
+instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c) =>
+         LeftCancellativeMonoid (a, b, c)
+
+instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c) =>
+         RightCancellativeMonoid (a, b, c)
+
+instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c) => LeftGCDMonoid (a, b, c) where
+   commonPrefix (a1, b1, c1) (a2, b2, c2) = (commonPrefix a1 a2, commonPrefix b1 b2, commonPrefix c1 c2)
+
+instance (RightGCDMonoid a, RightGCDMonoid b, RightGCDMonoid c) => RightGCDMonoid (a, b, c) where
+   commonSuffix (a1, b1, c1) (a2, b2, c2) = (commonSuffix a1 a2, commonSuffix b1 b2, commonSuffix c1 c2)
+
+-- Quadruple instances
+
+instance (CommutativeMonoid a, CommutativeMonoid b, CommutativeMonoid c, CommutativeMonoid d) =>
+         CommutativeMonoid (a, b, c, d)
+
+instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c, ReductiveMonoid d) =>
+         ReductiveMonoid (a, b, c, d) where
+   (a1, b1, c1, d1) </> (a2, b2, c2, d2) = (,,,) <$> (a1 </> a2) <*> (b1 </> b2) <*> (c1 </> c2) <*> (d1 </> d2)
+
+instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c, CancellativeMonoid d) =>
+         CancellativeMonoid (a, b, c, d)
+
+instance (GCDMonoid a, GCDMonoid b, GCDMonoid c, GCDMonoid d) => GCDMonoid (a, b, c, d) where
+   gcd (a1, b1, c1, d1) (a2, b2, c2, d2) = (gcd a1 a2, gcd b1 b2, gcd c1 c2, gcd d1 d2)
+
+instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c, LeftReductiveMonoid d) =>
+         LeftReductiveMonoid (a, b, c, d) where
+   stripPrefix (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      (,,,) <$> stripPrefix a1 a2 <*> stripPrefix b1 b2 <*> stripPrefix c1 c2 <*> stripPrefix d1 d2
+   isPrefixOf (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      isPrefixOf a1 a2 && isPrefixOf b1 b2 && isPrefixOf c1 c2 && isPrefixOf d1 d2
+
+instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c, RightReductiveMonoid d) =>
+         RightReductiveMonoid (a, b, c, d) where
+   stripSuffix (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      (,,,) <$> stripSuffix a1 a2 <*> stripSuffix b1 b2 <*> stripSuffix c1 c2 <*> stripSuffix d1 d2
+   isSuffixOf (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      isSuffixOf a1 a2 && isSuffixOf b1 b2 && isSuffixOf c1 c2 && isSuffixOf d1 d2
+
+instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c, LeftCancellativeMonoid d) =>
+         LeftCancellativeMonoid (a, b, c, d)
+
+instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c, RightCancellativeMonoid d) =>
+         RightCancellativeMonoid (a, b, c, d)
+
+instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c, LeftGCDMonoid d) => LeftGCDMonoid (a, b, c, d) where
+   commonPrefix (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      (commonPrefix a1 a2, commonPrefix b1 b2, commonPrefix c1 c2, commonPrefix d1 d2)
+
+instance (RightGCDMonoid a, RightGCDMonoid b, RightGCDMonoid c, RightGCDMonoid d) => RightGCDMonoid (a, b, c, d) where
+   commonSuffix (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      (commonSuffix a1 a2, commonSuffix b1 b2, commonSuffix c1 c2, commonSuffix d1 d2)
+
 -- Maybe instances
 
 instance LeftReductiveMonoid x => LeftReductiveMonoid (Maybe x) where

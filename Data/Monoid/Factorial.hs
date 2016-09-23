@@ -289,6 +289,189 @@ fromFst a = (a, mempty)
 fromSnd :: Monoid a => b -> (a, b)
 fromSnd b = (mempty, b)
 
+instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c) => FactorialMonoid (a, b, c) where
+   factors (a, b, c) = List.map (\a1-> (a1, mempty, mempty)) (factors a)
+                       ++ List.map (\b1-> (mempty, b1, mempty)) (factors b)
+                       ++ List.map (\c1-> (mempty, mempty, c1)) (factors c)
+   primePrefix (a, b, c) | not (null a) = (primePrefix a, mempty, mempty)
+                         | not (null b) = (mempty, primePrefix b, mempty)
+                         | otherwise = (mempty, mempty, primePrefix c)
+   primeSuffix (a, b, c) | not (null c) = (mempty, mempty, primeSuffix c)
+                         | not (null b) = (mempty, primeSuffix b, mempty)
+                         | otherwise = (primeSuffix a, mempty, mempty)
+   splitPrimePrefix (a, b, c) = case (splitPrimePrefix a, splitPrimePrefix b, splitPrimePrefix c)
+                                of (Just (ap, as), _, _) -> Just ((ap, mempty, mempty), (as, b, c))
+                                   (Nothing, Just (bp, bs), _) -> Just ((a, bp, mempty), (a, bs, c))
+                                   (Nothing, Nothing, Just (cp, cs)) -> Just ((a, b, cp), (a, b, cs))
+                                   (Nothing, Nothing, Nothing) -> Nothing
+   splitPrimeSuffix (a, b, c) = case (splitPrimeSuffix a, splitPrimeSuffix b, splitPrimeSuffix c)
+                                of (_, _, Just (cp, cs)) -> Just ((a, b, cp), (mempty, mempty, cs))
+                                   (_, Just (bp, bs), Nothing) -> Just ((a, bp, c), (mempty, bs, c))
+                                   (Just (ap, as), Nothing, Nothing) -> Just ((ap, b, c), (as, b, c))
+                                   (Nothing, Nothing, Nothing) -> Nothing
+   inits (a, b, c) = List.map (\a1-> (a1, mempty, mempty)) (inits a)
+                     ++ List.map (\b1-> (a, b1, mempty)) (List.tail $ inits b)
+                     ++ List.map (\c1-> (a, b, c1)) (List.tail $ inits c)
+   tails (a, b, c) = List.map (\a1-> (a1, b, c)) (tails a)
+                     ++ List.map (\b1-> (mempty, b1, c)) (List.tail $ tails b)
+                     ++ List.map (\c1-> (mempty, mempty, c1)) (List.tail $ tails c)
+   foldl f s0 (a, b, c) = foldl f3 (foldl f2 (foldl f1 s0 a) b) c
+      where f1 x = f x . fromFstOf3
+            f2 x = f x . fromSndOf3
+            f3 x = f x . fromThdOf3
+   foldl' f s0 (a, b, c) = a' `seq` b' `seq` foldl' f3 b' c
+      where f1 x = f x . fromFstOf3
+            f2 x = f x . fromSndOf3
+            f3 x = f x . fromThdOf3
+            a' = foldl' f1 s0 a
+            b' = foldl' f2 a' b
+   foldr f s (a, b, c) = foldr (f . fromFstOf3) (foldr (f . fromSndOf3) (foldr (f . fromThdOf3) s c) b) a
+   foldMap f (a, b, c) = Data.Monoid.Factorial.foldMap (f . fromFstOf3) a
+                         `mappend` Data.Monoid.Factorial.foldMap (f . fromSndOf3) b
+                         `mappend` Data.Monoid.Factorial.foldMap (f . fromThdOf3) c
+   length (a, b, c) = length a + length b + length c
+   span p (a, b, c) = ((ap, bp, cp), (as, bs, cs))
+      where (ap, as) = span (p . fromFstOf3) a
+            (bp, bs) | null as = span (p . fromSndOf3) b
+                     | otherwise = (mempty, b)
+            (cp, cs) | null as && null bs = span (p . fromThdOf3) c
+                     | otherwise = (mempty, c)
+   spanMaybe s0 f (a, b, c) | not (null as) = ((ap, mempty, mempty), (as, b, c), s1)
+                            | not (null bs) = ((ap, bp, mempty), (as, bs, c), s2)
+                            | otherwise = ((ap, bp, cp), (as, bs, cs), s3)
+     where (ap, as, s1) = spanMaybe s0 (\s-> f s . fromFstOf3) a
+           (bp, bs, s2) = spanMaybe s1 (\s-> f s . fromSndOf3) b
+           (cp, cs, s3) = spanMaybe s2 (\s-> f s . fromThdOf3) c
+   spanMaybe' s0 f (a, b, c) | not (null as) = ((ap, mempty, mempty), (as, b, c), s1)
+                             | not (null bs) = ((ap, bp, mempty), (as, bs, c), s2)
+                             | otherwise = ((ap, bp, cp), (as, bs, cs), s3)
+     where (ap, as, s1) = spanMaybe' s0 (\s-> f s . fromFstOf3) a
+           (bp, bs, s2) = spanMaybe' s1 (\s-> f s . fromSndOf3) b
+           (cp, cs, s3) = spanMaybe' s2 (\s-> f s . fromThdOf3) c
+   splitAt n (a, b, c) = ((ap, bp, cp), (as, bs, cs))
+      where (ap, as) = splitAt n a
+            (bp, bs) | null as = splitAt (n - length a) b
+                     | otherwise = (mempty, b)
+            (cp, cs) | null as && null bs = splitAt (n - length a - length b) c
+                     | otherwise = (mempty, c)
+   reverse (a, b, c) = (reverse a, reverse b, reverse c)
+
+{-# INLINE fromFstOf3 #-}
+fromFstOf3 :: (Monoid b, Monoid c) => a -> (a, b, c)
+fromFstOf3 a = (a, mempty, mempty)
+
+{-# INLINE fromSndOf3 #-}
+fromSndOf3 :: (Monoid a, Monoid c) => b -> (a, b, c)
+fromSndOf3 b = (mempty, b, mempty)
+
+{-# INLINE fromThdOf3 #-}
+fromThdOf3 :: (Monoid a, Monoid b) => c -> (a, b, c)
+fromThdOf3 c = (mempty, mempty, c)
+
+instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c, FactorialMonoid d) =>
+         FactorialMonoid (a, b, c, d) where
+   factors (a, b, c, d) = List.map (\a1-> (a1, mempty, mempty, mempty)) (factors a)
+                          ++ List.map (\b1-> (mempty, b1, mempty, mempty)) (factors b)
+                          ++ List.map (\c1-> (mempty, mempty, c1, mempty)) (factors c)
+                          ++ List.map (\d1-> (mempty, mempty, mempty, d1)) (factors d)
+   primePrefix (a, b, c, d) | not (null a) = (primePrefix a, mempty, mempty, mempty)
+                            | not (null b) = (mempty, primePrefix b, mempty, mempty)
+                            | not (null c) = (mempty, mempty, primePrefix c, mempty)
+                            | otherwise    = (mempty, mempty, mempty, primePrefix d)
+   primeSuffix (a, b, c, d) | not (null d) = (mempty, mempty, mempty, primeSuffix d)
+                            | not (null c) = (mempty, mempty, primeSuffix c, mempty)
+                            | not (null b) = (mempty, primeSuffix b, mempty, mempty)
+                            | otherwise    = (primeSuffix a, mempty, mempty, mempty)
+   splitPrimePrefix (a, b, c, d) = case (splitPrimePrefix a, splitPrimePrefix b, splitPrimePrefix c, splitPrimePrefix d)
+                                   of (Just (ap, as), _, _, _) -> Just ((ap, mempty, mempty, mempty), (as, b, c, d))
+                                      (Nothing, Just (bp, bs), _, _) -> Just ((a, bp, mempty, mempty), (a, bs, c, d))
+                                      (Nothing, Nothing, Just (cp, cs), _) -> Just ((a, b, cp, mempty), (a, b, cs, d))
+                                      (Nothing, Nothing, Nothing, Just (dp, ds)) -> Just ((a, b, c, dp), (a, b, c, ds))
+                                      (Nothing, Nothing, Nothing, Nothing) -> Nothing
+   splitPrimeSuffix (a, b, c, d) = case (splitPrimeSuffix a, splitPrimeSuffix b, splitPrimeSuffix c, splitPrimeSuffix d)
+                                   of (_, _, _, Just (dp, ds)) -> Just ((a, b, c, dp), (mempty, mempty, mempty, ds))
+                                      (_, _, Just (cp, cs), Nothing) -> Just ((a, b, cp, d), (mempty, mempty, cs, d))
+                                      (_, Just (bp, bs), Nothing, Nothing) -> Just ((a, bp, c, d), (a, bs, c, d))
+                                      (Just (ap, as), Nothing, Nothing, Nothing) -> Just ((ap, b, c, d), (as, b, c, d))
+                                      (Nothing, Nothing, Nothing, Nothing) -> Nothing
+   inits (a, b, c, d) = List.map (\a1-> (a1, mempty, mempty, mempty)) (inits a)
+                        ++ List.map (\b1-> (a, b1, mempty, mempty)) (List.tail $ inits b)
+                        ++ List.map (\c1-> (a, b, c1, mempty)) (List.tail $ inits c)
+                        ++ List.map (\d1-> (a, b, c, d1)) (List.tail $ inits d)
+   tails (a, b, c, d) = List.map (\a1-> (a1, b, c, d)) (tails a)
+                        ++ List.map (\b1-> (mempty, b1, c, d)) (List.tail $ tails b)
+                        ++ List.map (\c1-> (mempty, mempty, c1, d)) (List.tail $ tails c)
+                        ++ List.map (\d1-> (mempty, mempty, mempty, d1)) (List.tail $ tails d)
+   foldl f s0 (a, b, c, d) = foldl f4 (foldl f3 (foldl f2 (foldl f1 s0 a) b) c) d
+      where f1 x = f x . fromFstOf4
+            f2 x = f x . fromSndOf4
+            f3 x = f x . fromThdOf4
+            f4 x = f x . fromFthOf4
+   foldl' f s0 (a, b, c, d) = a' `seq` b' `seq` c' `seq` foldl' f4 c' d
+      where f1 x = f x . fromFstOf4
+            f2 x = f x . fromSndOf4
+            f3 x = f x . fromThdOf4
+            f4 x = f x . fromFthOf4
+            a' = foldl' f1 s0 a
+            b' = foldl' f2 a' b
+            c' = foldl' f3 b' c
+   foldr f s (a, b, c, d) =
+      foldr (f . fromFstOf4) (foldr (f . fromSndOf4) (foldr (f . fromThdOf4) (foldr (f . fromFthOf4) s d) c) b) a
+   foldMap f (a, b, c, d) = Data.Monoid.Factorial.foldMap (f . fromFstOf4) a
+                            `mappend` Data.Monoid.Factorial.foldMap (f . fromSndOf4) b
+                            `mappend` Data.Monoid.Factorial.foldMap (f . fromThdOf4) c
+                            `mappend` Data.Monoid.Factorial.foldMap (f . fromFthOf4) d
+   length (a, b, c, d) = length a + length b + length c + length d
+   span p (a, b, c, d) = ((ap, bp, cp, dp), (as, bs, cs, ds))
+      where (ap, as) = span (p . fromFstOf4) a
+            (bp, bs) | null as = span (p . fromSndOf4) b
+                     | otherwise = (mempty, b)
+            (cp, cs) | null as && null bs = span (p . fromThdOf4) c
+                     | otherwise = (mempty, c)
+            (dp, ds) | null as && null bs && null cs = span (p . fromFthOf4) d
+                     | otherwise = (mempty, d)
+   spanMaybe s0 f (a, b, c, d) | not (null as) = ((ap, mempty, mempty, mempty), (as, b, c, d), s1)
+                               | not (null bs) = ((ap, bp, mempty, mempty), (as, bs, c, d), s2)
+                               | not (null cs) = ((ap, bp, cp, mempty), (as, bs, cs, d), s3)
+                               | otherwise = ((ap, bp, cp, dp), (as, bs, cs, ds), s4)
+     where (ap, as, s1) = spanMaybe s0 (\s-> f s . fromFstOf4) a
+           (bp, bs, s2) = spanMaybe s1 (\s-> f s . fromSndOf4) b
+           (cp, cs, s3) = spanMaybe s2 (\s-> f s . fromThdOf4) c
+           (dp, ds, s4) = spanMaybe s3 (\s-> f s . fromFthOf4) d
+   spanMaybe' s0 f (a, b, c, d) | not (null as) = ((ap, mempty, mempty, mempty), (as, b, c, d), s1)
+                               | not (null bs) = ((ap, bp, mempty, mempty), (as, bs, c, d), s2)
+                               | not (null cs) = ((ap, bp, cp, mempty), (as, bs, cs, d), s3)
+                               | otherwise = ((ap, bp, cp, dp), (as, bs, cs, ds), s4)
+     where (ap, as, s1) = spanMaybe' s0 (\s-> f s . fromFstOf4) a
+           (bp, bs, s2) = spanMaybe' s1 (\s-> f s . fromSndOf4) b
+           (cp, cs, s3) = spanMaybe' s2 (\s-> f s . fromThdOf4) c
+           (dp, ds, s4) = spanMaybe' s3 (\s-> f s . fromFthOf4) d
+   splitAt n (a, b, c, d) = ((ap, bp, cp, dp), (as, bs, cs, ds))
+      where (ap, as) = splitAt n a
+            (bp, bs) | null as = splitAt (n - length a) b
+                     | otherwise = (mempty, b)
+            (cp, cs) | null as && null bs = splitAt (n - length a - length b) c
+                     | otherwise = (mempty, c)
+            (dp, ds) | null as && null bs && null cs = splitAt (n - length a - length b - length c) d
+                     | otherwise = (mempty, d)
+   reverse (a, b, c, d) = (reverse a, reverse b, reverse c, reverse d)
+
+{-# INLINE fromFstOf4 #-}
+fromFstOf4 :: (Monoid b, Monoid c, Monoid d) => a -> (a, b, c, d)
+fromFstOf4 a = (a, mempty, mempty, mempty)
+
+{-# INLINE fromSndOf4 #-}
+fromSndOf4 :: (Monoid a, Monoid c, Monoid d) => b -> (a, b, c, d)
+fromSndOf4 b = (mempty, b, mempty, mempty)
+
+{-# INLINE fromThdOf4 #-}
+fromThdOf4 :: (Monoid a, Monoid b, Monoid d) => c -> (a, b, c, d)
+fromThdOf4 c = (mempty, mempty, c, mempty)
+
+{-# INLINE fromFthOf4 #-}
+fromFthOf4 :: (Monoid a, Monoid b, Monoid c) => d -> (a, b, c, d)
+fromFthOf4 d = (mempty, mempty, mempty, d)
+
 instance FactorialMonoid [x] where
    factors xs = List.map (:[]) xs
    primePrefix [] = []

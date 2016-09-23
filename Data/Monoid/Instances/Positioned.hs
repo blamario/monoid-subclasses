@@ -129,9 +129,9 @@ instance (StableFactorialMonoid m, TextualMonoid m, MonoidNull m) => MonoidNull 
    null = null . extractLines
    {-# INLINE null #-}
 
-instance (StableFactorialMonoid m, PositiveMonoid m) => PositiveMonoid (OffsetPositioned m)
+instance StableFactorialMonoid m => PositiveMonoid (OffsetPositioned m)
 
-instance (StableFactorialMonoid m, TextualMonoid m, PositiveMonoid m) => PositiveMonoid (LinePositioned m)
+instance (StableFactorialMonoid m, TextualMonoid m) => PositiveMonoid (LinePositioned m)
 
 instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveMonoid (OffsetPositioned m) where
    isPrefixOf (OffsetPositioned _ c1) (OffsetPositioned _ c2) = isPrefixOf c1 c2
