@@ -148,7 +148,7 @@ positiveInstances = map upcast stableFactorialInstances
                          PositiveMonoidInstance (mempty :: Ordering),
                          PositiveMonoidInstance (mempty :: All),
                          PositiveMonoidInstance (mempty :: Any),
-                         PositiveMonoidInstance (mempty :: (Maybe (Sum Int))),
+                         PositiveMonoidInstance (mempty :: (Maybe (Sum Integer))),
                          PositiveMonoidInstance (mempty :: (First Char)),
                          PositiveMonoidInstance (mempty :: (Last Int)),
                          PositiveMonoidInstance (mempty :: String),
@@ -161,10 +161,12 @@ positiveInstances = map upcast stableFactorialInstances
 
 factorialInstances :: [FactorialMonoidInstance]
 factorialInstances = map upcast stableFactorialInstances
-                     ++ [FactorialMonoidInstance (mempty :: Sum Int8),
+                     ++ [FactorialMonoidInstance (mempty :: Sum Integer),
                          FactorialMonoidInstance (mempty :: Product Int32),
                          FactorialMonoidInstance (mempty :: Maybe String),
                          FactorialMonoidInstance (mempty :: (Text, String)),
+                         FactorialMonoidInstance (mempty :: (Product Int32, ByteString, Sum Integer)),
+                         FactorialMonoidInstance (mempty :: (IntSet, Text, Sum Integer, String)),
                          FactorialMonoidInstance (mempty :: IntMap Int),
                          FactorialMonoidInstance (mempty :: IntSet),
                          FactorialMonoidInstance (mempty :: Map String Int),
@@ -276,6 +278,8 @@ leftGCDInstances = map upcast gcdInstances
                        LeftGCDMonoidInstance (mempty :: Lazy.Text),
                        LeftGCDMonoidInstance (mempty :: Dual ByteString),
                        LeftGCDMonoidInstance (mempty :: (Text, String)),
+                       LeftGCDMonoidInstance (mempty :: (ByteString, Text, String)),
+                       LeftGCDMonoidInstance (mempty :: ([Word8], ByteString, String, Text)),
                        LeftGCDMonoidInstance (mempty :: IntMap Int),
                        LeftGCDMonoidInstance (mempty :: Map String Int),
                        LeftGCDMonoidInstance (mempty :: Seq Int),
@@ -310,7 +314,10 @@ gcdInstances = map upcast cancellativeGCDInstances
 cancellativeGCDInstances = [CancellativeGCDMonoidInstance (),
                             CancellativeGCDMonoidInstance (mempty :: Sum Integer),
                             CancellativeGCDMonoidInstance (mempty :: Dual (Sum Integer)),
-                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, Sum Int))]
+                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, Dual (Sum Integer))),
+                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, (), Dual (Sum Integer))),
+                            CancellativeGCDMonoidInstance (mempty :: ((Sum Integer, ()), Sum Integer, (),
+                                                                      Dual (Sum Integer)))]
 
 main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
   where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
@@ -762,27 +769,6 @@ instance TextualMonoid TestString where
    splitCharacterPrefix (TestString []) = Nothing
    splitCharacterPrefix (TestString (x:xs)) = Just (x, TestString xs)
 
-instance Arbitrary All where
-   arbitrary = fmap All arbitrary
-
-instance Arbitrary Any where
-   arbitrary = fmap Any arbitrary
-
-instance Arbitrary a => Arbitrary (Dual a) where
-   arbitrary = fmap Dual arbitrary
-
-instance Arbitrary a => Arbitrary (First a) where
-   arbitrary = fmap First arbitrary
-
-instance Arbitrary a => Arbitrary (Last a) where
-   arbitrary = fmap Last arbitrary
-
-instance Arbitrary a => Arbitrary (Product a) where
-   arbitrary = fmap Product arbitrary
-
-instance Arbitrary a => Arbitrary (Sum a) where
-   arbitrary = fmap Sum arbitrary
-
 instance Arbitrary ByteStringUTF8 where
    arbitrary = fmap ByteStringUTF8 arbitrary
 
@@ -800,27 +786,6 @@ instance (Arbitrary a, TextualMonoid a) => Arbitrary (LinePositioned a) where
 
 instance (Arbitrary a, Arbitrary b) => Arbitrary (Stateful a b) where
    arbitrary = Stateful.Stateful <$> liftA2 (,) arbitrary arbitrary
-
-instance CoArbitrary All where
-   coarbitrary (All p) = coarbitrary p
-
-instance CoArbitrary Any where
-   coarbitrary (Any p) = coarbitrary p
-
-instance CoArbitrary a => CoArbitrary (Dual a) where
-   coarbitrary (Dual a) = coarbitrary a
-
-instance CoArbitrary a => CoArbitrary (First a) where
-   coarbitrary (First a) = coarbitrary a
-
-instance CoArbitrary a => CoArbitrary (Last a) where
-   coarbitrary (Last a) = coarbitrary a
-
-instance CoArbitrary a => CoArbitrary (Product a) where
-   coarbitrary (Product a) = coarbitrary a
-
-instance CoArbitrary a => CoArbitrary (Sum a) where
-   coarbitrary (Sum a) = coarbitrary a
 
 instance CoArbitrary ByteStringUTF8 where
    coarbitrary (ByteStringUTF8 bs) = coarbitrary bs

@@ -391,7 +391,7 @@ instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c, FactorialMono
    splitPrimeSuffix (a, b, c, d) = case (splitPrimeSuffix a, splitPrimeSuffix b, splitPrimeSuffix c, splitPrimeSuffix d)
                                    of (_, _, _, Just (dp, ds)) -> Just ((a, b, c, dp), (mempty, mempty, mempty, ds))
                                       (_, _, Just (cp, cs), Nothing) -> Just ((a, b, cp, d), (mempty, mempty, cs, d))
-                                      (_, Just (bp, bs), Nothing, Nothing) -> Just ((a, bp, c, d), (a, bs, c, d))
+                                      (_, Just (bp, bs), Nothing, Nothing) -> Just ((a, bp, c, d), (mempty, bs, c, d))
                                       (Just (ap, as), Nothing, Nothing, Nothing) -> Just ((ap, b, c, d), (as, b, c, d))
                                       (Nothing, Nothing, Nothing, Nothing) -> Nothing
    inits (a, b, c, d) = List.map (\a1-> (a1, mempty, mempty, mempty)) (inits a)
