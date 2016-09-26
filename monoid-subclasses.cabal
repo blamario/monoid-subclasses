@@ -16,6 +16,7 @@ Author:              Mario Blazevic
 Maintainer:          Mario Blazevic <blamario@yahoo.com>
 Homepage:            https://github.com/blamario/monoid-subclasses/
 Bug-reports:         https://github.com/blamario/monoid-subclasses/issues
+Extra-Source-Files:  README.md
 Source-repository head
   type:              git
   location:          https://github.com/blamario/monoid-subclasses
