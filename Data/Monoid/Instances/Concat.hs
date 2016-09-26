@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2016 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -10,11 +10,12 @@
 {-# LANGUAGE Haskell2010 #-}
 
 module Data.Monoid.Instances.Concat (
-   Concat, concatenate, extract
+   Concat, concatenate, extract, force
    )
 where
 
 import Control.Applicative -- (Applicative(..))
+import Control.Arrow (first)
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.String (IsString(..))
@@ -26,262 +27,263 @@ import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
-import Data.Sequence (Seq, filter, (<|), (|>), ViewL((:<)), ViewR((:>)))
+import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
 import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
-                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
+                       length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, pi)
 
--- | @'Concat' a@ is a @newtype@ wrapper around @'Seq' a@. The behaviour of the @'Concat' a@ instances of monoid
--- subclasses is identical to the behaviour of their @a@ instances, up to the 'pure' isomorphism.
+-- | @'Concat'@ is a transparent monoid transformer. The behaviour of the @'Concat' a@ instances of monoid subclasses is
+-- identical to the behaviour of their @a@ instances, up to the 'pure' isomorphism.
 --
 -- The only purpose of 'Concat' then is to change the performance characteristics of various operations. Most
--- importantly, injecting a monoid into a 'Concat' has the effect of making 'mappend' a logarithmic-time operation.
+-- importantly, injecting a monoid into 'Concat' has the effect of making 'mappend' a constant-time operation. The
+-- `splitPrimePrefix` and `splitPrimeSuffix` operations are amortized to constant time, provided that only one or the
+-- other is used. Using both operations alternately will trigger the worst-case behaviour of O(n).
 --
-newtype Concat a = Concat {extract :: Seq a} deriving Show
+data Concat a = Leaf a
+              | Concat a :<> Concat a
+              deriving Show
 
+{-# DEPRECATED concatenate, extract "Concat is not wrapping Seq any more, don't use concatenate nor extract." #-}
 concatenate :: PositiveMonoid a => Seq a -> Concat a
-concatenate = Concat . filter (not . null)
+concatenate q
+   | Foldable.all null q = mempty
+   | otherwise = Foldable.foldr (\a c-> if null a then c else Leaf a <> c) mempty q
+
+extract :: Concat a -> Seq a
+extract = Seq.fromList . Foldable.toList
+
+force :: Monoid a => Concat a -> a
+force (Leaf x) = x
+force (x :<> y) = force x <> force y
 
 instance (Eq a, Monoid a) => Eq (Concat a) where
-   Concat x == Concat y = Foldable.foldMap id x == Foldable.foldMap id y
+   x == y = force x == force y
 
 instance (Ord a, Monoid a) => Ord (Concat a) where
-   compare (Concat x) (Concat y) = compare (Foldable.foldMap id x) (Foldable.foldMap id y)
+   compare x y = compare (force x) (force y)
 
 instance Functor Concat where
-   fmap f (Concat x) = Concat (fmap f x)
+   fmap f (Leaf x) = Leaf (f x)
+   fmap f (l :<> r) = fmap f l :<> fmap f r
 
 instance Applicative Concat where
-   pure a = Concat (Seq.singleton a)
-   Concat x <*> Concat y = Concat (x <*> y)
-   Concat x *> Concat y = Concat (x *> y)
+   pure = Leaf
+   Leaf f <*> x = f <$> x
+   (f1 :<> f2) <*> x = (f1 <*> x) :<> (f2 <*> x)
 
-instance Monoid (Concat a) where
-   mempty = Concat Seq.empty
-   mappend (Concat a) (Concat b) = Concat (mappend a b)
+instance Foldable.Foldable Concat where
+   fold (Leaf x) = x
+   fold (x :<> y) = Foldable.fold x <> Foldable.fold y
+   foldMap f (Leaf x) = f x
+   foldMap f (x :<> y) = Foldable.foldMap f x <> Foldable.foldMap f y
+   foldl f a (Leaf x) = f a x
+   foldl f a (x :<> y) = Foldable.foldl f (Foldable.foldl f a x) y
+   foldl' f a (Leaf x) = f a x
+   foldl' f a (x :<> y) = let a' = Foldable.foldl' f a x in a' `seq` Foldable.foldl' f a' y
+   foldr f a (Leaf x) = f x a
+   foldr f a (x :<> y) = Foldable.foldr f (Foldable.foldr f a y) x
+   foldr' f a (Leaf x) = f x a
+   foldr' f a (x :<> y) = let a' = Foldable.foldr' f a y in Foldable.foldr' f a' x
 
-instance MonoidNull (Concat a) where
-   null (Concat x) = Seq.null x
+instance PositiveMonoid a => Monoid (Concat a) where
+   mempty = Leaf mempty
+   mappend x y 
+      | null x = y
+      | null y = x
+      | otherwise = x :<> y
 
-instance PositiveMonoid (Concat a)
+instance PositiveMonoid a => MonoidNull (Concat a) where
+   null (Leaf x) = null x
+   null _ = False
 
-instance (LeftReductiveMonoid a, MonoidNull a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a) where
-   stripPrefix c1 c2 = fmap Concat $ strip1 (extract c1) (extract c2)
-      where strip1 x y = strip2 (Seq.viewl x) y
-            strip2 Seq.EmptyL y = Just y
-            strip2 (xp :< xs) y = strip3 xp xs (Seq.viewl y)
-            strip3 _ _ Seq.EmptyL = Nothing
-            strip3 xp xs (yp :< ys) =
-               case (stripPrefix xp yp, stripPrefix yp xp)
-               of (Just yps, _) -> strip1 xs (if null yps then ys else yps <| ys)
-                  (Nothing, Nothing) -> Nothing
-                  (Nothing, Just xps) -> strip3 xps xs (Seq.viewl ys)
+instance PositiveMonoid a => PositiveMonoid (Concat a)
 
-instance (MonoidNull a, RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Concat a) where
-   stripSuffix c1 c2 = fmap Concat $ strip1 (extract c1) (extract c2)
-      where strip1 x y = strip2 (Seq.viewr x) y
-            strip2 Seq.EmptyR y = Just y
-            strip2 (xp :> xs) y = strip3 xp xs (Seq.viewr y)
-            strip3 _ _ Seq.EmptyR = Nothing
-            strip3 xp xs (yp :> ys) =
-               case (stripSuffix xs ys, stripSuffix ys xs)
-               of (Just ysp, _) -> strip1 xp (if null ysp then yp else yp |> ysp)
-                  (Nothing, Nothing) -> Nothing
-                  (Nothing, Just xsp) -> strip3 xp xsp (Seq.viewr yp)
+instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a) where
+   stripPrefix (Leaf x) (Leaf y) = Leaf <$> stripPrefix x y
+   stripPrefix (xp :<> xs) y = stripPrefix xp y >>= stripPrefix xs
+   stripPrefix x (yp :<> ys) = case (stripPrefix x yp, stripPrefix yp x)
+                               of (Just yps, _) -> Just (yps <> ys)
+                                  (Nothing, Nothing) -> Nothing
+                                  (Nothing, Just xs) -> stripPrefix xs ys
 
-instance (Eq a, LeftGCDMonoid a, MonoidNull a, StableFactorialMonoid a) => LeftGCDMonoid (Concat a) where
-   stripCommonPrefix (Concat x) (Concat y) = strip cp1 xs1 ys1
-      where (cp1, xs1, ys1) = stripCommonPrefix x y
-            strip cp xs ys =
-               case (Seq.viewl xs, Seq.viewl ys)
-               of (Seq.EmptyL, _) -> (Concat cp, mempty, Concat ys)
-                  (_, Seq.EmptyL) -> (Concat cp, Concat xs, mempty)
-                  (xsp :< xss, ysp :< yss) ->
-                     let (cs, xsps, ysps) = stripCommonPrefix xsp ysp
-                         cp' = cp |> cs
-                         prepend p s = if null p then s else p <| s
-                     in if null cs
-                        then (Concat cp, Concat xs, Concat ys)
-                        else if null xsps && null ysps
-                             then strip cp' xss yss
-                             else (Concat cp', Concat $ prepend xsps xss, Concat $ prepend ysps yss)
+instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Concat a) where
+   stripSuffix (Leaf x) (Leaf y) = Leaf <$> stripSuffix x y
+   stripSuffix (xp :<> xs) y = stripSuffix xs y >>= stripSuffix xp
+   stripSuffix x (yp :<> ys) = case (stripSuffix x ys, stripSuffix ys x)
+                               of (Just ysp, _) -> Just (yp <> ysp)
+                                  (Nothing, Nothing) -> Nothing
+                                  (Nothing, Just xp) -> stripSuffix xp yp
 
-instance (Eq a, RightGCDMonoid a, MonoidNull a, StableFactorialMonoid a) => RightGCDMonoid (Concat a) where
-   stripCommonSuffix (Concat x) (Concat y) = strip xp1 yp1 cs1
-      where (xp1, yp1, cs1) = stripCommonSuffix x y
-            strip xp yp cs =
-               case (Seq.viewr xp, Seq.viewr yp)
-               of (Seq.EmptyR, _) -> (mempty, Concat yp, Concat cs)
-                  (_, Seq.EmptyR) -> (Concat xp, mempty, Concat cs)
-                  (xpp :> xps, ypp :> yps) ->
-                     let (xpsp, ypsp, cp) = stripCommonSuffix xps yps
-                         cs' = cp <| cs
-                         append p s = if null s then p else p |> s
-                     in if null cp
-                        then (Concat xp, Concat yp, Concat cs)
-                        else if null xpsp && null ypsp
-                             then strip xpp ypp cs'
-                             else (Concat $ append xpp xpsp, Concat $ append ypp ypsp, Concat cs')
+instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Concat a) where
+   stripCommonPrefix (Leaf x) (Leaf y) = map3 Leaf (stripCommonPrefix x y)
+   stripCommonPrefix (xp :<> xs) y
+      | null xps = (xp <> xsp, xss, yss)
+      | otherwise = (xpp, xps <> xs, ys)
+      where (xpp, xps, ys) = stripCommonPrefix xp y
+            (xsp, xss, yss) = stripCommonPrefix xs ys
+   stripCommonPrefix x (yp :<> ys)
+      | null yps = (yp <> ysp, xss, yss)
+      | otherwise = (ypp, xs, yps <> ys)
+      where (ypp, xs, yps) = stripCommonPrefix x yp
+            (ysp, xss, yss) = stripCommonPrefix xs ys
 
-instance FactorialMonoid a => FactorialMonoid (Concat a) where
-   factors (Concat x) = Foldable.foldMap (fmap (Concat . Seq.singleton) . factors) x
-   primePrefix (Concat x) = Concat (fmap primePrefix $ primePrefix x)
-   primeSuffix (Concat x) = Concat (fmap primeSuffix $ primeSuffix x)
-   splitPrimePrefix (Concat x) =
-      case Seq.viewl x
-           of Seq.EmptyL -> Nothing
-              xp :< xs -> Just (Concat $ Seq.singleton xpp, Concat xs')
-                 where Just (xpp, xps) = splitPrimePrefix xp
-                       xs' = if null xps then xs else xps <| xs
-   splitPrimeSuffix (Concat x) =
-      case Seq.viewr x
-           of Seq.EmptyR -> Nothing
-              xp :> xs -> Just (Concat xp', Concat $ Seq.singleton xss)
-                 where Just (xsp, xss) = splitPrimeSuffix xs
-                       xp' = if null xsp then xp else xp |> xsp
-   foldl f a0 (Concat x) = Foldable.foldl g a0 x
-      where g = Factorial.foldl (\a-> f a . Concat . Seq.singleton)
-   foldl' f a0 (Concat x) = Foldable.foldl' g a0 x
-      where g = Factorial.foldl' (\a-> f a . Concat . Seq.singleton)
-   foldr f a0 (Concat x) = Foldable.foldr g a0 x
-      where g a b = Factorial.foldr (f . Concat . Seq.singleton) b a
-   length (Concat x) = getSum $ Foldable.foldMap (Sum . length) x
-   foldMap f (Concat x) = Foldable.foldMap (Factorial.foldMap (f . Concat . Seq.singleton)) x
-   span p (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss)
-                  | null xpp -> (mempty, Concat x)
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
-            where (xpp, xps) = Factorial.span (p . Concat . Seq.singleton) xp
-                  (Concat xsp, xss) = Factorial.span p (Concat xs)
-   spanMaybe s0 f (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty, s0)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
-                  | null xpp -> (mempty, Concat x, s')
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
-            where (xpp, xps, s') = Factorial.spanMaybe s0 (\s-> f s . Concat . Seq.singleton) xp
-                  (Concat xsp, xss, s'') = Factorial.spanMaybe s' f (Concat xs)
-   spanMaybe' s0 f (Concat x) =
-      seq s0 $
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty, s0)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
-                  | null xpp -> (mempty, Concat x, s')
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
-            where (xpp, xps, s') = Factorial.spanMaybe' s0 (\s-> f s . Concat . Seq.singleton) xp
-                  (Concat xsp, xss, s'') = Factorial.spanMaybe' s' f (Concat xs)
-   split p (Concat x) = Foldable.foldr splitNext [mempty] x
+instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Concat a) where
+   stripCommonSuffix (Leaf x) (Leaf y) = map3 Leaf (stripCommonSuffix x y)
+   stripCommonSuffix (xp :<> xs) y
+      | null xsp = (xpp, ypp, xps <> xs)
+      | otherwise = (xp <> xsp, yp, xss)
+      where (xsp, yp, xss) = stripCommonSuffix xs y
+            (xpp, ypp, xps) = stripCommonSuffix xp yp
+   stripCommonSuffix x (yp :<> ys)
+      | null ysp = (xpp, ypp, yps <> ys)
+      | otherwise = (xp, yp <> ysp, yss)
+      where (xp, ysp, yss) = stripCommonSuffix x ys
+            (xpp, ypp, yps) = stripCommonSuffix xp yp
+
+instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) where
+   factors c = toList c []
+      where toList (Leaf x) rest
+               | null x = rest
+               | otherwise = (Leaf <$> factors x) ++ rest
+            toList (x :<> y) rest = toList x (toList y rest)
+   primePrefix (Leaf x) = Leaf (primePrefix x)
+   primePrefix (x :<> _) = primePrefix x
+   primeSuffix (Leaf x) = Leaf (primeSuffix x)
+   primeSuffix (_ :<> y) = primeSuffix y
+   splitPrimePrefix (Leaf x) = map2 Leaf <$> splitPrimePrefix x
+   splitPrimePrefix (x :<> y) = ((<> y) <$>) <$> splitPrimePrefix x
+   splitPrimeSuffix (Leaf x) = map2 Leaf <$> splitPrimeSuffix x
+   splitPrimeSuffix (x :<> y) = first (x <>) <$> splitPrimeSuffix y
+
+   foldl f = Foldable.foldl g
+      where g = Factorial.foldl (\a-> f a . Leaf)
+   foldl' f = Foldable.foldl' g
+      where g = Factorial.foldl' (\a-> f a . Leaf)
+   foldr f = Foldable.foldr g
+      where g a b = Factorial.foldr (f . Leaf) b a
+   length x = getSum $ Foldable.foldMap (Sum . length) x
+   foldMap f = Foldable.foldMap (Factorial.foldMap (f . Leaf))
+   span p (Leaf x) = map2 Leaf (Factorial.span (p . Leaf) x)
+   span p (x :<> y)
+      | null xs = (x <> yp, ys)
+      | otherwise = (xp, xs :<> y)
+      where (xp, xs) = Factorial.span p x
+            (yp, ys) = Factorial.span p y
+   spanMaybe s0 f (Leaf x) = first2 Leaf (Factorial.spanMaybe s0 (\s-> f s . Leaf) x)
+   spanMaybe s0 f (x :<> y)
+      | null xs = (x :<> yp, ys, s2)
+      | otherwise = (xp, xs :<> y, s1)
+      where (xp, xs, s1) = Factorial.spanMaybe s0 f x
+            (yp, ys, s2) = Factorial.spanMaybe s1 f y
+   spanMaybe' s0 f c = seq s0 $
+      case c
+      of Leaf x -> first2 Leaf (Factorial.spanMaybe' s0 (\s-> f s . Leaf) x)
+         x :<> y -> let (xp, xs, s1) = Factorial.spanMaybe' s0 f x
+                        (yp, ys, s2) = Factorial.spanMaybe' s1 f y
+                    in if null xs then (x :<> yp, ys, s2) else (xp, xs :<> y, s1)
+
+   split p = Foldable.foldr splitNext [mempty]
       where splitNext a ~(xp:xs) =
-               let as = fmap (Concat . Seq.singleton) (Factorial.split (p . Concat . Seq.singleton) a)
+               let as = Leaf <$> Factorial.split (p . Leaf) a
                in if null xp
                   then as ++ xs
                   else init as ++ (last as <> xp):xs
    splitAt 0 c = (mempty, c)
-   splitAt n (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty)
-         xp :< xs | k < n -> (Concat (xp <| xsp), xss)
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (if null xps then xs else xps <| xs))
-            where k = length xp
-                  (Concat xsp, xss) = splitAt (n - k) (Concat xs)
-                  (xpp, xps) = splitAt n xp
-   reverse (Concat x) = Concat (reverse <$> reverse x)
+   splitAt n (Leaf x) = map2 Leaf (Factorial.splitAt n x)
+   splitAt n (x :<> y)
+      | k < n = (x :<> yp, ys)
+      | k > n = (xp, xs :<> y)
+      | otherwise = (x, y)
+      where k = length x
+            (yp, ys) = splitAt (n - k) y
+            (xp, xs) = splitAt n x
+   reverse (Leaf x) = Leaf (reverse x)
+   reverse (x :<> y) = reverse y :<> reverse x
 
+instance (FactorialMonoid a, PositiveMonoid a) => StableFactorialMonoid (Concat a)
 
 instance (IsString a) => IsString (Concat a) where
-   fromString "" = Concat Seq.empty
-   fromString s = Concat (Seq.singleton $ fromString s)
+   fromString s = Leaf (fromString s)
 
 instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Concat a) where
-   fromText t | null t = Concat Seq.empty
-              | otherwise = Concat (Seq.singleton $ fromText t)
-   singleton = Concat . Seq.singleton . singleton
-   splitCharacterPrefix (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> Nothing
-         xp :< xs -> case splitCharacterPrefix xp
-                     of Just (c, xps) -> Just (c, Concat $ if null xps then xs else xps <| xs)
-                        Nothing -> Nothing
-   characterPrefix (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> Nothing
-         xp :< _ -> characterPrefix xp
-   map f (Concat x) = Concat (fmap (map f) x)
-   any p (Concat x) = Foldable.any (any p) x
-   all p (Concat x) = Foldable.all (all p) x
+   fromText t = Leaf (fromText t)
+   singleton = Leaf . singleton
+   splitCharacterPrefix (Leaf x) = (Leaf <$>) <$> splitCharacterPrefix x
+   splitCharacterPrefix (x :<> y) = ((<> y) <$>) <$> splitCharacterPrefix x
+   characterPrefix (Leaf x) = characterPrefix x
+   characterPrefix (x :<> _) = characterPrefix x
+   map f x = map f <$> x
+   toString ft x = List.concatMap (toString $ ft . Leaf) (Foldable.toList x)
 
-   foldl ft fc a0 (Concat x) = Foldable.foldl g a0 x
-      where g = Textual.foldl (\a-> ft a . Concat . Seq.singleton) fc
-   foldl' ft fc a0 (Concat x) = Foldable.foldl' g a0 x
-      where g = Textual.foldl' (\a-> ft a . Concat . Seq.singleton) fc
-   foldr ft fc a0 (Concat x) = Foldable.foldr g a0 x
-      where g a b = Textual.foldr (ft . Concat . Seq.singleton) fc b a
-   toString ft (Concat x) = List.concatMap (toString $ ft . Concat . Seq.singleton) (Foldable.toList x)
+   foldl ft fc = Foldable.foldl g
+      where g = Textual.foldl (\a-> ft a . Leaf) fc
+   foldl' ft fc = Foldable.foldl' g
+      where g = Textual.foldl' (\a-> ft a . Leaf) fc
+   foldr ft fc = Foldable.foldr g
+      where g a b = Textual.foldr (ft . Leaf) fc b a
+   any p = Foldable.any (any p)
+   all p = Foldable.all (all p)
 
-   span pt pc (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss)
-                  | null xpp -> (mempty, Concat x)
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
-            where (xpp, xps) = Textual.span (pt . Concat . Seq.singleton) pc xp
-                  (Concat xsp, xss) = Textual.span pt pc (Concat xs)
-   span_ bt pc (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss)
-                  | null xpp -> (mempty, Concat x)
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs))
-            where (xpp, xps) = Textual.span_ bt pc xp
-                  (Concat xsp, xss) = Textual.span_ bt pc (Concat xs)
+   span pt pc (Leaf x) = map2 Leaf (Textual.span (pt . Leaf) pc x)
+   span pt pc (x :<> y)
+      | null xs = (x <> yp, ys)
+      | otherwise = (xp, xs :<> y)
+      where (xp, xs) = Textual.span pt pc x
+            (yp, ys) = Textual.span pt pc y
+   span_ bt pc (Leaf x) = map2 Leaf (Textual.span_ bt pc x)
+   span_ bt pc (x :<> y)
+      | null xs = (x <> yp, ys)
+      | otherwise = (xp, xs :<> y)
+      where (xp, xs) = Textual.span_ bt pc x
+            (yp, ys) = Textual.span_ bt pc y
    break pt pc = Textual.span (not . pt) (not . pc)
    takeWhile_ bt pc = fst . span_ bt pc
    dropWhile_ bt pc = snd . span_ bt pc
    break_ bt pc = span_ (not bt) (not . pc)
 
-   spanMaybe s0 ft fc (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty, s0)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
-                  | null xpp -> (mempty, Concat x, s')
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
-            where (xpp, xps, s') = Textual.spanMaybe s0 (\s-> ft s . Concat . Seq.singleton) fc xp
-                  (Concat xsp, xss, s'') = Textual.spanMaybe s' ft fc (Concat xs)
-   spanMaybe' s0 ft fc (Concat x) =
-      seq s0 $
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty, s0)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
-                  | null xpp -> (mempty, Concat x, s')
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
-            where (xpp, xps, s') = Textual.spanMaybe' s0 (\s-> ft s . Concat . Seq.singleton) fc xp
-                  (Concat xsp, xss, s'') = Textual.spanMaybe' s' ft fc (Concat xs)
-   spanMaybe_ s0 fc (Concat x) =
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty, s0)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
-                  | null xpp -> (mempty, Concat x, s')
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
-            where (xpp, xps, s') = Textual.spanMaybe_ s0 fc xp
-                  (Concat xsp, xss, s'') = Textual.spanMaybe_ s' fc (Concat xs)
-   spanMaybe_' s0 fc (Concat x) =
-      seq s0 $
-      case Seq.viewl x
-      of Seq.EmptyL -> (mempty, mempty, s0)
-         xp :< xs | null xps -> (Concat (xp <| xsp), xss, s'')
-                  | null xpp -> (mempty, Concat x, s')
-                  | otherwise -> (Concat $ Seq.singleton xpp, Concat (xps <| xs), s')
-            where (xpp, xps, s') = Textual.spanMaybe_' s0 fc xp
-                  (Concat xsp, xss, s'') = Textual.spanMaybe_' s' fc (Concat xs)
+   spanMaybe s0 ft fc (Leaf x) = first2 Leaf (Textual.spanMaybe s0 (\s-> ft s . Leaf) fc x)
+   spanMaybe s0 ft fc (x :<> y)
+      | null xs = (x :<> yp, ys, s2)
+      | otherwise = (xp, xs :<> y, s1)
+      where (xp, xs, s1) = Textual.spanMaybe s0 ft fc x
+            (yp, ys, s2) = Textual.spanMaybe s1 ft fc y
+   spanMaybe' s0 ft fc c = seq s0 $
+      case c
+      of Leaf x -> first2 Leaf (Textual.spanMaybe' s0 (\s-> ft s . Leaf) fc x)
+         x :<> y -> let (xp, xs, s1) = Textual.spanMaybe' s0 ft fc x
+                        (yp, ys, s2) = Textual.spanMaybe' s1 ft fc y
+                    in if null xs then (x :<> yp, ys, s2) else (xp, xs :<> y, s1)
+   spanMaybe_ s0 fc (Leaf x) = first2 Leaf (Textual.spanMaybe_ s0 fc x)
+   spanMaybe_ s0 fc (x :<> y)
+      | null xs = (x :<> yp, ys, s2)
+      | otherwise = (xp, xs :<> y, s1)
+      where (xp, xs, s1) = Textual.spanMaybe_ s0 fc x
+            (yp, ys, s2) = Textual.spanMaybe_ s1 fc y
+   spanMaybe_' s0 fc c = seq s0 $
+      case c
+      of Leaf x -> first2 Leaf (Textual.spanMaybe_' s0 fc x)
+         x :<> y -> let (xp, xs, s1) = Textual.spanMaybe_' s0 fc x
+                        (yp, ys, s2) = Textual.spanMaybe_' s1 fc y
+                    in if null xs then (x :<> yp, ys, s2) else (xp, xs :<> y, s1)
 
-   split p (Concat x) = Foldable.foldr splitNext [mempty] x
+   split p = Foldable.foldr splitNext [mempty]
       where splitNext a ~(xp:xs) =
-               let as = fmap (Concat . Seq.singleton) (Textual.split p a)
+               let as = Leaf <$> Textual.split p a
                in if null xp
                   then as ++ xs
                   else init as ++ (last as <> xp):xs
-   find p (Concat x) = getFirst $ Foldable.foldMap (First . find p) x
-   elem c (Concat x) = Foldable.any (Textual.elem c) x
+   find p x = getFirst $ Foldable.foldMap (First . find p) x
+   elem i = Foldable.any (Textual.elem i)
+
+-- Utility functions
+
+map2 :: (a -> b) -> (a, a) -> (b, b)
+map2 f (x, y) = (f x, f y)
+
+map3 :: (a -> b) -> (a, a, a) -> (b, b, b)
+map3 f (x, y, z) = (f x, f y, f z)
+
+first2 :: (a -> b) -> (a, a, c) -> (b, b, c)
+first2 f (x, y, z) = (f x, f y, z)
