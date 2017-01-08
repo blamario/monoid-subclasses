@@ -773,7 +773,7 @@ instance Arbitrary ByteStringUTF8 where
    arbitrary = fmap ByteStringUTF8 arbitrary
 
 instance (Arbitrary a, MonoidNull a, PositiveMonoid a) => Arbitrary (Concat a) where
-   arbitrary = fmap Concat.concatenate arbitrary
+   arbitrary = fmap (foldMap pure) (arbitrary :: Gen [a])
 
 instance (Arbitrary a, FactorialMonoid a) => Arbitrary (Measured a) where
    arbitrary = fmap Measured.measure arbitrary
@@ -791,7 +791,7 @@ instance CoArbitrary ByteStringUTF8 where
    coarbitrary (ByteStringUTF8 bs) = coarbitrary bs
 
 instance CoArbitrary a => CoArbitrary (Concat a) where
-   coarbitrary = coarbitrary . Concat.extract
+   coarbitrary = coarbitrary . toList
 
 instance CoArbitrary a => CoArbitrary (Measured a) where
    coarbitrary = coarbitrary . Measured.extract
