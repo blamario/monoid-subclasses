@@ -11,9 +11,9 @@ Description:
   
 License:             BSD3
 License-file:        BSD3-LICENSE.txt
-Copyright:           (c) 2013-2016 Mario Blazevic
-Author:              Mario Blazevic
-Maintainer:          Mario Blazevic <blamario@yahoo.com>
+Copyright:           (c) 2013-2017 Mario Blažević
+Author:              Mario Blažević
+Maintainer:          Mario Blažević <blamario@protonmail.com>
 Homepage:            https://github.com/blamario/monoid-subclasses/
 Bug-reports:         https://github.com/blamario/monoid-subclasses/issues
 Extra-Source-Files:  README.md
