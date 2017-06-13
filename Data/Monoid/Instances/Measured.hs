@@ -17,10 +17,11 @@ where
 import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(..))
-import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
-                                 LeftGCDMonoid(..), RightGCDMonoid(..))
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid (Monoid(..))
+import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -43,8 +44,8 @@ measure x = Measured (length x) x
 instance Ord a => Ord (Measured a) where
    compare (Measured _ x) (Measured _ y) = compare x y
 
-instance StableFactorialMonoid a => Semigroup (Measured a) where
-   Measured m a <> Measured n b = Measured (m + n) (mappend a b)
+instance StableFactorialSemigroup a => Semigroup (Measured a) where
+   Measured m a <> Measured n b = Measured (m + n) (a <> b)
 
 instance StableFactorialMonoid a => Monoid (Measured a) where
    mempty = Measured 0 mempty
@@ -55,11 +56,15 @@ instance StableFactorialMonoid a => MonoidNull (Measured a) where
 
 instance StableFactorialMonoid a => PositiveMonoid (Measured a)
 
-instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Measured a) where
+instance (LeftReductiveSemigroup a, StableFactorialSemigroup a) => LeftReductiveSemigroup (Measured a) where
    stripPrefix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripPrefix x y)
 
-instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Measured a) where
+instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Measured a)
+
+instance (RightReductiveSemigroup a, StableFactorialSemigroup a) => RightReductiveSemigroup (Measured a) where
    stripSuffix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripSuffix x y)
+
+instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Measured a)
 
 instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Measured a) where
    commonPrefix (Measured _ x) (Measured _ y) = measure (commonPrefix x y)
@@ -67,24 +72,27 @@ instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Measured a
 instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Measured a) where
    commonSuffix (Measured _ x) (Measured _ y) = measure (commonSuffix x y)
 
-instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
+instance StableFactorialMonoid a => FactorialSemigroup (Measured a) where
    factors (Measured _ x) = List.map (Measured 1) (factors x)
    primePrefix m@(Measured _ x) = if null x then m else Measured 1 (primePrefix x)
    primeSuffix m@(Measured _ x) = if null x then m else Measured 1 (primeSuffix x)
-   splitPrimePrefix (Measured n x) = case splitPrimePrefix x
-                                     of Nothing -> Nothing
-                                        Just (p, s) -> Just (Measured 1 p, Measured (n - 1) s)
-   splitPrimeSuffix (Measured n x) = case splitPrimeSuffix x
-                                     of Nothing -> Nothing
-                                        Just (p, s) -> Just (Measured (n - 1) p, Measured 1 s)
    foldl f a0 (Measured _ x) = Factorial.foldl g a0 x
       where g a = f a . Measured 1
    foldl' f a0 (Measured _ x) = Factorial.foldl' g a0 x
       where g a = f a . Measured 1
    foldr f a0 (Measured _ x) = Factorial.foldr g a0 x
       where g = f . Measured 1
-   length (Measured n _) = n
    foldMap f (Measured _ x) = Factorial.foldMap (f . Measured 1) x
+   length (Measured n _) = n
+   reverse (Measured n x) = Measured n (reverse x)
+
+instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
+   splitPrimePrefix (Measured n x) = case splitPrimePrefix x
+                                     of Nothing -> Nothing
+                                        Just (p, s) -> Just (Measured 1 p, Measured (n - 1) s)
+   splitPrimeSuffix (Measured n x) = case splitPrimeSuffix x
+                                     of Nothing -> Nothing
+                                        Just (p, s) -> Just (Measured (n - 1) p, Measured 1 s)
    span p (Measured n x) = (xp', xs')
       where (xp, xs) = Factorial.span (p . Measured 1) x
             xp' = measure xp
@@ -94,8 +102,8 @@ instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
                             | m >= n = (Measured n x, mempty)
                             | otherwise = (Measured m xp, Measured (n - m) xs)
       where (xp, xs) = splitAt m x
-   reverse (Measured n x) = Measured n (reverse x)
 
+instance StableFactorialMonoid a => StableFactorialSemigroup (Measured a)
 instance StableFactorialMonoid a => StableFactorialMonoid (Measured a)
 
 instance (FactorialMonoid a, IsString a) => IsString (Measured a) where

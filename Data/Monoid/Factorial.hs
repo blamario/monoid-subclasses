@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2017 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -11,14 +11,13 @@
 
 module Data.Monoid.Factorial (
    -- * Classes
-   FactorialMonoid(..), StableFactorialMonoid,
+   FactorialSemigroup(..), FactorialMonoid(..), StableFactorialMonoid,
    -- * Monad function equivalents
    mapM, mapM_
    )
 where
 
 import Control.Arrow (first)
-import qualified Control.Monad as Monad
 import Data.Monoid -- (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -33,8 +32,8 @@ import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Data.Int (Int64)
-import Data.Numbers.Primes (primeFactors)
 
+import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup, mapM, mapM_)
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 
 import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, mapM, mapM_, max, min,
@@ -50,20 +49,15 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 --
 -- prop> factors "abc" == ["a", "b", "c"]
 -- 
--- The methods of this class satisfy the following laws:
+-- The methods of this class satisfy the following laws in addition to those of 'FactorialSemigroup':
 -- 
--- > mconcat . factors == id
 -- > null == List.null . factors
--- > List.all (\prime-> factors prime == [prime]) . factors
 -- > factors == unfoldr splitPrimePrefix == List.reverse . unfoldr (fmap swap . splitPrimeSuffix)
 -- > reverse == mconcat . List.reverse . factors
 -- > primePrefix == maybe mempty fst . splitPrimePrefix
 -- > primeSuffix == maybe mempty snd . splitPrimeSuffix
 -- > inits == List.map mconcat . List.inits . factors
 -- > tails == List.map mconcat . List.tails . factors
--- > foldl f a == List.foldl f a . factors
--- > foldl' f a == List.foldl' f a . factors
--- > foldr f a == List.foldr f a . factors
 -- > span p m == (mconcat l, mconcat r) where (l, r) = List.span p (factors m)
 -- > List.all (List.all (not . pred) . factors) . split pred
 -- > mconcat . intersperse prime . split (== prime) == id
@@ -78,15 +72,9 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 -- >    && Just s' == foldMaybe prefix
 -- >    && m == prefix <> suffix
 --
--- A minimal instance definition must implement 'factors' or 'splitPrimePrefix'. Other methods are provided and should
--- be implemented only for performance reasons.
-class MonoidNull m => FactorialMonoid m where
-   -- | Returns a list of all prime factors; inverse of mconcat.
-   factors :: m -> [m]
-   -- | The prime prefix, 'mempty' if none.
-   primePrefix :: m -> m
-   -- | The prime suffix, 'mempty' if none.
-   primeSuffix :: m -> m
+-- A minimal instance definition should implement 'splitPrimePrefix' for performance reasons, and other methods where
+-- beneficial.
+class (FactorialSemigroup m, MonoidNull m) => FactorialMonoid m where
    -- | Splits the argument into its prime prefix and the remaining suffix. Returns 'Nothing' for 'mempty'.
    splitPrimePrefix :: m -> Maybe (m, m)
    -- | Splits the argument into its prime suffix and the remaining prefix. Returns 'Nothing' for 'mempty'.
@@ -95,17 +83,6 @@ class MonoidNull m => FactorialMonoid m where
    inits :: m -> [m]
    -- | Returns the list of all suffixes of the argument, 'mempty' last.
    tails :: m -> [m]
-   -- | Like 'List.foldl' from "Data.List" on the list of 'primes'.
-   foldl :: (a -> m -> a) -> a -> m -> a
-   -- | Like 'List.foldl'' from "Data.List" on the list of 'primes'.
-   foldl' :: (a -> m -> a) -> a -> m -> a
-   -- | Like 'List.foldr' from "Data.List" on the list of 'primes'.
-   foldr :: (m -> a -> a) -> a -> m -> a
-   -- | The 'length' of the list of 'primes'.
-   length :: m -> Int
-   -- | Generalizes 'foldMap' from "Data.Foldable", except the function arguments are prime factors rather than the
-   -- structure elements.
-   foldMap :: Monoid n => (m -> n) -> m -> n
    -- | Like 'List.span' from "Data.List" on the list of 'primes'.
    span :: (m -> Bool) -> m -> (m, m)
    -- | Equivalent to 'List.break' from "Data.List".
@@ -127,12 +104,7 @@ class MonoidNull m => FactorialMonoid m where
    drop :: Int -> m -> m
    -- | Equivalent to 'List.take' from "Data.List".
    take :: Int -> m -> m
-   -- | Equivalent to 'List.reverse' from "Data.List".
-   reverse :: m -> m
 
-   factors = List.unfoldr splitPrimePrefix
-   primePrefix = maybe mempty fst . splitPrimePrefix
-   primeSuffix = maybe mempty snd . splitPrimeSuffix
    splitPrimePrefix x = case factors x
                         of [] -> Nothing
                            prefix : rest -> Just (prefix, mconcat rest)
@@ -141,11 +113,6 @@ class MonoidNull m => FactorialMonoid m where
                            fs -> Just (mconcat (List.init fs), List.last fs)
    inits = foldr (\m l-> mempty : List.map (mappend m) l) [mempty]
    tails m = m : maybe [] (tails . snd) (splitPrimePrefix m)
-   foldl f f0 = List.foldl f f0 . factors
-   foldl' f f0 = List.foldl' f f0 . factors
-   foldr f f0 = List.foldr f f0 . factors
-   length = List.length . factors
-   foldMap f = foldr (mappend . f) mempty
    span p m0 = spanAfter id m0
       where spanAfter f m = case splitPrimePrefix m
                             of Just (prime, rest) | p prime -> spanAfter (f . mappend prime) rest
@@ -177,28 +144,18 @@ class MonoidNull m => FactorialMonoid m where
                               Just (prime, rest) -> split' (pred n) (f . mappend prime) rest
    drop n p = snd (splitAt n p)
    take n p = fst (splitAt n p)
-   reverse = mconcat . List.reverse . factors
-   {-# MINIMAL factors | splitPrimePrefix #-}
+   {-# MINIMAL #-}
 
 -- | A subclass of 'FactorialMonoid' whose instances satisfy this additional law:
 --
 -- > factors (a <> b) == factors a <> factors b
-class (FactorialMonoid m, PositiveMonoid m) => StableFactorialMonoid m
+class (StableFactorialSemigroup m, FactorialMonoid m, PositiveMonoid m) => StableFactorialMonoid m
 
 instance FactorialMonoid () where
-   factors () = []
-   primePrefix () = ()
-   primeSuffix () = ()
    splitPrimePrefix () = Nothing
    splitPrimeSuffix () = Nothing
-   length () = 0
-   reverse = id
 
 instance FactorialMonoid a => FactorialMonoid (Dual a) where
-   factors (Dual a) = fmap Dual (reverse $ factors a)
-   length (Dual a) = length a
-   primePrefix (Dual a) = Dual (primeSuffix a)
-   primeSuffix (Dual a) = Dual (primePrefix a)
    splitPrimePrefix (Dual a) = case splitPrimeSuffix a
                                of Nothing -> Nothing
                                   Just (p, s) -> Just (Dual s, Dual p)
@@ -207,37 +164,23 @@ instance FactorialMonoid a => FactorialMonoid (Dual a) where
                                   Just (p, s) -> Just (Dual s, Dual p)
    inits (Dual a) = fmap Dual (reverse $ tails a)
    tails (Dual a) = fmap Dual (reverse $ inits a)
-   reverse (Dual a) = Dual (reverse a)
 
 instance (Integral a, Eq a) => FactorialMonoid (Sum a) where
-   primePrefix (Sum a) = Sum (signum a )
-   primeSuffix = primePrefix
    splitPrimePrefix (Sum 0) = Nothing
    splitPrimePrefix (Sum a) = Just (Sum (signum a), Sum (a - signum a))
    splitPrimeSuffix (Sum 0) = Nothing
    splitPrimeSuffix (Sum a) = Just (Sum (a - signum a), Sum (signum a))
-   length (Sum a) = abs (fromIntegral a)
-   reverse = id
 
-instance Integral a => FactorialMonoid (Product a) where
-   factors (Product a) = List.map Product (primeFactors a)
-   reverse = id
+instance Integral a => FactorialMonoid (Product a)
 
 instance FactorialMonoid a => FactorialMonoid (Maybe a) where
-   factors Nothing = []
-   factors (Just a) | null a = [Just a]
-                    | otherwise = List.map Just (factors a)
-   length Nothing = 0
-   length (Just a) | null a = 1
-                   | otherwise = length a
-   reverse = fmap reverse
+   splitPrimePrefix Nothing = Nothing
+   splitPrimePrefix (Just a) = case splitPrimePrefix a
+                               of Nothing -> Just (Just a, Nothing)
+                                  Just (p, s) -> Just (Just p, if null s then Nothing else Just s)
+
 
 instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
-   factors (a, b) = List.map (\a1-> (a1, mempty)) (factors a) ++ List.map ((,) mempty) (factors b)
-   primePrefix (a, b) | null a = (a, primePrefix b)
-                      | otherwise = (primePrefix a, mempty)
-   primeSuffix (a, b) | null b = (primeSuffix a, b)
-                      | otherwise = (mempty, primeSuffix b)
    splitPrimePrefix (a, b) = case (splitPrimePrefix a, splitPrimePrefix b)
                              of (Just (ap, as), _) -> Just ((ap, mempty), (as, b))
                                 (Nothing, Just (bp, bs)) -> Just ((a, bp), (a, bs))
@@ -248,16 +191,6 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
                                 (Nothing, Nothing) -> Nothing
    inits (a, b) = List.map (flip (,) mempty) (inits a) ++ List.map ((,) a) (List.tail $ inits b)
    tails (a, b) = List.map (flip (,) b) (tails a) ++ List.map ((,) mempty) (List.tail $ tails b)
-   foldl f a0 (x, y) = foldl f2 (foldl f1 a0 x) y
-      where f1 a = f a . fromFst
-            f2 a = f a . fromSnd
-   foldl' f a0 (x, y) = a' `seq` foldl' f2 a' y
-      where f1 a = f a . fromFst
-            f2 a = f a . fromSnd
-            a' = foldl' f1 a0 x
-   foldr f a (x, y) = foldr (f . fromFst) (foldr (f . fromSnd) a y) x
-   foldMap f (x, y) = Data.Monoid.Factorial.foldMap (f . fromFst) x `mappend` Data.Monoid.Factorial.foldMap (f . fromSnd) y
-   length (a, b) = length a + length b
    span p (x, y) = ((xp, yp), (xs, ys))
       where (xp, xs) = span (p . fromFst) x
             (yp, ys) | null xs = span (p . fromSnd) y
@@ -279,7 +212,6 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (a, b) where
       where (xp, xs) = splitAt n x
             (yp, ys) | null xs = splitAt (n - length x) y
                      | otherwise = (mempty, y)
-   reverse (a, b) = (reverse a, reverse b)
 
 {-# INLINE fromFst #-}
 fromFst :: Monoid b => a -> (a, b)
@@ -290,15 +222,6 @@ fromSnd :: Monoid a => b -> (a, b)
 fromSnd b = (mempty, b)
 
 instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c) => FactorialMonoid (a, b, c) where
-   factors (a, b, c) = List.map (\a1-> (a1, mempty, mempty)) (factors a)
-                       ++ List.map (\b1-> (mempty, b1, mempty)) (factors b)
-                       ++ List.map (\c1-> (mempty, mempty, c1)) (factors c)
-   primePrefix (a, b, c) | not (null a) = (primePrefix a, mempty, mempty)
-                         | not (null b) = (mempty, primePrefix b, mempty)
-                         | otherwise = (mempty, mempty, primePrefix c)
-   primeSuffix (a, b, c) | not (null c) = (mempty, mempty, primeSuffix c)
-                         | not (null b) = (mempty, primeSuffix b, mempty)
-                         | otherwise = (primeSuffix a, mempty, mempty)
    splitPrimePrefix (a, b, c) = case (splitPrimePrefix a, splitPrimePrefix b, splitPrimePrefix c)
                                 of (Just (ap, as), _, _) -> Just ((ap, mempty, mempty), (as, b, c))
                                    (Nothing, Just (bp, bs), _) -> Just ((a, bp, mempty), (a, bs, c))
@@ -315,21 +238,6 @@ instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c) => FactorialM
    tails (a, b, c) = List.map (\a1-> (a1, b, c)) (tails a)
                      ++ List.map (\b1-> (mempty, b1, c)) (List.tail $ tails b)
                      ++ List.map (\c1-> (mempty, mempty, c1)) (List.tail $ tails c)
-   foldl f s0 (a, b, c) = foldl f3 (foldl f2 (foldl f1 s0 a) b) c
-      where f1 x = f x . fromFstOf3
-            f2 x = f x . fromSndOf3
-            f3 x = f x . fromThdOf3
-   foldl' f s0 (a, b, c) = a' `seq` b' `seq` foldl' f3 b' c
-      where f1 x = f x . fromFstOf3
-            f2 x = f x . fromSndOf3
-            f3 x = f x . fromThdOf3
-            a' = foldl' f1 s0 a
-            b' = foldl' f2 a' b
-   foldr f s (a, b, c) = foldr (f . fromFstOf3) (foldr (f . fromSndOf3) (foldr (f . fromThdOf3) s c) b) a
-   foldMap f (a, b, c) = Data.Monoid.Factorial.foldMap (f . fromFstOf3) a
-                         `mappend` Data.Monoid.Factorial.foldMap (f . fromSndOf3) b
-                         `mappend` Data.Monoid.Factorial.foldMap (f . fromThdOf3) c
-   length (a, b, c) = length a + length b + length c
    span p (a, b, c) = ((ap, bp, cp), (as, bs, cs))
       where (ap, as) = span (p . fromFstOf3) a
             (bp, bs) | null as = span (p . fromSndOf3) b
@@ -354,7 +262,6 @@ instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c) => FactorialM
                      | otherwise = (mempty, b)
             (cp, cs) | null as && null bs = splitAt (n - length a - length b) c
                      | otherwise = (mempty, c)
-   reverse (a, b, c) = (reverse a, reverse b, reverse c)
 
 {-# INLINE fromFstOf3 #-}
 fromFstOf3 :: (Monoid b, Monoid c) => a -> (a, b, c)
@@ -370,18 +277,6 @@ fromThdOf3 c = (mempty, mempty, c)
 
 instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c, FactorialMonoid d) =>
          FactorialMonoid (a, b, c, d) where
-   factors (a, b, c, d) = List.map (\a1-> (a1, mempty, mempty, mempty)) (factors a)
-                          ++ List.map (\b1-> (mempty, b1, mempty, mempty)) (factors b)
-                          ++ List.map (\c1-> (mempty, mempty, c1, mempty)) (factors c)
-                          ++ List.map (\d1-> (mempty, mempty, mempty, d1)) (factors d)
-   primePrefix (a, b, c, d) | not (null a) = (primePrefix a, mempty, mempty, mempty)
-                            | not (null b) = (mempty, primePrefix b, mempty, mempty)
-                            | not (null c) = (mempty, mempty, primePrefix c, mempty)
-                            | otherwise    = (mempty, mempty, mempty, primePrefix d)
-   primeSuffix (a, b, c, d) | not (null d) = (mempty, mempty, mempty, primeSuffix d)
-                            | not (null c) = (mempty, mempty, primeSuffix c, mempty)
-                            | not (null b) = (mempty, primeSuffix b, mempty, mempty)
-                            | otherwise    = (primeSuffix a, mempty, mempty, mempty)
    splitPrimePrefix (a, b, c, d) = case (splitPrimePrefix a, splitPrimePrefix b, splitPrimePrefix c, splitPrimePrefix d)
                                    of (Just (ap, as), _, _, _) -> Just ((ap, mempty, mempty, mempty), (as, b, c, d))
                                       (Nothing, Just (bp, bs), _, _) -> Just ((a, bp, mempty, mempty), (a, bs, c, d))
@@ -402,26 +297,6 @@ instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c, FactorialMono
                         ++ List.map (\b1-> (mempty, b1, c, d)) (List.tail $ tails b)
                         ++ List.map (\c1-> (mempty, mempty, c1, d)) (List.tail $ tails c)
                         ++ List.map (\d1-> (mempty, mempty, mempty, d1)) (List.tail $ tails d)
-   foldl f s0 (a, b, c, d) = foldl f4 (foldl f3 (foldl f2 (foldl f1 s0 a) b) c) d
-      where f1 x = f x . fromFstOf4
-            f2 x = f x . fromSndOf4
-            f3 x = f x . fromThdOf4
-            f4 x = f x . fromFthOf4
-   foldl' f s0 (a, b, c, d) = a' `seq` b' `seq` c' `seq` foldl' f4 c' d
-      where f1 x = f x . fromFstOf4
-            f2 x = f x . fromSndOf4
-            f3 x = f x . fromThdOf4
-            f4 x = f x . fromFthOf4
-            a' = foldl' f1 s0 a
-            b' = foldl' f2 a' b
-            c' = foldl' f3 b' c
-   foldr f s (a, b, c, d) =
-      foldr (f . fromFstOf4) (foldr (f . fromSndOf4) (foldr (f . fromThdOf4) (foldr (f . fromFthOf4) s d) c) b) a
-   foldMap f (a, b, c, d) = Data.Monoid.Factorial.foldMap (f . fromFstOf4) a
-                            `mappend` Data.Monoid.Factorial.foldMap (f . fromSndOf4) b
-                            `mappend` Data.Monoid.Factorial.foldMap (f . fromThdOf4) c
-                            `mappend` Data.Monoid.Factorial.foldMap (f . fromFthOf4) d
-   length (a, b, c, d) = length a + length b + length c + length d
    span p (a, b, c, d) = ((ap, bp, cp, dp), (as, bs, cs, ds))
       where (ap, as) = span (p . fromFstOf4) a
             (bp, bs) | null as = span (p . fromSndOf4) b
@@ -454,7 +329,6 @@ instance (FactorialMonoid a, FactorialMonoid b, FactorialMonoid c, FactorialMono
                      | otherwise = (mempty, c)
             (dp, ds) | null as && null bs && null cs = splitAt (n - length a - length b - length c) d
                      | otherwise = (mempty, d)
-   reverse (a, b, c, d) = (reverse a, reverse b, reverse c, reverse d)
 
 {-# INLINE fromFstOf4 #-}
 fromFstOf4 :: (Monoid b, Monoid c, Monoid d) => a -> (a, b, c, d)
@@ -473,11 +347,6 @@ fromFthOf4 :: (Monoid a, Monoid b, Monoid c) => d -> (a, b, c, d)
 fromFthOf4 d = (mempty, mempty, mempty, d)
 
 instance FactorialMonoid [x] where
-   factors xs = List.map (:[]) xs
-   primePrefix [] = []
-   primePrefix (x:_) = [x]
-   primeSuffix [] = []
-   primeSuffix xs = [List.last xs]
    splitPrimePrefix [] = Nothing
    splitPrimePrefix (x:xs) = Just ([x], xs)
    splitPrimeSuffix [] = Nothing
@@ -486,14 +355,6 @@ instance FactorialMonoid [x] where
             splitLast f ~(x:rest) = splitLast (f . (x:)) rest
    inits = List.inits
    tails = List.tails
-   foldl _ a [] = a
-   foldl f a (x:xs) = foldl f (f a [x]) xs
-   foldl' _ a [] = a
-   foldl' f a (x:xs) = let a' = f a [x] in a' `seq` foldl' f a' xs
-   foldr _ f0 [] = f0
-   foldr f f0 (x:xs) = f [x] (foldr f f0 xs)
-   length = List.length
-   foldMap f = mconcat . List.map (f . (:[]))
    break f = List.break (f . (:[]))
    span f = List.span (f . (:[]))
    dropWhile f = List.dropWhile (f . (:[]))
@@ -509,24 +370,12 @@ instance FactorialMonoid [x] where
    splitAt = List.splitAt
    drop = List.drop
    take = List.take
-   reverse = List.reverse
 
 instance FactorialMonoid ByteString.ByteString where
-   factors x = factorize (ByteString.length x) x
-      where factorize 0 _ = []
-            factorize n xs = xs1 : factorize (pred n) xs'
-              where (xs1, xs') = ByteString.splitAt 1 xs
-   primePrefix = ByteString.take 1
-   primeSuffix x = ByteString.drop (ByteString.length x - 1) x
    splitPrimePrefix x = if ByteString.null x then Nothing else Just (ByteString.splitAt 1 x)
    splitPrimeSuffix x = if ByteString.null x then Nothing else Just (ByteString.splitAt (ByteString.length x - 1) x)
    inits = ByteString.inits
    tails = ByteString.tails
-   foldl f = ByteString.foldl f'
-      where f' a byte = f a (ByteString.singleton byte)
-   foldl' f = ByteString.foldl' f'
-      where f' a byte = f a (ByteString.singleton byte)
-   foldr f = ByteString.foldr (f . ByteString.singleton)
    break f = ByteString.break (f . ByteString.singleton)
    span f = ByteString.span (f . ByteString.singleton)
    spanMaybe s0 f b = case ByteString.foldr g id b (0, s0)
@@ -539,34 +388,19 @@ instance FactorialMonoid ByteString.ByteString where
                             | otherwise = (i, s)
    dropWhile f = ByteString.dropWhile (f . ByteString.singleton)
    takeWhile f = ByteString.takeWhile (f . ByteString.singleton)
-   length = ByteString.length
    split f = ByteString.splitWith f'
       where f' = f . ByteString.singleton
    splitAt = ByteString.splitAt
    drop = ByteString.drop
    take = ByteString.take
-   reverse = ByteString.reverse
 
 instance FactorialMonoid LazyByteString.ByteString where
-   factors x = factorize (LazyByteString.length x) x
-      where factorize 0 _ = []
-            factorize n xs = xs1 : factorize (pred n) xs'
-               where (xs1, xs') = LazyByteString.splitAt 1 xs
-   primePrefix = LazyByteString.take 1
-   primeSuffix x = LazyByteString.drop (LazyByteString.length x - 1) x
    splitPrimePrefix x = if LazyByteString.null x then Nothing
                         else Just (LazyByteString.splitAt 1 x)
    splitPrimeSuffix x = if LazyByteString.null x then Nothing
                         else Just (LazyByteString.splitAt (LazyByteString.length x - 1) x)
    inits = LazyByteString.inits
    tails = LazyByteString.tails
-   foldl f = LazyByteString.foldl f'
-      where f' a byte = f a (LazyByteString.singleton byte)
-   foldl' f = LazyByteString.foldl' f'
-      where f' a byte = f a (LazyByteString.singleton byte)
-   foldr f = LazyByteString.foldr f'
-      where f' byte a = f (LazyByteString.singleton byte) a
-   length = fromIntegral . LazyByteString.length
    break f = LazyByteString.break (f . LazyByteString.singleton)
    span f = LazyByteString.span (f . LazyByteString.singleton)
    spanMaybe s0 f b = case LazyByteString.foldr g id b (0, s0)
@@ -585,23 +419,12 @@ instance FactorialMonoid LazyByteString.ByteString where
    splitAt = LazyByteString.splitAt . fromIntegral
    drop n = LazyByteString.drop (fromIntegral n)
    take n = LazyByteString.take (fromIntegral n)
-   reverse = LazyByteString.reverse
 
 instance FactorialMonoid Text.Text where
-   factors = Text.chunksOf 1
-   primePrefix = Text.take 1
-   primeSuffix x = if Text.null x then Text.empty else Text.singleton (Text.last x)
    splitPrimePrefix = fmap (first Text.singleton) . Text.uncons
    splitPrimeSuffix x = if Text.null x then Nothing else Just (Text.init x, Text.singleton (Text.last x))
    inits = Text.inits
    tails = Text.tails
-   foldl f = Text.foldl f'
-      where f' a char = f a (Text.singleton char)
-   foldl' f = Text.foldl' f'
-      where f' a char = f a (Text.singleton char)
-   foldr f = Text.foldr f'
-      where f' char a = f (Text.singleton char) a
-   length = Text.length
    span f = Text.span (f . Text.singleton)
    break f = Text.break (f . Text.singleton)
    dropWhile f = Text.dropWhile (f . Text.singleton)
@@ -619,25 +442,14 @@ instance FactorialMonoid Text.Text where
    splitAt = Text.splitAt
    drop = Text.drop
    take = Text.take
-   reverse = Text.reverse
 
 instance FactorialMonoid LazyText.Text where
-   factors = LazyText.chunksOf 1
-   primePrefix = LazyText.take 1
-   primeSuffix x = if LazyText.null x then LazyText.empty else LazyText.singleton (LazyText.last x)
    splitPrimePrefix = fmap (first LazyText.singleton) . LazyText.uncons
    splitPrimeSuffix x = if LazyText.null x
                         then Nothing
                         else Just (LazyText.init x, LazyText.singleton (LazyText.last x))
    inits = LazyText.inits
    tails = LazyText.tails
-   foldl f = LazyText.foldl f'
-      where f' a char = f a (LazyText.singleton char)
-   foldl' f = LazyText.foldl' f'
-      where f' a char = f a (LazyText.singleton char)
-   foldr f = LazyText.foldr f'
-      where f' char a = f (LazyText.singleton char) a
-   length = fromIntegral . LazyText.length
    span f = LazyText.span (f . LazyText.singleton)
    break f = LazyText.break (f . LazyText.singleton)
    dropWhile f = LazyText.dropWhile (f . LazyText.singleton)
@@ -655,69 +467,26 @@ instance FactorialMonoid LazyText.Text where
    splitAt = LazyText.splitAt . fromIntegral
    drop n = LazyText.drop (fromIntegral n)
    take n = LazyText.take (fromIntegral n)
-   reverse = LazyText.reverse
 
 instance Ord k => FactorialMonoid (Map.Map k v) where
-   factors = List.map (uncurry Map.singleton) . Map.toAscList
-   primePrefix map | Map.null map = map
-                   | otherwise = uncurry Map.singleton $ Map.findMin map
-   primeSuffix map | Map.null map = map
-                   | otherwise = uncurry Map.singleton $ Map.findMax map
    splitPrimePrefix = fmap singularize . Map.minViewWithKey
       where singularize ((k, v), rest) = (Map.singleton k v, rest)
    splitPrimeSuffix = fmap singularize . Map.maxViewWithKey
       where singularize ((k, v), rest) = (rest, Map.singleton k v)
-   foldl f = Map.foldlWithKey f'
-      where f' a k v = f a (Map.singleton k v)
-   foldl' f = Map.foldlWithKey' f'
-      where f' a k v = f a (Map.singleton k v)
-   foldr f = Map.foldrWithKey f'
-      where f' k v a = f (Map.singleton k v) a
-   length = Map.size
-   reverse = id
 
 instance FactorialMonoid (IntMap.IntMap a) where
-   factors = List.map (uncurry IntMap.singleton) . IntMap.toAscList
-   primePrefix map | IntMap.null map = map
-                   | otherwise = uncurry IntMap.singleton $ IntMap.findMin map
-   primeSuffix map | IntMap.null map = map
-                   | otherwise = uncurry IntMap.singleton $ IntMap.findMax map
    splitPrimePrefix = fmap singularize . IntMap.minViewWithKey
       where singularize ((k, v), rest) = (IntMap.singleton k v, rest)
    splitPrimeSuffix = fmap singularize . IntMap.maxViewWithKey
       where singularize ((k, v), rest) = (rest, IntMap.singleton k v)
-   foldl f = IntMap.foldlWithKey f'
-      where f' a k v = f a (IntMap.singleton k v)
-   foldl' f = IntMap.foldlWithKey' f'
-      where f' a k v = f a (IntMap.singleton k v)
-   foldr f = IntMap.foldrWithKey f'
-      where f' k v a = f (IntMap.singleton k v) a
-   length = IntMap.size
-   reverse = id
 
 instance FactorialMonoid IntSet.IntSet where
-   factors = List.map IntSet.singleton . IntSet.toAscList
-   primePrefix set | IntSet.null set = set
-                   | otherwise = IntSet.singleton $ IntSet.findMin set
-   primeSuffix set | IntSet.null set = set
-                   | otherwise = IntSet.singleton $ IntSet.findMax set
    splitPrimePrefix = fmap singularize . IntSet.minView
       where singularize (min, rest) = (IntSet.singleton min, rest)
    splitPrimeSuffix = fmap singularize . IntSet.maxView
       where singularize (max, rest) = (rest, IntSet.singleton max)
-   foldl f = IntSet.foldl f'
-      where f' a b = f a (IntSet.singleton b)
-   foldl' f = IntSet.foldl' f'
-      where f' a b = f a (IntSet.singleton b)
-   foldr f = IntSet.foldr f'
-      where f' a b = f (IntSet.singleton a) b
-   length = IntSet.size
-   reverse = id
 
 instance FactorialMonoid (Sequence.Seq a) where
-   factors = List.map Sequence.singleton . Foldable.toList
-   primePrefix = Sequence.take 1
-   primeSuffix q = Sequence.drop (Sequence.length q - 1) q
    splitPrimePrefix q = case Sequence.viewl q
                         of Sequence.EmptyL -> Nothing
                            hd Sequence.:< rest -> Just (Sequence.singleton hd, rest)
@@ -726,12 +495,6 @@ instance FactorialMonoid (Sequence.Seq a) where
                            rest Sequence.:> last -> Just (rest, Sequence.singleton last)
    inits = Foldable.toList . Sequence.inits
    tails = Foldable.toList . Sequence.tails
-   foldl f = Foldable.foldl f'
-      where f' a b = f a (Sequence.singleton b)
-   foldl' f = Foldable.foldl' f'
-      where f' a b = f a (Sequence.singleton b)
-   foldr f = Foldable.foldr f'
-      where f' a b = f (Sequence.singleton a) b
    span f = Sequence.spanl (f . Sequence.singleton)
    break f = Sequence.breakl (f . Sequence.singleton)
    dropWhile f = Sequence.dropWhileL (f . Sequence.singleton)
@@ -747,47 +510,20 @@ instance FactorialMonoid (Sequence.Seq a) where
    splitAt = Sequence.splitAt
    drop = Sequence.drop
    take = Sequence.take
-   length = Sequence.length
-   reverse = Sequence.reverse
 
 instance Ord a => FactorialMonoid (Set.Set a) where
-   factors = List.map Set.singleton . Set.toAscList
-   primePrefix set | Set.null set = set
-                   | otherwise = Set.singleton $ Set.findMin set
-   primeSuffix set | Set.null set = set
-                   | otherwise = Set.singleton $ Set.findMax set
    splitPrimePrefix = fmap singularize . Set.minView
       where singularize (min, rest) = (Set.singleton min, rest)
    splitPrimeSuffix = fmap singularize . Set.maxView
       where singularize (max, rest) = (rest, Set.singleton max)
-   foldl f = Foldable.foldl f'
-      where f' a b = f a (Set.singleton b)
-   foldl' f = Foldable.foldl' f'
-      where f' a b = f a (Set.singleton b)
-   foldr f = Foldable.foldr f'
-      where f' a b = f (Set.singleton a) b
-   length = Set.size
-   reverse = id
 
 instance FactorialMonoid (Vector.Vector a) where
-   factors x = factorize (Vector.length x) x
-      where factorize 0 _ = []
-            factorize n xs = xs1 : factorize (pred n) xs'
-               where (xs1, xs') = Vector.splitAt 1 xs
-   primePrefix = Vector.take 1
-   primeSuffix x = Vector.drop (Vector.length x - 1) x
    splitPrimePrefix x = if Vector.null x then Nothing else Just (Vector.splitAt 1 x)
    splitPrimeSuffix x = if Vector.null x then Nothing else Just (Vector.splitAt (Vector.length x - 1) x)
    inits x0 = initsWith x0 []
       where initsWith x rest | Vector.null x = x:rest
                              | otherwise = initsWith (Vector.unsafeInit x) (x:rest)
    tails x = x : if Vector.null x then [] else tails (Vector.unsafeTail x)
-   foldl f = Vector.foldl f'
-      where f' a byte = f a (Vector.singleton byte)
-   foldl' f = Vector.foldl' f'
-      where f' a byte = f a (Vector.singleton byte)
-   foldr f = Vector.foldr f'
-      where f' byte a = f (Vector.singleton byte) a
    break f = Vector.break (f . Vector.singleton)
    span f = Vector.span (f . Vector.singleton)
    dropWhile f = Vector.dropWhile (f . Vector.singleton)
@@ -805,8 +541,6 @@ instance FactorialMonoid (Vector.Vector a) where
    splitAt = Vector.splitAt
    drop = Vector.drop
    take = Vector.take
-   length = Vector.length
-   reverse = Vector.reverse
 
 instance StableFactorialMonoid ()
 instance StableFactorialMonoid a => StableFactorialMonoid (Dual a)
@@ -817,11 +551,3 @@ instance StableFactorialMonoid Text.Text
 instance StableFactorialMonoid LazyText.Text
 instance StableFactorialMonoid (Sequence.Seq a)
 instance StableFactorialMonoid (Vector.Vector a)
-
--- | A 'Monad.mapM' equivalent.
-mapM :: (FactorialMonoid a, Monoid b, Monad m) => (a -> m b) -> a -> m b
-mapM f = ($ return mempty) . appEndo . Data.Monoid.Factorial.foldMap (Endo . Monad.liftM2 mappend . f)
-
--- | A 'Monad.mapM_' equivalent.
-mapM_ :: (FactorialMonoid a, Monad m) => (a -> m b) -> a -> m ()
-mapM_ f = foldr ((>>) . f) (return ())

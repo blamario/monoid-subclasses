@@ -56,18 +56,22 @@ import qualified Data.Monoid.Instances.Stateful as Stateful
 import Data.Monoid.Instances.Positioned (OffsetPositioned, LinePositioned)
 import qualified Data.Monoid.Instances.Positioned as Positioned
 
-import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual),
+import Data.Semigroup (Semigroup, (<>))
+import Data.Monoid (Monoid, mempty, mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
+import Data.Semigroup.Factorial (FactorialSemigroup, StableFactorialSemigroup, 
+                                 factors, primePrefix, primeSuffix, foldl, foldl', foldr, length, reverse)
+import Data.Semigroup.Cancellative (CommutativeSemigroup, ReductiveSemigroup,
+                                    LeftReductiveSemigroup, RightReductiveSemigroup,
+                                    CancellativeSemigroup, LeftCancellativeSemigroup, RightCancellativeSemigroup,
+                                    (</>), isPrefixOf, stripPrefix, isSuffixOf, stripSuffix)
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
-import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid, 
-                              factors, splitPrimePrefix, splitPrimeSuffix, primePrefix, primeSuffix, inits, tails,
-                              foldl, foldl', foldr, length, reverse, span, spanMaybe, split, splitAt)
+import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
+                              splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
 import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
-                                 (</>), gcd,
-                                 isPrefixOf, stripPrefix, commonPrefix, stripCommonPrefix,
-                                 isSuffixOf, stripSuffix, commonSuffix, stripCommonSuffix)
+                                 gcd, commonPrefix, stripCommonPrefix, commonSuffix, stripCommonSuffix)
 import Data.Monoid.Textual (TextualMonoid)
 import qualified Data.Monoid.Textual as Textual
 
@@ -420,7 +424,7 @@ checkCommutative (CommutativeMonoidInstance (e :: a)) = forAll (arbitrary :: Gen
 checkNull (NullMonoidInstance (e :: a)) = null e .&&. forAll (arbitrary :: Gen a) (\a-> null a == (a == mempty))
 
 checkPositive (PositiveMonoidInstance (_ :: a)) =
-   forAll (arbitrary :: Gen (a, a)) (\(a, b)-> null a && null b || not (null (a <> b)))
+   forAll (arbitrary :: Gen (a, a)) (\(a, b)-> null a && null b || not (null (mappend a b)))
 
 checkConcatFactors (FactorialMonoidInstance (e :: a)) = null (factors e) .&&. forAll (arbitrary :: Gen a) check
    where check a = mconcat (factors a) == a
@@ -757,9 +761,14 @@ textualFactors :: TextualMonoid t => t -> [Either t Char]
 textualFactors = map characterize . factors
    where characterize prime = maybe (Left prime) Right (Textual.characterPrefix prime)
 
-newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, Semigroup,
+newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
+                                                 Semigroup, LeftReductiveSemigroup, LeftCancellativeSemigroup,
+                                                 StableFactorialSemigroup,
                                                  Monoid, LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, StableFactorialMonoid, IsString)
+
+instance FactorialSemigroup TestString where
+   factors (TestString s) = TestString <$> factors s
 
 instance FactorialMonoid TestString where
    splitPrimePrefix (TestString []) = Nothing

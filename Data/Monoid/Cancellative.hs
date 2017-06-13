@@ -36,9 +36,9 @@
 
 module Data.Monoid.Cancellative (
    -- * Symmetric, commutative monoid classes
-   CommutativeMonoid, ReductiveMonoid(..), CancellativeMonoid, GCDMonoid(..),
+   CommutativeMonoid, ReductiveMonoid, CancellativeMonoid, GCDMonoid(..),
    -- * Asymmetric monoid classes
-   LeftReductiveMonoid(..), RightReductiveMonoid(..),
+   LeftReductiveMonoid, RightReductiveMonoid,
    LeftCancellativeMonoid, RightCancellativeMonoid,
    LeftGCDMonoid(..), RightGCDMonoid(..)
    )
@@ -48,8 +48,6 @@ import qualified Prelude
 
 import Control.Applicative ((<$>), (<*>))
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
-import qualified Data.List as List
-import Data.Maybe (isJust)
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Unsafe as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
@@ -63,22 +61,21 @@ import qualified Data.Set as Set
 import Data.Sequence (ViewL((:<)), ViewR((:>)), (<|), (|>))
 import qualified Data.Vector as Vector
 
+import Data.Semigroup.Cancellative
+
 import Prelude hiding (gcd)
 
 -- | Class of all Abelian ({i.e.}, commutative) monoids that satisfy the commutativity property:
 -- 
 -- > a <> b == b <> a
-class Monoid m => CommutativeMonoid m
+class (Monoid m, CommutativeSemigroup m) => CommutativeMonoid m
 
 -- | Class of Abelian monoids with a partial inverse for the Monoid '<>' operation. The inverse operation '</>' must
 -- satisfy the following laws:
 -- 
 -- > maybe a (b <>) (a </> b) == a
 -- > maybe a (<> b) (a </> b) == a
-class (CommutativeMonoid m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m where
-   (</>) :: m -> m -> Maybe m
-
-infix 5 </>
+class (CommutativeMonoid m, ReductiveSemigroup m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m
 
 -- | Subclass of 'ReductiveMonoid' where '</>' is a complete inverse of the Monoid '<>' operation. The class instances
 -- must satisfy the following additional laws:
@@ -87,7 +84,7 @@ infix 5 </>
 -- > (a <> b) </> b == Just a
 class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) => CancellativeMonoid m
 
--- | Class of Abelian monoids that allow the greatest common denominator to be found for any two given values. The
+-- | Class of Abelian monoids that allow the greatest common divisor to be found for any two given values. The
 -- operations must satisfy the following laws:
 --
 -- > gcd a b == commonPrefix a b == commonSuffix a b
@@ -101,7 +98,7 @@ class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) =
 class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
--- | Class of monoids with a left inverse of 'Data.Monoid.mappend', satisfying the following law:
+-- | Class of monoids with a left inverse of '<>', satisfying the following law:
 -- 
 -- > isPrefixOf a b == isJust (stripPrefix a b)
 -- > maybe b (a <>) (stripPrefix a b) == b
@@ -109,14 +106,9 @@ class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m) => GCDMonoid m wher
 -- 
 -- | Every instance definition has to implement at least the 'stripPrefix' method. Its complexity should be no worse
 -- than linear in the length of the prefix argument.
-class Monoid m => LeftReductiveMonoid m where
-   isPrefixOf :: m -> m -> Bool
-   stripPrefix :: m -> m -> Maybe m
+class (Monoid m, LeftReductiveSemigroup m) => LeftReductiveMonoid m
 
-   isPrefixOf a b = isJust (stripPrefix a b)
-   {-# MINIMAL stripPrefix #-}
-
--- | Class of monoids with a right inverse of 'Data.Monoid.mappend', satisfying the following law:
+-- | Class of monoids with a right inverse of '<>', satisfying the following law:
 -- 
 -- > isSuffixOf a b == isJust (stripSuffix a b)
 -- > maybe b (<> a) (stripSuffix a b) == b
@@ -124,24 +116,19 @@ class Monoid m => LeftReductiveMonoid m where
 -- 
 -- | Every instance definition has to implement at least the 'stripSuffix' method. Its complexity should be no worse
 -- than linear in the length of the suffix argument.
-class Monoid m => RightReductiveMonoid m where
-   isSuffixOf :: m -> m -> Bool
-   stripSuffix :: m -> m -> Maybe m
-
-   isSuffixOf a b = isJust (stripSuffix a b)
-   {-# MINIMAL stripSuffix #-}
+class (Monoid m, RightReductiveSemigroup m) => RightReductiveMonoid m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
 -- additional law:
 --
 -- > stripPrefix a (a <> b) == Just b
-class LeftReductiveMonoid m => LeftCancellativeMonoid m
+class (LeftCancellativeSemigroup m, LeftReductiveMonoid m) => LeftCancellativeMonoid m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
 -- additional law:
 --
 -- > stripSuffix b (a <> b) == Just a
-class RightReductiveMonoid m => RightCancellativeMonoid m
+class (RightCancellativeSemigroup m, RightReductiveMonoid m) => RightCancellativeMonoid m
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the left side of two monoidal
 -- values. The methods' complexity should be no worse than linear in the length of the common prefix. The following laws
@@ -190,24 +177,15 @@ class RightReductiveMonoid m => RightGCDMonoid m where
 -- Unit instances
 
 instance CommutativeMonoid ()
-
-instance ReductiveMonoid () where
-   () </> () = Just ()
-
+instance ReductiveMonoid ()
 instance CancellativeMonoid ()
+instance LeftReductiveMonoid ()
+instance RightReductiveMonoid ()
+instance LeftCancellativeMonoid ()
+instance RightCancellativeMonoid ()
 
 instance GCDMonoid () where
    gcd () () = ()
-
-instance LeftReductiveMonoid () where
-   stripPrefix () () = Just ()
-
-instance RightReductiveMonoid () where
-   stripSuffix () () = Just ()
-
-instance LeftCancellativeMonoid ()
-
-instance RightCancellativeMonoid ()
 
 instance LeftGCDMonoid () where
    commonPrefix () () = ()
@@ -218,26 +196,15 @@ instance RightGCDMonoid () where
 -- Dual instances
 
 instance CommutativeMonoid a => CommutativeMonoid (Dual a)
-
-instance ReductiveMonoid a => ReductiveMonoid (Dual a) where
-   Dual a </> Dual b = fmap Dual (a </> b)
-
+instance ReductiveMonoid a => ReductiveMonoid (Dual a)
 instance CancellativeMonoid a => CancellativeMonoid (Dual a)
+instance LeftReductiveMonoid a => RightReductiveMonoid (Dual a)
+instance RightReductiveMonoid a => LeftReductiveMonoid (Dual a)
+instance LeftCancellativeMonoid a => RightCancellativeMonoid (Dual a)
+instance RightCancellativeMonoid a => LeftCancellativeMonoid (Dual a)
 
 instance GCDMonoid a => GCDMonoid (Dual a) where
    gcd (Dual a) (Dual b) = Dual (gcd a b)
-
-instance LeftReductiveMonoid a => RightReductiveMonoid (Dual a) where
-   stripSuffix (Dual a) (Dual b) = fmap Dual (stripPrefix a b)
-   Dual a `isSuffixOf` Dual b = a `isPrefixOf` b
-
-instance RightReductiveMonoid a => LeftReductiveMonoid (Dual a) where
-   stripPrefix (Dual a) (Dual b) = fmap Dual (stripSuffix a b)
-   Dual a `isPrefixOf` Dual b = a `isSuffixOf` b
-
-instance LeftCancellativeMonoid a => RightCancellativeMonoid (Dual a)
-
-instance RightCancellativeMonoid a => LeftCancellativeMonoid (Dual a)
 
 instance LeftGCDMonoid a => RightGCDMonoid (Dual a) where
    commonSuffix (Dual a) (Dual b) = Dual (commonPrefix a b)
@@ -248,24 +215,15 @@ instance RightGCDMonoid a => LeftGCDMonoid (Dual a) where
 -- Sum instances
 
 instance Num a => CommutativeMonoid (Sum a)
-
-instance Integral a => ReductiveMonoid (Sum a) where
-   Sum a </> Sum b = Just $ Sum (a - b)
-
+instance Integral a => ReductiveMonoid (Sum a)
 instance Integral a => CancellativeMonoid (Sum a)
+instance Integral a => LeftReductiveMonoid (Sum a)
+instance Integral a => RightReductiveMonoid (Sum a)
+instance Integral a => LeftCancellativeMonoid (Sum a)
+instance Integral a => RightCancellativeMonoid (Sum a)
 
 instance (Integral a, Ord a) => GCDMonoid (Sum a) where
    gcd (Sum a) (Sum b) = Sum (min a b)
-
-instance Integral a => LeftReductiveMonoid (Sum a) where
-   stripPrefix a b = b </> a
-
-instance Integral a => RightReductiveMonoid (Sum a) where
-   stripSuffix a b = b </> a
-
-instance Integral a => LeftCancellativeMonoid (Sum a)
-
-instance Integral a => RightCancellativeMonoid (Sum a)
 
 instance (Integral a, Ord a) => LeftGCDMonoid (Sum a) where
    commonPrefix a b = gcd a b
@@ -276,21 +234,12 @@ instance (Integral a, Ord a) => RightGCDMonoid (Sum a) where
 -- Product instances
 
 instance Num a => CommutativeMonoid (Product a)
-
-instance Integral a => ReductiveMonoid (Product a) where
-   Product 0 </> Product 0 = Just (Product 0)
-   Product _ </> Product 0 = Nothing
-   Product a </> Product b = if remainder == 0 then Just (Product quotient) else Nothing
-      where (quotient, remainder) = quotRem a b
+instance Integral a => ReductiveMonoid (Product a)
+instance Integral a => LeftReductiveMonoid (Product a)
+instance Integral a => RightReductiveMonoid (Product a)
 
 instance Integral a => GCDMonoid (Product a) where
    gcd (Product a) (Product b) = Product (Prelude.gcd a b)
-
-instance Integral a => LeftReductiveMonoid (Product a) where
-   stripPrefix a b = b </> a
-
-instance Integral a => RightReductiveMonoid (Product a) where
-   stripSuffix a b = b </> a
 
 instance Integral a => LeftGCDMonoid (Product a) where
    commonPrefix a b = gcd a b
@@ -301,32 +250,15 @@ instance Integral a => RightGCDMonoid (Product a) where
 -- Pair instances
 
 instance (CommutativeMonoid a, CommutativeMonoid b) => CommutativeMonoid (a, b)
-
-instance (ReductiveMonoid a, ReductiveMonoid b) => ReductiveMonoid (a, b) where
-   (a, b) </> (c, d) = case (a </> c, b </> d)
-                       of (Just a', Just b') -> Just (a', b')
-                          _ -> Nothing
-
+instance (ReductiveMonoid a, ReductiveMonoid b) => ReductiveMonoid (a, b)
 instance (CancellativeMonoid a, CancellativeMonoid b) => CancellativeMonoid (a, b)
+instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (a, b)
+instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (a, b)
+instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b) => LeftCancellativeMonoid (a, b)
+instance (RightCancellativeMonoid a, RightCancellativeMonoid b) => RightCancellativeMonoid (a, b)
 
 instance (GCDMonoid a, GCDMonoid b) => GCDMonoid (a, b) where
    gcd (a, b) (c, d) = (gcd a c, gcd b d)
-
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (a, b) where
-   stripPrefix (a, b) (c, d) = case (stripPrefix a c, stripPrefix b d)
-                               of (Just a', Just b') -> Just (a', b')
-                                  _ -> Nothing
-   isPrefixOf (a, b) (c, d) = isPrefixOf a c && isPrefixOf b d
-
-instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (a, b) where
-   stripSuffix (a, b) (c, d) = case (stripSuffix a c, stripSuffix b d)
-                               of (Just a', Just b') -> Just (a', b')
-                                  _ -> Nothing
-   isSuffixOf (a, b) (c, d) = isSuffixOf a c && isSuffixOf b d
-
-instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b) => LeftCancellativeMonoid (a, b)
-
-instance (RightCancellativeMonoid a, RightCancellativeMonoid b) => RightCancellativeMonoid (a, b)
 
 instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (a, b) where
    commonPrefix (a, b) (c, d) = (commonPrefix a c, commonPrefix b d)
@@ -337,29 +269,17 @@ instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (a, b) where
 -- Triple instances
 
 instance (CommutativeMonoid a, CommutativeMonoid b, CommutativeMonoid c) => CommutativeMonoid (a, b, c)
-
-instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c) => ReductiveMonoid (a, b, c) where
-   (a1, b1, c1) </> (a2, b2, c2) = (,,) <$> (a1 </> a2) <*> (b1 </> b2) <*> (c1 </> c2)
-
+instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c) => ReductiveMonoid (a, b, c)
 instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c) => CancellativeMonoid (a, b, c)
+instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c) => LeftReductiveMonoid (a, b, c)
+instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c) => RightReductiveMonoid (a, b, c)
+instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c) =>
+         LeftCancellativeMonoid (a, b, c)
+instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c) =>
+         RightCancellativeMonoid (a, b, c)
 
 instance (GCDMonoid a, GCDMonoid b, GCDMonoid c) => GCDMonoid (a, b, c) where
    gcd (a1, b1, c1) (a2, b2, c2) = (gcd a1 a2, gcd b1 b2, gcd c1 c2)
-
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c) => LeftReductiveMonoid (a, b, c) where
-   stripPrefix (a1, b1, c1) (a2, b2, c2) = (,,) <$> stripPrefix a1 a2 <*> stripPrefix b1 b2 <*> stripPrefix c1 c2
-   isPrefixOf (a1, b1, c1) (a2, b2, c2) = isPrefixOf a1 a2 && isPrefixOf b1 b2 && isPrefixOf c1 c2
-
-instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c) =>
-         RightReductiveMonoid (a, b, c) where
-   stripSuffix (a1, b1, c1) (a2, b2, c2) = (,,) <$> stripSuffix a1 a2 <*> stripSuffix b1 b2 <*> stripSuffix c1 c2
-   isSuffixOf (a1, b1, c1) (a2, b2, c2) = isSuffixOf a1 a2 && isSuffixOf b1 b2 && isSuffixOf c1 c2
-
-instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c) =>
-         LeftCancellativeMonoid (a, b, c)
-
-instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c) =>
-         RightCancellativeMonoid (a, b, c)
 
 instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c) => LeftGCDMonoid (a, b, c) where
    commonPrefix (a1, b1, c1) (a2, b2, c2) = (commonPrefix a1 a2, commonPrefix b1 b2, commonPrefix c1 c2)
@@ -371,36 +291,20 @@ instance (RightGCDMonoid a, RightGCDMonoid b, RightGCDMonoid c) => RightGCDMonoi
 
 instance (CommutativeMonoid a, CommutativeMonoid b, CommutativeMonoid c, CommutativeMonoid d) =>
          CommutativeMonoid (a, b, c, d)
-
-instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c, ReductiveMonoid d) =>
-         ReductiveMonoid (a, b, c, d) where
-   (a1, b1, c1, d1) </> (a2, b2, c2, d2) = (,,,) <$> (a1 </> a2) <*> (b1 </> b2) <*> (c1 </> c2) <*> (d1 </> d2)
-
+instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c, ReductiveMonoid d) => ReductiveMonoid (a, b, c, d)
 instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c, CancellativeMonoid d) =>
          CancellativeMonoid (a, b, c, d)
+instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c, LeftReductiveMonoid d) =>
+         LeftReductiveMonoid (a, b, c, d)
+instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c, RightReductiveMonoid d) =>
+         RightReductiveMonoid (a, b, c, d)
+instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c, LeftCancellativeMonoid d) =>
+         LeftCancellativeMonoid (a, b, c, d)
+instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c, RightCancellativeMonoid d) =>
+         RightCancellativeMonoid (a, b, c, d)
 
 instance (GCDMonoid a, GCDMonoid b, GCDMonoid c, GCDMonoid d) => GCDMonoid (a, b, c, d) where
    gcd (a1, b1, c1, d1) (a2, b2, c2, d2) = (gcd a1 a2, gcd b1 b2, gcd c1 c2, gcd d1 d2)
-
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c, LeftReductiveMonoid d) =>
-         LeftReductiveMonoid (a, b, c, d) where
-   stripPrefix (a1, b1, c1, d1) (a2, b2, c2, d2) =
-      (,,,) <$> stripPrefix a1 a2 <*> stripPrefix b1 b2 <*> stripPrefix c1 c2 <*> stripPrefix d1 d2
-   isPrefixOf (a1, b1, c1, d1) (a2, b2, c2, d2) =
-      isPrefixOf a1 a2 && isPrefixOf b1 b2 && isPrefixOf c1 c2 && isPrefixOf d1 d2
-
-instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c, RightReductiveMonoid d) =>
-         RightReductiveMonoid (a, b, c, d) where
-   stripSuffix (a1, b1, c1, d1) (a2, b2, c2, d2) =
-      (,,,) <$> stripSuffix a1 a2 <*> stripSuffix b1 b2 <*> stripSuffix c1 c2 <*> stripSuffix d1 d2
-   isSuffixOf (a1, b1, c1, d1) (a2, b2, c2, d2) =
-      isSuffixOf a1 a2 && isSuffixOf b1 b2 && isSuffixOf c1 c2 && isSuffixOf d1 d2
-
-instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c, LeftCancellativeMonoid d) =>
-         LeftCancellativeMonoid (a, b, c, d)
-
-instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c, RightCancellativeMonoid d) =>
-         RightCancellativeMonoid (a, b, c, d)
 
 instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c, LeftGCDMonoid d) => LeftGCDMonoid (a, b, c, d) where
    commonPrefix (a1, b1, c1, d1) (a2, b2, c2, d2) =
@@ -412,10 +316,8 @@ instance (RightGCDMonoid a, RightGCDMonoid b, RightGCDMonoid c, RightGCDMonoid d
 
 -- Maybe instances
 
-instance LeftReductiveMonoid x => LeftReductiveMonoid (Maybe x) where
-   stripPrefix Nothing y = Just y
-   stripPrefix Just{} Nothing = Nothing
-   stripPrefix (Just x) (Just y) = fmap Just $ stripPrefix x y
+instance LeftReductiveMonoid x => LeftReductiveMonoid (Maybe x)
+instance RightReductiveMonoid x => RightReductiveMonoid (Maybe x)
 
 instance LeftGCDMonoid x => LeftGCDMonoid (Maybe x) where
    commonPrefix (Just x) (Just y) = Just (commonPrefix x y)
@@ -424,11 +326,6 @@ instance LeftGCDMonoid x => LeftGCDMonoid (Maybe x) where
    stripCommonPrefix (Just x) (Just y) = (Just p, Just x', Just y')
       where (p, x', y') = stripCommonPrefix x y
    stripCommonPrefix x y = (Nothing, x, y)
-
-instance RightReductiveMonoid x => RightReductiveMonoid (Maybe x) where
-   stripSuffix Nothing y = Just y
-   stripSuffix Just{} Nothing = Nothing
-   stripSuffix (Just x) (Just y) = fmap Just $ stripSuffix x y
 
 instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
    commonSuffix (Just x) (Just y) = Just (commonSuffix x y)
@@ -441,18 +338,9 @@ instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
 -- Set instances
 
 instance Ord a => CommutativeMonoid (Set.Set a)
-
-instance Ord a => LeftReductiveMonoid (Set.Set a) where
-   isPrefixOf = Set.isSubsetOf
-   stripPrefix a b = b </> a
-
-instance Ord a => RightReductiveMonoid (Set.Set a) where
-   isSuffixOf = Set.isSubsetOf
-   stripSuffix a b = b </> a
-
-instance Ord a => ReductiveMonoid (Set.Set a) where
-   a </> b | Set.isSubsetOf b a = Just (a Set.\\ b)
-           | otherwise = Nothing
+instance Ord a => LeftReductiveMonoid (Set.Set a)
+instance Ord a => RightReductiveMonoid (Set.Set a)
+instance Ord a => ReductiveMonoid (Set.Set a)
 
 instance Ord a => LeftGCDMonoid (Set.Set a) where
    commonPrefix = Set.intersection
@@ -466,18 +354,9 @@ instance Ord a => GCDMonoid (Set.Set a) where
 -- IntSet instances
 
 instance CommutativeMonoid IntSet.IntSet
-
-instance LeftReductiveMonoid IntSet.IntSet where
-   isPrefixOf = IntSet.isSubsetOf
-   stripPrefix a b = b </> a
-
-instance RightReductiveMonoid IntSet.IntSet where
-   isSuffixOf = IntSet.isSubsetOf
-   stripSuffix a b = b </> a
-
-instance ReductiveMonoid IntSet.IntSet where
-   a </> b | IntSet.isSubsetOf b a = Just (a IntSet.\\ b)
-           | otherwise = Nothing
+instance LeftReductiveMonoid IntSet.IntSet
+instance RightReductiveMonoid IntSet.IntSet
+instance ReductiveMonoid IntSet.IntSet
 
 instance LeftGCDMonoid IntSet.IntSet where
    commonPrefix = IntSet.intersection
@@ -490,20 +369,14 @@ instance GCDMonoid IntSet.IntSet where
 
 -- Map instances
 
-instance Ord k => LeftReductiveMonoid (Map.Map k a) where
-   isPrefixOf = Map.isSubmapOfBy (\_ _-> True)
-   stripPrefix a b | Map.isSubmapOfBy (\_ _-> True) a b = Just (b Map.\\ a)
-                   | otherwise = Nothing
+instance Ord k => LeftReductiveMonoid (Map.Map k a)
 
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
    commonPrefix = Map.mergeWithKey (\_ a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
 
 -- IntMap instances
 
-instance LeftReductiveMonoid (IntMap.IntMap a) where
-   isPrefixOf = IntMap.isSubmapOfBy (\_ _-> True)
-   stripPrefix a b | IntMap.isSubmapOfBy (\_ _-> True) a b = Just (b IntMap.\\ a)
-                   | otherwise = Nothing
+instance LeftReductiveMonoid (IntMap.IntMap a)
 
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
    commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
@@ -511,10 +384,7 @@ instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
 
 -- List instances
 
-instance Eq x => LeftReductiveMonoid [x] where
-   stripPrefix = List.stripPrefix
-   isPrefixOf = List.isPrefixOf
-
+instance Eq x => LeftReductiveMonoid [x]
 instance Eq x => LeftCancellativeMonoid [x]
 
 instance Eq x => LeftGCDMonoid [x] where
@@ -527,18 +397,9 @@ instance Eq x => LeftGCDMonoid [x] where
 
 -- Seq instances
 
-instance Eq a => LeftReductiveMonoid (Sequence.Seq a) where
-   stripPrefix p s | p == s1 = Just s2
-                   | otherwise = Nothing
-      where (s1, s2) = Sequence.splitAt (Sequence.length p) s
-
-instance Eq a => RightReductiveMonoid (Sequence.Seq a) where
-   stripSuffix p s | p == s2 = Just s1
-                   | otherwise = Nothing
-      where (s1, s2) = Sequence.splitAt (Sequence.length s - Sequence.length p) s
-
+instance Eq a => LeftReductiveMonoid (Sequence.Seq a)
+instance Eq a => RightReductiveMonoid (Sequence.Seq a)
 instance Eq a => LeftCancellativeMonoid (Sequence.Seq a)
-
 instance Eq a => RightCancellativeMonoid (Sequence.Seq a)
 
 instance Eq a => LeftGCDMonoid (Sequence.Seq a) where
@@ -555,38 +416,9 @@ instance Eq a => RightGCDMonoid (Sequence.Seq a) where
 
 -- Vector instances
 
-instance Eq a => LeftReductiveMonoid (Vector.Vector a) where
-   stripPrefix p l | prefixLength > Vector.length l = Nothing
-                    | otherwise = strip 0
-      where strip i | i == prefixLength = Just (Vector.drop prefixLength l)
-                    | l Vector.! i == p Vector.! i = strip (succ i)
-                    | otherwise = Nothing
-            prefixLength = Vector.length p
-   isPrefixOf p l | prefixLength > Vector.length l = False
-                  | otherwise = test 0
-      where test i | i == prefixLength = True
-                   | l Vector.! i == p Vector.! i = test (succ i)
-                   | otherwise = False
-            prefixLength = Vector.length p
-
-instance Eq a => RightReductiveMonoid (Vector.Vector a) where
-   stripSuffix s l | suffixLength > Vector.length l = Nothing
-                   | otherwise = strip (pred suffixLength)
-      where strip i | i == -1 = Just (Vector.take lengthDifference l)
-                    | l Vector.! (lengthDifference + i) == s Vector.! i = strip (pred i)
-                    | otherwise = Nothing
-            suffixLength = Vector.length s
-            lengthDifference = Vector.length l - suffixLength
-   isSuffixOf s l | suffixLength > Vector.length l = False
-                  | otherwise = test (pred suffixLength)
-      where test i | i == -1 = True
-                   | l Vector.! (lengthDifference + i) == s Vector.! i = test (pred i)
-                   | otherwise = False
-            suffixLength = Vector.length s
-            lengthDifference = Vector.length l - suffixLength
-
+instance Eq a => LeftReductiveMonoid (Vector.Vector a)
+instance Eq a => RightReductiveMonoid (Vector.Vector a)
 instance Eq a => LeftCancellativeMonoid (Vector.Vector a)
-
 instance Eq a => RightCancellativeMonoid (Vector.Vector a)
 
 instance Eq a => LeftGCDMonoid (Vector.Vector a) where
@@ -605,20 +437,9 @@ instance Eq a => RightGCDMonoid (Vector.Vector a) where
 
 -- ByteString instances
 
-instance LeftReductiveMonoid ByteString.ByteString where
-   stripPrefix p l = if ByteString.isPrefixOf p l
-                     then Just (ByteString.unsafeDrop (ByteString.length p) l)
-                     else Nothing
-   isPrefixOf = ByteString.isPrefixOf
-
-instance RightReductiveMonoid ByteString.ByteString where
-   stripSuffix s l = if ByteString.isSuffixOf s l
-                     then Just (ByteString.unsafeTake (ByteString.length l - ByteString.length s) l)
-                     else Nothing
-   isSuffixOf = ByteString.isSuffixOf
-
+instance LeftReductiveMonoid ByteString.ByteString
+instance RightReductiveMonoid ByteString.ByteString
 instance LeftCancellativeMonoid ByteString.ByteString
-
 instance RightCancellativeMonoid ByteString.ByteString
 
 instance LeftGCDMonoid ByteString.ByteString where
@@ -640,20 +461,9 @@ instance RightGCDMonoid ByteString.ByteString where
 
 -- Lazy ByteString instances
 
-instance LeftReductiveMonoid LazyByteString.ByteString where
-   stripPrefix p l = if LazyByteString.isPrefixOf p l
-                     then Just (LazyByteString.drop (LazyByteString.length p) l)
-                     else Nothing
-   isPrefixOf = LazyByteString.isPrefixOf
-
-instance RightReductiveMonoid LazyByteString.ByteString where
-   stripSuffix s l = if LazyByteString.isSuffixOf s l
-                     then Just (LazyByteString.take (LazyByteString.length l - LazyByteString.length s) l)
-                     else Nothing
-   isSuffixOf = LazyByteString.isSuffixOf
-
+instance LeftReductiveMonoid LazyByteString.ByteString
+instance RightReductiveMonoid LazyByteString.ByteString
 instance LeftCancellativeMonoid LazyByteString.ByteString
-
 instance RightCancellativeMonoid LazyByteString.ByteString
 
 instance LeftGCDMonoid LazyByteString.ByteString where
@@ -673,16 +483,9 @@ instance RightGCDMonoid LazyByteString.ByteString where
 
 -- Text instances
 
-instance LeftReductiveMonoid Text.Text where
-   stripPrefix = Text.stripPrefix
-   isPrefixOf = Text.isPrefixOf
-
-instance RightReductiveMonoid Text.Text where
-   stripSuffix = Text.stripSuffix
-   isSuffixOf = Text.isSuffixOf
-
+instance LeftReductiveMonoid Text.Text
+instance RightReductiveMonoid Text.Text
 instance LeftCancellativeMonoid Text.Text
-
 instance RightCancellativeMonoid Text.Text
 
 instance LeftGCDMonoid Text.Text where
@@ -690,16 +493,9 @@ instance LeftGCDMonoid Text.Text where
 
 -- Lazy Text instances
 
-instance LeftReductiveMonoid LazyText.Text where
-   stripPrefix = LazyText.stripPrefix
-   isPrefixOf = LazyText.isPrefixOf
-
-instance RightReductiveMonoid LazyText.Text where
-   stripSuffix = LazyText.stripSuffix
-   isSuffixOf = LazyText.isSuffixOf
-
+instance LeftReductiveMonoid LazyText.Text
+instance RightReductiveMonoid LazyText.Text
 instance LeftCancellativeMonoid LazyText.Text
-
 instance RightCancellativeMonoid LazyText.Text
 
 instance LeftGCDMonoid LazyText.Text where

@@ -23,12 +23,15 @@ import Control.Applicative -- (Applicative(..))
 import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(..))
-import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftGCDMonoid(..), RightReductiveMonoid(..), RightGCDMonoid(..))
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid (Monoid(..))
+import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid(..), RightReductiveMonoid, RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
+import qualified Data.Semigroup.Factorial as Factorial
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 
@@ -54,7 +57,11 @@ instance Functor (Stateful a) where
 
 instance Monoid a => Applicative (Stateful a) where
    pure m = Stateful (m, mempty)
-   Stateful (f, s1) <*> Stateful (x, s2) = Stateful (f x, s1 <> s2)
+   Stateful (f, s1) <*> Stateful (x, s2) = Stateful (f x, mappend s1 s2)
+
+instance (Semigroup a, Semigroup b) => Semigroup (Stateful a b) where
+   Stateful x <> Stateful y = Stateful (x <> y)
+   {-# INLINE (<>) #-}
 
 instance (Semigroup a, Semigroup b) => Semigroup (Stateful a b) where
    Stateful x <> Stateful y = Stateful (x <> y)
@@ -72,17 +79,20 @@ instance (MonoidNull a, MonoidNull b) => MonoidNull (Stateful a b) where
 
 instance (PositiveMonoid a, PositiveMonoid b) => PositiveMonoid (Stateful a b)
 
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (Stateful a b) where
+instance (LeftReductiveSemigroup a, LeftReductiveSemigroup b) => LeftReductiveSemigroup (Stateful a b) where
    isPrefixOf (Stateful x) (Stateful x') = isPrefixOf x x'
    stripPrefix (Stateful x) (Stateful x') = Stateful <$> stripPrefix x x'
    {-# INLINE isPrefixOf #-}
    {-# INLINE stripPrefix #-}
 
-instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (Stateful a b) where
+instance (RightReductiveSemigroup a, RightReductiveSemigroup b) => RightReductiveSemigroup (Stateful a b) where
    isSuffixOf (Stateful x) (Stateful x') = isSuffixOf x x'
    stripSuffix (Stateful x) (Stateful x') = Stateful <$> stripSuffix x x'
    {-# INLINE stripSuffix #-}
    {-# INLINE isSuffixOf #-}
+
+instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (Stateful a b)
+instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (Stateful a b)
 
 instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (Stateful a b) where
    commonPrefix (Stateful x) (Stateful x') = Stateful (commonPrefix x x')
@@ -95,22 +105,31 @@ instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (Stateful a b) w
    commonSuffix (Stateful x) (Stateful x') = Stateful (commonSuffix x x')
    {-# INLINE commonSuffix #-}
 
-instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b) where
+instance (MonoidNull a, MonoidNull b, FactorialSemigroup a, FactorialSemigroup b) =>
+         FactorialSemigroup (Stateful a b) where
    factors (Stateful x) = List.map Stateful (factors x)
    length (Stateful x) = length x
    reverse (Stateful x) = Stateful (reverse x)
    primePrefix (Stateful x) = Stateful (primePrefix x)
    primeSuffix (Stateful x) = Stateful (primeSuffix x)
-   splitPrimePrefix (Stateful x) = do (xp, xs) <- splitPrimePrefix x
-                                      return (Stateful xp, Stateful xs)
-   splitPrimeSuffix (Stateful x) = do (xp, xs) <- splitPrimeSuffix x
-                                      return (Stateful xp, Stateful xs)
    foldl f a0 (Stateful x) = Factorial.foldl f' a0 x
       where f' a x1 = f a (Stateful x1)
    foldl' f a0 (Stateful x) = Factorial.foldl' f' a0 x
       where f' a x1 = f a (Stateful x1)
    foldr f a (Stateful x) = Factorial.foldr (f . Stateful) a x
    foldMap f (Stateful x) = Factorial.foldMap (f . Stateful) x
+   {-# INLINE primePrefix #-}
+   {-# INLINE primeSuffix #-}
+   {-# INLINE foldl' #-}
+   {-# INLINE foldr #-}
+   {-# INLINE foldMap #-}
+   {-# INLINE length #-}
+
+instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b) where
+   splitPrimePrefix (Stateful x) = do (xp, xs) <- splitPrimePrefix x
+                                      return (Stateful xp, Stateful xs)
+   splitPrimeSuffix (Stateful x) = do (xp, xs) <- splitPrimeSuffix x
+                                      return (Stateful xp, Stateful xs)
    span p (Stateful x) = (Stateful xp, Stateful xs)
       where (xp, xs) = Factorial.span (p . Stateful) x
    spanMaybe s0 f (Stateful x) = (Stateful xp, Stateful xs, s')
@@ -124,20 +143,16 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b
       where (xp, xs) = splitAt n x
    take n (Stateful x) = Stateful (take n x)
    drop n (Stateful x) = Stateful (drop n x)
-   {-# INLINE primePrefix #-}
-   {-# INLINE primeSuffix #-}
    {-# INLINE splitPrimePrefix #-}
    {-# INLINE splitPrimeSuffix #-}
-   {-# INLINE foldl' #-}
-   {-# INLINE foldr #-}
-   {-# INLINE foldMap #-}
-   {-# INLINE length #-}
    {-# INLINE span #-}
    {-# INLINE spanMaybe #-}
    {-# INLINE spanMaybe' #-}
    {-# INLINE splitAt #-}
    {-# INLINE take #-}
    {-# INLINE drop #-}
+
+instance (StableFactorialMonoid a, StableFactorialMonoid b) => StableFactorialSemigroup (Stateful a b)
 
 instance (StableFactorialMonoid a, StableFactorialMonoid b) => StableFactorialMonoid (Stateful a b)
 

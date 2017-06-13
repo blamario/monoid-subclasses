@@ -20,9 +20,10 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
-import Data.Monoid -- (Monoid(..), First(..), Sum(..))
-import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
-                                 LeftGCDMonoid(..), RightGCDMonoid(..))
+import Data.Monoid (Monoid(..), First(..), Sum(..))
+import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -55,14 +56,14 @@ concatenate q
 extract :: Concat a -> Seq a
 extract = Seq.fromList . Foldable.toList
 
-force :: Monoid a => Concat a -> a
+force :: Semigroup a => Concat a -> a
 force (Leaf x) = x
 force (x :<> y) = force x <> force y
 
-instance (Eq a, Monoid a) => Eq (Concat a) where
+instance (Eq a, Semigroup a) => Eq (Concat a) where
    x == y = force x == force y
 
-instance (Ord a, Monoid a) => Ord (Concat a) where
+instance (Ord a, Semigroup a) => Ord (Concat a) where
    compare x y = compare (force x) (force y)
 
 instance Functor Concat where
@@ -76,9 +77,9 @@ instance Applicative Concat where
 
 instance Foldable.Foldable Concat where
    fold (Leaf x) = x
-   fold (x :<> y) = Foldable.fold x <> Foldable.fold y
+   fold (x :<> y) = Foldable.fold x `mappend` Foldable.fold y
    foldMap f (Leaf x) = f x
-   foldMap f (x :<> y) = Foldable.foldMap f x <> Foldable.foldMap f y
+   foldMap f (x :<> y) = Foldable.foldMap f x `mappend` Foldable.foldMap f y
    foldl f a (Leaf x) = f a x
    foldl f a (x :<> y) = Foldable.foldl f (Foldable.foldl f a x) y
    foldl' f a (Leaf x) = f a x
@@ -89,10 +90,14 @@ instance Foldable.Foldable Concat where
    foldr' f a (x :<> y) = let a' = Foldable.foldr' f a y in Foldable.foldr' f a' x
 
 instance PositiveMonoid a => Semigroup (Concat a) where
-   x <> y
+   x <> y 
       | null x = y
       | null y = x
       | otherwise = x :<> y
+
+instance PositiveMonoid a => Monoid (Concat a) where
+   mempty = Leaf mempty
+   mappend = (<>)
 
 instance PositiveMonoid a => Monoid (Concat a) where
    mempty = Leaf mempty
@@ -104,7 +109,7 @@ instance PositiveMonoid a => MonoidNull (Concat a) where
 
 instance PositiveMonoid a => PositiveMonoid (Concat a)
 
-instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a) where
+instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveSemigroup (Concat a) where
    stripPrefix (Leaf x) (Leaf y) = Leaf <$> stripPrefix x y
    stripPrefix (xp :<> xs) y = stripPrefix xp y >>= stripPrefix xs
    stripPrefix x (yp :<> ys) = case (stripPrefix x yp, stripPrefix yp x)
@@ -112,13 +117,17 @@ instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid
                                   (Nothing, Nothing) -> Nothing
                                   (Nothing, Just xs) -> stripPrefix xs ys
 
-instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Concat a) where
+instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a)
+
+instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveSemigroup (Concat a) where
    stripSuffix (Leaf x) (Leaf y) = Leaf <$> stripSuffix x y
    stripSuffix (xp :<> xs) y = stripSuffix xs y >>= stripSuffix xp
    stripSuffix x (yp :<> ys) = case (stripSuffix x ys, stripSuffix ys x)
                                of (Just ysp, _) -> Just (yp <> ysp)
                                   (Nothing, Nothing) -> Nothing
                                   (Nothing, Just xp) -> stripSuffix xp yp
+
+instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Concat a)
 
 instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Concat a) where
    stripCommonPrefix (Leaf x) (Leaf y) = map3 Leaf (stripCommonPrefix x y)
@@ -146,7 +155,7 @@ instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Concat a
       where (xp, ysp, yss) = stripCommonSuffix x ys
             (xpp, ypp, yps) = stripCommonSuffix xp yp
 
-instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) where
+instance (FactorialSemigroup a, PositiveMonoid a) => FactorialSemigroup (Concat a) where
    factors c = toList c []
       where toList (Leaf x) rest
                | null x = rest
@@ -156,10 +165,6 @@ instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) whe
    primePrefix (x :<> _) = primePrefix x
    primeSuffix (Leaf x) = Leaf (primeSuffix x)
    primeSuffix (_ :<> y) = primeSuffix y
-   splitPrimePrefix (Leaf x) = map2 Leaf <$> splitPrimePrefix x
-   splitPrimePrefix (x :<> y) = ((<> y) <$>) <$> splitPrimePrefix x
-   splitPrimeSuffix (Leaf x) = map2 Leaf <$> splitPrimeSuffix x
-   splitPrimeSuffix (x :<> y) = first (x <>) <$> splitPrimeSuffix y
 
    foldl f = Foldable.foldl g
       where g = Factorial.foldl (\a-> f a . Leaf)
@@ -167,8 +172,16 @@ instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) whe
       where g = Factorial.foldl' (\a-> f a . Leaf)
    foldr f = Foldable.foldr g
       where g a b = Factorial.foldr (f . Leaf) b a
-   length x = getSum $ Foldable.foldMap (Sum . length) x
    foldMap f = Foldable.foldMap (Factorial.foldMap (f . Leaf))
+   length x = getSum $ Foldable.foldMap (Sum . length) x
+   reverse (Leaf x) = Leaf (reverse x)
+   reverse (x :<> y) = reverse y :<> reverse x
+
+instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) where
+   splitPrimePrefix (Leaf x) = map2 Leaf <$> splitPrimePrefix x
+   splitPrimePrefix (x :<> y) = ((<> y) <$>) <$> splitPrimePrefix x
+   splitPrimeSuffix (Leaf x) = map2 Leaf <$> splitPrimeSuffix x
+   splitPrimeSuffix (x :<> y) = first (x <>) <$> splitPrimeSuffix y
    span p (Leaf x) = map2 Leaf (Factorial.span (p . Leaf) x)
    span p (x :<> y)
       | null xs = (x <> yp, ys)
@@ -203,9 +216,8 @@ instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) whe
       where k = length x
             (yp, ys) = splitAt (n - k) y
             (xp, xs) = splitAt n x
-   reverse (Leaf x) = Leaf (reverse x)
-   reverse (x :<> y) = reverse y :<> reverse x
 
+instance (FactorialSemigroup a, PositiveMonoid a) => StableFactorialSemigroup (Concat a)
 instance (FactorialMonoid a, PositiveMonoid a) => StableFactorialMonoid (Concat a)
 
 instance (IsString a) => IsString (Concat a) where

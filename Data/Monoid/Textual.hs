@@ -105,8 +105,8 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    -- | Equivalent to 'List.concatMap' from "Data.List" with a @Char -> String@ function. Preserves all non-character
    -- data.
    concatMap :: (Char -> t) -> t -> t
-   -- | Returns the list of characters the monoid contains, after having the argument function convert all its
-   -- non-character factors into characters.
+   -- | Returns the list of characters the monoid contains, once the argument function converts all its non-character
+   -- factors into characters.
    toString :: (t -> String) -> t -> String
    -- | Equivalent to 'List.any' from "Data.List". Ignores all non-character data.
    any :: (Char -> Bool) -> t -> Bool
@@ -147,9 +147,9 @@ class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) =>
    -- | The first predicate tests the non-character data, the second one the characters. Otherwise equivalent to
    -- 'List.dropWhile' from "Data.List" when applied to a 'String'.
    dropWhile :: (t -> Bool) -> (Char -> Bool) -> t -> t
-   -- | 'break pt pc' is equivalent to |span (not . pt) (not . pc)|.
+   -- | 'break pt pc' is equivalent to @span (not . pt) (not . pc)@.
    break :: (t -> Bool) -> (Char -> Bool) -> t -> (t, t)
-   -- | 'span pt pc t' is equivalent to |(takeWhile pt pc t, dropWhile pt pc t)|.
+   -- | 'span pt pc t' is equivalent to @(takeWhile pt pc t, dropWhile pt pc t)@.
    span :: (t -> Bool) -> (Char -> Bool) -> t -> (t, t)
    -- | A stateful variant of 'span', threading the result of the test function as long as it returns 'Just'.
    spanMaybe :: s -> (s -> t -> Maybe s) -> (s -> Char -> Maybe s) -> t -> (t, t, s)

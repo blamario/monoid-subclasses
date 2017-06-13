@@ -53,9 +53,11 @@ import qualified Data.ByteString.Char8 as ByteString.Char8
 import Data.ByteString.Internal (w2c)
 import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, unsafeIndex)
 
-import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(mempty, mappend))
-import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftCancellativeMonoid, LeftGCDMonoid(..))
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid (Monoid(..))
+import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), LeftCancellativeSemigroup)
+import Data.Semigroup.Factorial (FactorialSemigroup(..))
+import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -95,12 +97,14 @@ instance MonoidNull ByteStringUTF8 where
    null (ByteStringUTF8 b) = ByteString.null b
    {-# INLINE null #-}
 
-instance LeftReductiveMonoid ByteStringUTF8 where
+instance LeftReductiveSemigroup ByteStringUTF8 where
    stripPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = fmap ByteStringUTF8 (stripPrefix a b)
    {-# INLINE stripPrefix #-}
    ByteStringUTF8 a `isPrefixOf` ByteStringUTF8 b = a `isPrefixOf` b
    {-# INLINE isPrefixOf #-}
 
+instance LeftCancellativeSemigroup ByteStringUTF8
+instance LeftReductiveMonoid ByteStringUTF8
 instance LeftCancellativeMonoid ByteStringUTF8
 
 instance LeftGCDMonoid ByteStringUTF8 where
@@ -123,21 +127,7 @@ instance IsString ByteStringUTF8 where
 
 instance PositiveMonoid ByteStringUTF8
 
-instance FactorialMonoid ByteStringUTF8 where
-   splitPrimePrefix utf8@(ByteStringUTF8 bs)
-      | ByteString.null bs = Nothing
-      | unsafeHead bs < 0x80 = Just (wrapPair $ ByteString.splitAt 1 bs)
-      | otherwise = case ByteString.findIndex byteStartsCharacter (unsafeTail bs)
-                    of Just i -> Just (wrapPair $ ByteString.splitAt (succ i) bs)
-                       Nothing -> Just (utf8, ByteStringUTF8 $ ByteString.empty)
-   {-# INLINABLE splitPrimePrefix #-}
-   splitPrimeSuffix (ByteStringUTF8 bs)
-      | ByteString.null bs = Nothing
-      | ByteString.null prefix = Just (wrapPair splitBS)
-      | not (ByteString.null suffix) && ByteString.last prefix < 0x80 = Just (wrapPair splitBS)
-      | otherwise = Just (wrapPair $ ByteString.splitAt (pred $ ByteString.length prefix) bs)
-      where splitBS@(prefix, suffix) = ByteString.breakEnd byteStartsCharacter bs
-   {-# INLINABLE splitPrimeSuffix #-}
+instance FactorialSemigroup ByteStringUTF8 where
    primePrefix utf8@(ByteStringUTF8 bs)
       | ByteString.null bs = utf8
       | unsafeHead bs < 0x80 = ByteStringUTF8 (ByteString.take 1 bs)
@@ -168,6 +158,27 @@ instance FactorialMonoid ByteStringUTF8 where
                    | otherwise = f (ByteStringUTF8 b) a
             f'' w a = f (ByteStringUTF8 $ ByteString.singleton w) a
    {-# INLINABLE foldr #-}
+   reverse (ByteStringUTF8 bs) =
+      ByteStringUTF8 (ByteString.concat $ List.reverse $ List.map reverseASCII $ groupASCII bs)
+      where reverseASCII b | unsafeHead b < 0x80 = ByteString.reverse b
+                           | otherwise = b
+   {-# INLINABLE reverse #-}
+
+instance FactorialMonoid ByteStringUTF8 where
+   splitPrimePrefix utf8@(ByteStringUTF8 bs)
+      | ByteString.null bs = Nothing
+      | unsafeHead bs < 0x80 = Just (wrapPair $ ByteString.splitAt 1 bs)
+      | otherwise = case ByteString.findIndex byteStartsCharacter (unsafeTail bs)
+                    of Just i -> Just (wrapPair $ ByteString.splitAt (succ i) bs)
+                       Nothing -> Just (utf8, ByteStringUTF8 $ ByteString.empty)
+   {-# INLINABLE splitPrimePrefix #-}
+   splitPrimeSuffix (ByteStringUTF8 bs)
+      | ByteString.null bs = Nothing
+      | ByteString.null prefix = Just (wrapPair splitBS)
+      | not (ByteString.null suffix) && ByteString.last prefix < 0x80 = Just (wrapPair splitBS)
+      | otherwise = Just (wrapPair $ ByteString.splitAt (pred $ ByteString.length prefix) bs)
+      where splitBS@(prefix, suffix) = ByteString.breakEnd byteStartsCharacter bs
+   {-# INLINABLE splitPrimeSuffix #-}
    splitAt n (ByteStringUTF8 bs) = wrapPair (ByteString.splitAt (charStartIndex n bs) bs)
    {-# INLINE splitAt #-}
    take n (ByteStringUTF8 bs) = ByteStringUTF8 (ByteString.take (charStartIndex n bs) bs)
@@ -248,11 +259,6 @@ instance FactorialMonoid ByteStringUTF8 where
                                of Just s1 -> seq s1 (dropASCII s1 tl)
                                   Nothing -> (bs, s)
    {-# INLINE spanMaybe' #-}
-   reverse (ByteStringUTF8 bs) =
-      ByteStringUTF8 (ByteString.concat $ List.reverse $ List.map reverseASCII $ groupASCII bs)
-      where reverseASCII b | unsafeHead b < 0x80 = ByteString.reverse b
-                           | otherwise = b
-   {-# INLINABLE reverse #-}
 
 instance TextualMonoid ByteStringUTF8 where
    singleton = ByteStringUTF8 . fromChar

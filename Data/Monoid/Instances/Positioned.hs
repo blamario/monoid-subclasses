@@ -29,12 +29,15 @@ import Control.Applicative -- (Applicative(..))
 import qualified Data.List as List
 import Data.String (IsString(..))
 
-import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(..), Endo(..))
-import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..), LeftGCDMonoid(..), RightGCDMonoid(..))
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid (Monoid(..), Endo(..))
+import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
+import qualified Data.Semigroup.Factorial as Factorial
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 
@@ -100,10 +103,16 @@ instance Show m => Show (LinePositioned m) where
    showsPrec prec (LinePositioned pos l lpos c) =
       ("Line " ++) . shows l . (", column " ++) . shows (pos - lpos) . (": " ++) . showsPrec prec c
 
-instance StableFactorialMonoid m => Semigroup (OffsetPositioned m) where
+instance StableFactorialSemigroup m => Semigroup (OffsetPositioned m) where
    OffsetPositioned p1 c1 <> OffsetPositioned p2 c2 =
-      OffsetPositioned (if p1 /= 0 || p2 == 0 then p1 else max 0 $ p2 - length c1) (mappend c1 c2)
+      OffsetPositioned (if p1 /= 0 || p2 == 0 then p1 else max 0 $ p2 - length c1) (c1 <> c2)
    {-# INLINE (<>) #-}
+
+instance StableFactorialMonoid m => Monoid (OffsetPositioned m) where
+   mempty = pure mempty
+   mappend = (<>)
+   {-# INLINE mempty #-}
+   {-# INLINE mappend #-}
 
 instance (StableFactorialMonoid m, TextualMonoid m) => Semigroup (LinePositioned m) where
    LinePositioned p1 l1 lp1 c1 <> LinePositioned p2 l2 lp2 c2
@@ -117,6 +126,13 @@ instance (StableFactorialMonoid m, TextualMonoid m) => Semigroup (LinePositioned
            countLines n '\n' = succ n
            countLines n _ = n
    {-# INLINE (<>) #-}
+
+instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m) where
+   mempty = pure mempty
+   mappend (LinePositioned p1 l1 lp1 c1) (LinePositioned p2 l2 lp2 c2)
+   mappend = (<>)
+   {-# INLINE mempty #-}
+   {-# INLINE mappend #-}
 
 instance StableFactorialMonoid m => Monoid (OffsetPositioned m) where
    mempty = pure mempty
@@ -142,14 +158,15 @@ instance StableFactorialMonoid m => PositiveMonoid (OffsetPositioned m)
 
 instance (StableFactorialMonoid m, TextualMonoid m) => PositiveMonoid (LinePositioned m)
 
-instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveMonoid (OffsetPositioned m) where
+instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveSemigroup (OffsetPositioned m) where
    isPrefixOf (OffsetPositioned _ c1) (OffsetPositioned _ c2) = isPrefixOf c1 c2
    stripPrefix (OffsetPositioned _ c1) (OffsetPositioned p c2) = fmap (OffsetPositioned (p + length c1)) (stripPrefix c1 c2)
    {-# INLINE isPrefixOf #-}
    {-# INLINE stripPrefix #-}
 
-instance (StableFactorialMonoid m, TextualMonoid m, LeftReductiveMonoid m) =>
-         LeftReductiveMonoid (LinePositioned m) where
+instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveMonoid (OffsetPositioned m)
+
+instance (StableFactorialMonoid m, TextualMonoid m) => LeftReductiveSemigroup (LinePositioned m) where
    isPrefixOf a b = isPrefixOf (extractLines a) (extractLines b)
    stripPrefix LinePositioned{extractLines= c1} (LinePositioned p l lpos c2) =
       let (lines, columns) = linesColumns' c1
@@ -157,6 +174,8 @@ instance (StableFactorialMonoid m, TextualMonoid m, LeftReductiveMonoid m) =>
       in fmap (LinePositioned (p + len) (l + lines) (lpos + len - columns)) (stripPrefix c1 c2)
    {-# INLINE isPrefixOf #-}
    {-# INLINE stripPrefix #-}
+
+instance (StableFactorialMonoid m, TextualMonoid m) => LeftReductiveMonoid (LinePositioned m)
 
 instance (StableFactorialMonoid m, LeftGCDMonoid m) => LeftGCDMonoid (OffsetPositioned m) where
    commonPrefix (OffsetPositioned p1 c1) (OffsetPositioned p2 c2) = OffsetPositioned (min p1 p2) (commonPrefix c1 c2)
@@ -182,19 +201,23 @@ instance (StableFactorialMonoid m, TextualMonoid m, LeftGCDMonoid m) => LeftGCDM
    {-# INLINE commonPrefix #-}
    {-# INLINE stripCommonPrefix #-}
 
-instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductiveMonoid (OffsetPositioned m) where
+instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductiveSemigroup (OffsetPositioned m) where
    isSuffixOf (OffsetPositioned _ c1) (OffsetPositioned _ c2) = isSuffixOf c1 c2
    stripSuffix (OffsetPositioned _ c1) (OffsetPositioned p c2) = fmap (OffsetPositioned p) (stripSuffix c1 c2)
    {-# INLINE isSuffixOf #-}
    {-# INLINE stripSuffix #-}
 
+instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductiveMonoid (OffsetPositioned m)
+
 instance (StableFactorialMonoid m, TextualMonoid m, RightReductiveMonoid m) =>
-         RightReductiveMonoid (LinePositioned m) where
+         RightReductiveSemigroup (LinePositioned m) where
    isSuffixOf LinePositioned{extractLines=c1} LinePositioned{extractLines=c2} = isSuffixOf c1 c2
    stripSuffix (LinePositioned p l lp c1) LinePositioned{extractLines=c2} =
       fmap (LinePositioned p l lp) (stripSuffix c1 c2)
    {-# INLINE isSuffixOf #-}
    {-# INLINE stripSuffix #-}
+
+instance (StableFactorialMonoid m, TextualMonoid m, RightReductiveMonoid m) => RightReductiveMonoid (LinePositioned m)
 
 instance (StableFactorialMonoid m, RightGCDMonoid m) => RightGCDMonoid (OffsetPositioned m) where
    commonSuffix (OffsetPositioned p1 c1) (OffsetPositioned p2 c2) =
@@ -219,25 +242,34 @@ instance (StableFactorialMonoid m, TextualMonoid m, RightGCDMonoid m) => RightGC
             (lines1, columns1) = linesColumns' c1'
             (lines2, columns2) = linesColumns' c2'
 
-instance StableFactorialMonoid m => FactorialMonoid (OffsetPositioned m) where
+instance StableFactorialSemigroup m => FactorialSemigroup (OffsetPositioned m) where
    factors (OffsetPositioned p c) = snd $ List.mapAccumL next p (factors c)
       where next p1 c1 = (succ p1, OffsetPositioned p1 c1)
    primePrefix (OffsetPositioned p c) = OffsetPositioned p (primePrefix c)
-   splitPrimePrefix (OffsetPositioned p c) = fmap rewrap (splitPrimePrefix c)
-      where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (succ p) cs)
-   splitPrimeSuffix (OffsetPositioned p c) = fmap rewrap (splitPrimeSuffix c)
-      where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (p + length cp) cs)
    foldl f a0 (OffsetPositioned p0 c0) = fst $ Factorial.foldl f' (a0, p0) c0
       where f' (a, p) c = (f a (OffsetPositioned p c), succ p)
    foldl' f a0 (OffsetPositioned p0 c0) = fst $ Factorial.foldl' f' (a0, p0) c0
       where f' (a, p) c = let a' = f a (OffsetPositioned p c) in seq a' (a', succ p)
    foldr f a0 (OffsetPositioned p0 c0) = Factorial.foldr f' (const a0) c0 p0
       where f' c cont p = f (OffsetPositioned p c) (cont $! succ p)
-   length (OffsetPositioned _ c) = length c
    foldMap f (OffsetPositioned p c) = appEndo (Factorial.foldMap f' c) (const mempty) p
       where -- f' :: m -> Endo (Int -> m)
-            f' prime = Endo (\cont pos-> f (OffsetPositioned pos prime) <> cont (succ pos))
+            f' prime = Endo (\cont pos-> f (OffsetPositioned pos prime) `mappend` cont (succ pos))
+   length (OffsetPositioned _ c) = length c
+   reverse (OffsetPositioned p c) = OffsetPositioned p (Factorial.reverse c)
+   {-# INLINE primePrefix #-}
+   {-# INLINE foldl #-}
+   {-# INLINE foldl' #-}
+   {-# INLINE foldr #-}
+   {-# INLINE foldMap #-}
+   {-# INLINE length #-}
+   {-# INLINE reverse #-}
 
+instance StableFactorialMonoid m => FactorialMonoid (OffsetPositioned m) where
+   splitPrimePrefix (OffsetPositioned p c) = fmap rewrap (splitPrimePrefix c)
+      where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (succ p) cs)
+   splitPrimeSuffix (OffsetPositioned p c) = fmap rewrap (splitPrimeSuffix c)
+      where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (p + length cp) cs)
    spanMaybe s0 f (OffsetPositioned p0 t) = rewrap $ Factorial.spanMaybe (s0, p0) f' t
       where f' (s, p) prime = do s' <- f s (OffsetPositioned p prime)
                                  let p' = succ p
@@ -259,36 +291,18 @@ instance StableFactorialMonoid m => FactorialMonoid (OffsetPositioned m) where
       where (prefix, suffix) = splitAt n c
    drop n (OffsetPositioned p c) = OffsetPositioned (p + n) (Factorial.drop n c)
    take n (OffsetPositioned p c) = OffsetPositioned p (Factorial.take n c)
-   reverse (OffsetPositioned p c) = OffsetPositioned p (Factorial.reverse c)
-   {-# INLINE primePrefix #-}
    {-# INLINE splitPrimePrefix #-}
    {-# INLINE splitPrimeSuffix #-}
-   {-# INLINE foldl #-}
-   {-# INLINE foldl' #-}
-   {-# INLINE foldr #-}
-   {-# INLINE foldMap #-}
-   {-# INLINE length #-}
    {-# INLINE span #-}
    {-# INLINE splitAt #-}
    {-# INLINE take #-}
    {-# INLINE drop #-}
-   {-# INLINE reverse #-}
 
-instance (StableFactorialMonoid m, TextualMonoid m) => FactorialMonoid (LinePositioned m) where
+instance (StableFactorialMonoid m, TextualMonoid m) => FactorialSemigroup (LinePositioned m) where
    factors (LinePositioned p0 l0 lp0 c) = snd $ List.mapAccumL next (p0, l0, lp0) (factors c)
       where next (p, l, lp) c1 | characterPrefix c1 == Just '\n' = ((succ p, succ l, p), LinePositioned p l lp c1)
                                | otherwise = ((succ p, l, lp), LinePositioned p l lp c1)
    primePrefix (LinePositioned p l lp c) = LinePositioned p l lp (primePrefix c)
-   splitPrimePrefix (LinePositioned p l lp c) = fmap rewrap (splitPrimePrefix c)
-      where rewrap (cp, cs) = (LinePositioned p l lp cp,
-                               if characterPrefix cp == Just '\n'
-                               then LinePositioned (succ p) (succ l) p cs
-                               else LinePositioned (succ p) l lp cs)
-   splitPrimeSuffix (LinePositioned p l lp c) = fmap rewrap (splitPrimeSuffix c)
-      where rewrap (cp, cs) = (LinePositioned p l lp cp, LinePositioned p' (l + lines) (p' - columns) cs)
-               where len = length cp
-                     (lines, columns) = linesColumns cp
-                     p' = p + len
    foldl f a0 (LinePositioned p0 l0 lp0 c0) = fstOf4 $! Factorial.foldl f' (a0, p0, l0, lp0) c0
       where f' (a, p, l, lp) c | characterPrefix c == Just '\n' = (f a (LinePositioned p l lp c), succ p, succ l, p)
                                | otherwise = (f a (LinePositioned p l lp c), succ p, l, lp)
@@ -301,14 +315,33 @@ instance (StableFactorialMonoid m, TextualMonoid m) => FactorialMonoid (LinePosi
       where f' c cont p l lp
                | characterPrefix c == Just '\n' = f (LinePositioned p l lp c) $ ((cont $! succ p) $! succ l) p
                | otherwise = f (LinePositioned p l lp c) $ (cont $! succ p) l lp
-   length = length . extractLines
    foldMap f (LinePositioned p0 l0 lp0 c) = appEndo (Factorial.foldMap f' c) (const mempty) p0 l0 lp0
       where -- f' :: m -> Endo (Int -> Int -> Int -> m)
             f' prime = Endo (\cont p l lp-> f (LinePositioned p l lp prime)
-                                            <> if characterPrefix prime == Just '\n'
-                                               then cont (succ p) (succ l) p
-                                               else cont (succ p) l lp)
+                                            `mempty` if characterPrefix prime == Just '\n'
+                                                     then cont (succ p) (succ l) p
+                                                     else cont (succ p) l lp)
+   length = length . extractLines
+   reverse (LinePositioned p l lp c) = LinePositioned p l lp (Factorial.reverse c)
+   {-# INLINE primePrefix #-}
+   {-# INLINE foldl #-}
+   {-# INLINE foldl' #-}
+   {-# INLINE foldr #-}
+   {-# INLINE foldMap #-}
+   {-# INLINE length #-}
+   {-# INLINE reverse #-}
 
+instance (StableFactorialMonoid m, TextualMonoid m) => FactorialMonoid (LinePositioned m) where
+   splitPrimePrefix (LinePositioned p l lp c) = fmap rewrap (splitPrimePrefix c)
+      where rewrap (cp, cs) = (LinePositioned p l lp cp,
+                               if characterPrefix cp == Just '\n'
+                               then LinePositioned (succ p) (succ l) p cs
+                               else LinePositioned (succ p) l lp cs)
+   splitPrimeSuffix (LinePositioned p l lp c) = fmap rewrap (splitPrimeSuffix c)
+      where rewrap (cp, cs) = (LinePositioned p l lp cp, LinePositioned p' (l + lines) (p' - columns) cs)
+               where len = length cp
+                     (lines, columns) = linesColumns cp
+                     p' = p + len
    spanMaybe s0 f (LinePositioned p0 l0 lp0 c) = rewrap $ Factorial.spanMaybe (s0, p0, l0, lp0) f' c
       where f' (s, p, l, lp) prime = do s' <- f s (LinePositioned p l lp prime)
                                         let p' = succ p
@@ -343,22 +376,16 @@ instance (StableFactorialMonoid m, TextualMonoid m) => FactorialMonoid (LinePosi
             (lines, columns) = linesColumns prefix
             p' = p + n
    take n (LinePositioned p l lp c) = LinePositioned p l lp (Factorial.take n c)
-   reverse (LinePositioned p l lp c) = LinePositioned p l lp (Factorial.reverse c)
-   {-# INLINE primePrefix #-}
    {-# INLINE splitPrimePrefix #-}
    {-# INLINE splitPrimeSuffix #-}
-   {-# INLINE foldl #-}
-   {-# INLINE foldl' #-}
-   {-# INLINE foldr #-}
-   {-# INLINE foldMap #-}
-   {-# INLINE length #-}
    {-# INLINE span #-}
    {-# INLINE splitAt #-}
    {-# INLINE take #-}
-   {-# INLINE reverse #-}
 
+instance StableFactorialSemigroup m => StableFactorialSemigroup (OffsetPositioned m)
 instance StableFactorialMonoid m => StableFactorialMonoid (OffsetPositioned m)
 
+instance (StableFactorialMonoid m, TextualMonoid m) => StableFactorialSemigroup (LinePositioned m)
 instance (StableFactorialMonoid m, TextualMonoid m) => StableFactorialMonoid (LinePositioned m)
 
 instance IsString m => IsString (OffsetPositioned m) where
