@@ -47,6 +47,7 @@ import Data.Vector (Vector, fromList)
 import Text.Show.Functions
 
 import Data.Monoid.Instances.ByteString.UTF8 (ByteStringUTF8(ByteStringUTF8))
+import Data.Monoid.Instances.CharVector ()
 import Data.Monoid.Instances.Concat (Concat)
 import qualified Data.Monoid.Instances.Concat as Concat
 import Data.Monoid.Instances.Measured (Measured)
