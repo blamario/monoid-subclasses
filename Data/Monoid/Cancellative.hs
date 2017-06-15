@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2017 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -46,6 +46,7 @@ where
 
 import qualified Prelude
 
+import Control.Applicative ((<$>), (<*>))
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.List as List
 import Data.Maybe (isJust)

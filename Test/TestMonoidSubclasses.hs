@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2017 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -18,7 +18,7 @@ import Test.QuickCheck.Instances ()
 
 import Control.Applicative (Applicative(..), liftA2)
 import Data.Functor ((<$>))
-import Data.Foldable (toList)
+import Data.Foldable (foldMap, toList)
 import Data.Int (Int8, Int32)
 import qualified Data.Foldable as Foldable
 import Data.Traversable (Traversable)
