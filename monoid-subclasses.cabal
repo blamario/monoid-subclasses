@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             0.4.3.1
+Version:             0.4.3.2
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -16,7 +16,7 @@ Author:              Mario Blažević
 Maintainer:          Mario Blažević <blamario@protonmail.com>
 Homepage:            https://github.com/blamario/monoid-subclasses/
 Bug-reports:         https://github.com/blamario/monoid-subclasses/issues
-Extra-Source-Files:  README.md
+Extra-Source-Files:  README.md, CHANGELOG.md
 Source-repository head
   type:              git
   location:          https://github.com/blamario/monoid-subclasses
@@ -37,7 +37,7 @@ test-suite Main
                      bytestring >= 0.9 && < 1.0, containers >= 0.5.7.0 && < 0.6, text >= 0.11 && < 1.3,
                      vector >= 0.9 && < 0.13, primes == 0.2.*,
                      QuickCheck >= 2.9 && < 3, quickcheck-instances >= 0.3.12 && <0.4,
-                     tasty >= 0.7, tasty-quickcheck >= 0.7,
+                     tasty >= 0.7, tasty-quickcheck >= 0.7 && < 1.0,
                      monoid-subclasses
   Main-is:           Test/TestMonoidSubclasses.hs
   default-language:  Haskell2010
