@@ -387,7 +387,7 @@ reverseBytesToChar ft fc [b0, b1, b2] =
   else ft (ByteString.pack [b2, b1, b0])
 reverseBytesToChar ft fc [b0, b1, b2, b3] =
   assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0 && 0x80 <= b2 && b2 < 0xC0) $
-  if (0xF0 < b3 || 0xF0 == b3 && 0x90 <= b2) && b3 < 0xF4
+  if (0xF0 < b3 || 0xF0 == b3 && 0x90 <= b2) && b3 < 0xF5 && (b3 < 0xF4 || b2 < 0x90)
   then fc (chr (shiftL (fromIntegral b3 .&. 0x7) 18
                 .|. shiftL (fromIntegral b2 .&. 0x3F) 12
                 .|. shiftL (fromIntegral b1 .&. 0x3F) 6
@@ -411,7 +411,7 @@ bytesToChar ft fc bytes@[b2, b1, b0] =
   else ft (ByteString.pack bytes)
 bytesToChar ft fc bytes@[b3, b2, b1, b0] =
   assert (0x80 <= b0 && b0 < 0xC0 && 0x80 <= b1 && b1 < 0xC0 && 0x80 <= b2 && b2 < 0xC0) $
-  if (0xF0 < b3 || 0xF0 == b3 && 0x90 <= b2) && b3 < 0xF4
+  if (0xF0 < b3 || 0xF0 == b3 && 0x90 <= b2) && b3 < 0xF5 && (b3 < 0xF4 || b2 < 0x90)
   then fc (chr (shiftL (fromIntegral b3 .&. 0x7) 18
                 .|. shiftL (fromIntegral b2 .&. 0x3F) 12
                 .|. shiftL (fromIntegral b1 .&. 0x3F) 6
@@ -458,10 +458,10 @@ toChar hd tl | hd < 0x80 = Just (w2c hd, ByteStringUTF8 tl)
                                                    .|. fromIntegral b0 .&. 0x3F),
                                               ByteStringUTF8 t0)
                                  else Nothing
-             | hd < 0xF4 = do (b2, t2) <- ByteString.uncons tl
+             | hd < 0xF5 = do (b2, t2) <- ByteString.uncons tl
                               (b1, t1) <- ByteString.uncons t2
                               (b0, t0) <- ByteString.uncons t1
-                              if (hd > 0xF0 || b2 >= 0x90) && headIndex tl == 3
+                              if (hd > 0xF0 || b2 >= 0x90) && (hd < 0xF4 || b2 < 0x90) && headIndex tl == 3
                                  then return (chr (shiftL (fromIntegral hd .&. 0x7) 18
                                                    .|. shiftL (fromIntegral b2 .&. 0x3F) 12
                                                    .|. shiftL (fromIntegral b1 .&. 0x3F) 6
