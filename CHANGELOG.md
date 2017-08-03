@@ -1,4 +1,8 @@
 
+Version 0.4.4
+---------------
+Fixed boundary condition bugs in ByteStringUTF8 uncovered by a new version of QuickCheck
+
 Version 0.4.3.2
 ---------------
 Fixed compilation errors with GHC 7.8.4 and older
