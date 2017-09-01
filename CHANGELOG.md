@@ -71,7 +71,7 @@ Version 0.3.6
 
 Version 0.3.4.1
 ---------------
-Accomodating the text-1.0 release
+Accommodating the text-1.0 release
 
 * Introduced the function ByteStringUTF8.decode
 * Removed the utf-string dependency
