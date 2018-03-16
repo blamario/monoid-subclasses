@@ -1,4 +1,8 @@
 
+Version 0.4.5
+---------------
+Added the Semigroup instances to fix the compilation errors with base-4.11
+
 Version 0.4.4
 ---------------
 Fixed boundary condition bugs in ByteStringUTF8 uncovered by a new version of QuickCheck
