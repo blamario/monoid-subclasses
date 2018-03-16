@@ -1,5 +1,5 @@
 
-Version 0.4.5
+Version 0.4.6
 ---------------
 Added the Semigroup instances to fix the compilation errors with base-4.11
 
