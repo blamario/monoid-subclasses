@@ -18,7 +18,7 @@ import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(..))
+import Data.Monoid (Monoid(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)

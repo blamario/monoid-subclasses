@@ -54,7 +54,7 @@ import Data.ByteString.Internal (w2c)
 import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, unsafeIndex)
 
 import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(mempty, mappend))
+import Data.Monoid (Monoid(mempty, mappend))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftCancellativeMonoid, LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..))

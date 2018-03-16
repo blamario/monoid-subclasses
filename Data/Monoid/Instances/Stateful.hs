@@ -24,7 +24,7 @@ import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(..))
+import Data.Monoid (Monoid(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftGCDMonoid(..), RightReductiveMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
@@ -54,7 +54,7 @@ instance Functor (Stateful a) where
 
 instance Monoid a => Applicative (Stateful a) where
    pure m = Stateful (m, mempty)
-   Stateful (f, s1) <*> Stateful (x, s2) = Stateful (f x, s1 <> s2)
+   Stateful (f, s1) <*> Stateful (x, s2) = Stateful (f x, mappend s1 s2)
 
 instance (Semigroup a, Semigroup b) => Semigroup (Stateful a b) where
    Stateful x <> Stateful y = Stateful (x <> y)
@@ -62,7 +62,7 @@ instance (Semigroup a, Semigroup b) => Semigroup (Stateful a b) where
 
 instance (Monoid a, Monoid b) => Monoid (Stateful a b) where
    mempty = Stateful mempty
-   mappend = (<>)
+   Stateful x `mappend` Stateful y = Stateful (mappend x y)
    {-# INLINE mempty #-}
    {-# INLINE mappend #-}
 

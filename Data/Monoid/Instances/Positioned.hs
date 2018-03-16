@@ -29,8 +29,8 @@ import Control.Applicative -- (Applicative(..))
 import qualified Data.List as List
 import Data.String (IsString(..))
 
-import Data.Semigroup -- (Semigroup(..))
-import Data.Monoid -- (Monoid(..), Endo(..))
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid (Monoid(..), Endo(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..), LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
@@ -236,7 +236,7 @@ instance StableFactorialMonoid m => FactorialMonoid (OffsetPositioned m) where
    length (OffsetPositioned _ c) = length c
    foldMap f (OffsetPositioned p c) = appEndo (Factorial.foldMap f' c) (const mempty) p
       where -- f' :: m -> Endo (Int -> m)
-            f' prime = Endo (\cont pos-> f (OffsetPositioned pos prime) <> cont (succ pos))
+            f' prime = Endo (\cont pos-> f (OffsetPositioned pos prime) `mappend` cont (succ pos))
 
    spanMaybe s0 f (OffsetPositioned p0 t) = rewrap $ Factorial.spanMaybe (s0, p0) f' t
       where f' (s, p) prime = do s' <- f s (OffsetPositioned p prime)
@@ -305,9 +305,10 @@ instance (StableFactorialMonoid m, TextualMonoid m) => FactorialMonoid (LinePosi
    foldMap f (LinePositioned p0 l0 lp0 c) = appEndo (Factorial.foldMap f' c) (const mempty) p0 l0 lp0
       where -- f' :: m -> Endo (Int -> Int -> Int -> m)
             f' prime = Endo (\cont p l lp-> f (LinePositioned p l lp prime)
-                                            <> if characterPrefix prime == Just '\n'
-                                               then cont (succ p) (succ l) p
-                                               else cont (succ p) l lp)
+                                            `mappend`
+                                            if characterPrefix prime == Just '\n'
+                                            then cont (succ p) (succ l) p
+                                            else cont (succ p) l lp)
 
    spanMaybe s0 f (LinePositioned p0 l0 lp0 c) = rewrap $ Factorial.spanMaybe (s0, p0, l0, lp0) f' c
       where f' (s, p, l, lp) prime = do s' <- f s (LinePositioned p l lp prime)

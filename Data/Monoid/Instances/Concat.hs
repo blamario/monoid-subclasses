@@ -20,7 +20,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
-import Data.Monoid -- (Monoid(..), First(..), Sum(..))
+import Data.Monoid (Monoid(..), First(..), Sum(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -57,7 +57,7 @@ extract = Seq.fromList . Foldable.toList
 
 force :: Monoid a => Concat a -> a
 force (Leaf x) = x
-force (x :<> y) = force x <> force y
+force (x :<> y) = force x `mappend` force y
 
 instance (Eq a, Monoid a) => Eq (Concat a) where
    x == y = force x == force y
@@ -76,9 +76,9 @@ instance Applicative Concat where
 
 instance Foldable.Foldable Concat where
    fold (Leaf x) = x
-   fold (x :<> y) = Foldable.fold x <> Foldable.fold y
+   fold (x :<> y) = Foldable.fold x `mappend` Foldable.fold y
    foldMap f (Leaf x) = f x
-   foldMap f (x :<> y) = Foldable.foldMap f x <> Foldable.foldMap f y
+   foldMap f (x :<> y) = Foldable.foldMap f x `mappend` Foldable.foldMap f y
    foldl f a (Leaf x) = f a x
    foldl f a (x :<> y) = Foldable.foldl f (Foldable.foldl f a x) y
    foldl' f a (Leaf x) = f a x

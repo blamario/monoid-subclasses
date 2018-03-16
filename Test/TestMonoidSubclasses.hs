@@ -56,6 +56,7 @@ import qualified Data.Monoid.Instances.Stateful as Stateful
 import Data.Monoid.Instances.Positioned (OffsetPositioned, LinePositioned)
 import qualified Data.Monoid.Instances.Positioned as Positioned
 
+import Data.Semigroup (Semigroup)
 import Data.Monoid (Monoid, mempty, (<>), mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
