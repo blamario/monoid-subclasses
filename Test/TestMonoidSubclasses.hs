@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2017 Mario Blazevic
+    Copyright 2013-2018 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -757,7 +757,7 @@ textualFactors :: TextualMonoid t => t -> [Either t Char]
 textualFactors = map characterize . factors
    where characterize prime = maybe (Left prime) Right (Textual.characterPrefix prime)
 
-newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
+newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, Semigroup,
                                                  Monoid, LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, StableFactorialMonoid, IsString)
 

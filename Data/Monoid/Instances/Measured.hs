@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2015 Mario Blazevic
+    Copyright 2013-2018 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -17,6 +17,7 @@ where
 import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
+import Data.Semigroup -- (Semigroup(..))
 import Data.Monoid -- (Monoid(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
@@ -41,6 +42,9 @@ measure x = Measured (length x) x
 
 instance Ord a => Ord (Measured a) where
    compare (Measured _ x) (Measured _ y) = compare x y
+
+instance StableFactorialMonoid a => Semigroup (Measured a) where
+   Measured m a <> Measured n b = Measured (m + n) (mappend a b)
 
 instance StableFactorialMonoid a => Monoid (Measured a) where
    mempty = Measured 0 mempty

@@ -1,5 +1,5 @@
 {-
-    Copyright 2014-2015 Mario Blazevic
+    Copyright 2014-2018 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -29,7 +29,8 @@ import Control.Applicative -- (Applicative(..))
 import qualified Data.List as List
 import Data.String (IsString(..))
 
-import Data.Monoid -- (Monoid(..), (<>), Endo(..))
+import Data.Semigroup -- (Semigroup(..))
+import Data.Monoid -- (Monoid(..), Endo(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..), LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
@@ -99,16 +100,13 @@ instance Show m => Show (LinePositioned m) where
    showsPrec prec (LinePositioned pos l lpos c) =
       ("Line " ++) . shows l . (", column " ++) . shows (pos - lpos) . (": " ++) . showsPrec prec c
 
-instance StableFactorialMonoid m => Monoid (OffsetPositioned m) where
-   mempty = pure mempty
-   mappend (OffsetPositioned p1 c1) (OffsetPositioned p2 c2) =
+instance StableFactorialMonoid m => Semigroup (OffsetPositioned m) where
+   OffsetPositioned p1 c1 <> OffsetPositioned p2 c2 =
       OffsetPositioned (if p1 /= 0 || p2 == 0 then p1 else max 0 $ p2 - length c1) (mappend c1 c2)
-   {-# INLINE mempty #-}
-   {-# INLINE mappend #-}
+   {-# INLINE (<>) #-}
 
-instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m) where
-   mempty = pure mempty
-   mappend (LinePositioned p1 l1 lp1 c1) (LinePositioned p2 l2 lp2 c2)
+instance (StableFactorialMonoid m, TextualMonoid m) => Semigroup (LinePositioned m) where
+   LinePositioned p1 l1 lp1 c1 <> LinePositioned p2 l2 lp2 c2
      | p1 /= 0 || p2 == 0 = LinePositioned p1 l1 lp1 c
      | otherwise = LinePositioned p2' l2' lp2' c
      where c = mappend c1 c2
@@ -118,6 +116,17 @@ instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m)
            countLines :: Int -> Char -> Int
            countLines n '\n' = succ n
            countLines n _ = n
+   {-# INLINE (<>) #-}
+
+instance StableFactorialMonoid m => Monoid (OffsetPositioned m) where
+   mempty = pure mempty
+   mappend = (<>)
+   {-# INLINE mempty #-}
+   {-# INLINE mappend #-}
+
+instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m) where
+   mempty = pure mempty
+   mappend = (<>)
    {-# INLINE mempty #-}
    {-# INLINE mappend #-}
 

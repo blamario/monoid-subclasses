@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2016 Mario Blazevic
+    Copyright 2013-2018 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -19,7 +19,8 @@ import Control.Arrow (first)
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.String (IsString(..))
-import Data.Monoid -- (Monoid(..), (<>), First(..), Sum(..))
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid -- (Monoid(..), First(..), Sum(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), RightReductiveMonoid(..),
                                  LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -87,12 +88,15 @@ instance Foldable.Foldable Concat where
    foldr' f a (Leaf x) = f x a
    foldr' f a (x :<> y) = let a' = Foldable.foldr' f a y in Foldable.foldr' f a' x
 
-instance PositiveMonoid a => Monoid (Concat a) where
-   mempty = Leaf mempty
-   mappend x y 
+instance PositiveMonoid a => Semigroup (Concat a) where
+   x <> y
       | null x = y
       | null y = x
       | otherwise = x :<> y
+
+instance PositiveMonoid a => Monoid (Concat a) where
+   mempty = Leaf mempty
+   mappend = (<>)
 
 instance PositiveMonoid a => MonoidNull (Concat a) where
    null (Leaf x) = null x

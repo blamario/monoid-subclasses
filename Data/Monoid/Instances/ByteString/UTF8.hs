@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2016 Mario Blazevic
+    Copyright 2013-2018 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -53,6 +53,7 @@ import qualified Data.ByteString.Char8 as ByteString.Char8
 import Data.ByteString.Internal (w2c)
 import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, unsafeIndex)
 
+import Data.Semigroup -- (Semigroup(..))
 import Data.Monoid -- (Monoid(mempty, mappend))
 import Data.Monoid.Cancellative (LeftReductiveMonoid(..), LeftCancellativeMonoid, LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
@@ -79,6 +80,10 @@ decode bs
          Just{} -> (ByteStringUTF8 bs, mempty)
    where (prefix, suffix) = ByteString.breakEnd byteStartsCharacter bs
          l = ByteString.last bs
+
+instance Semigroup ByteStringUTF8 where
+   ByteStringUTF8 a <> ByteStringUTF8 b = ByteStringUTF8 (a <> b)
+   {-# INLINE (<>) #-}
 
 instance Monoid ByteStringUTF8 where
    mempty = ByteStringUTF8 ByteString.empty
