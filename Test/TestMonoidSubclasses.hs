@@ -511,9 +511,12 @@ checkFactorsFromString (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: G
 
 checkTextualMap (TextualMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
-   where check1 a = Textual.map succ a == Textual.concatMap (Textual.singleton . succ) a
+   where check1 a = Textual.map wrapSucc a == Textual.concatMap (Textual.singleton . wrapSucc) a
                     && Textual.map id a == a
-         check2 s = Textual.map succ (fromString s :: a) == fromString (List.map succ s)
+         check2 s = Textual.map wrapSucc (fromString s :: a) == fromString (List.map wrapSucc s)
+         wrapSucc c
+            | c == maxBound = minBound
+            | otherwise = succ c
 
 checkConcatMap (TextualMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
