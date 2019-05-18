@@ -137,7 +137,7 @@ class Monoid m => RightReductiveMonoid m where
 -- > stripPrefix a (a <> b) == Just b
 class LeftReductiveMonoid m => LeftCancellativeMonoid m
 
--- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
+-- | Subclass of 'RightReductiveMonoid' where 'stripSuffix' is a complete inverse of '<>', satisfying the following
 -- additional law:
 --
 -- > stripSuffix b (a <> b) == Just a
