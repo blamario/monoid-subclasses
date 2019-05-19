@@ -219,12 +219,17 @@ leftReductiveInstances = map upcast leftCancellativeInstances
                          ++ [LeftReductiveMonoidInstance (mempty :: Sum Integer),
                              LeftReductiveMonoidInstance (mempty :: IntSet),
                              LeftReductiveMonoidInstance (mempty :: Set Integer),
+                             LeftReductiveMonoidInstance (mempty :: IntMap Char),
                              LeftReductiveMonoidInstance (mempty :: Concat String),
                              LeftReductiveMonoidInstance (mempty :: Concat ByteString),
                              LeftReductiveMonoidInstance (mempty :: Concat Lazy.ByteString),
                              LeftReductiveMonoidInstance (mempty :: Concat Text),
                              LeftReductiveMonoidInstance (mempty :: Concat Lazy.Text),
-                             LeftReductiveMonoidInstance (mempty :: Concat (Dual Text))]
+                             LeftReductiveMonoidInstance (mempty :: Concat (Dual Text)),
+                             LeftReductiveMonoidInstance (mempty :: LinePositioned Text),
+                             LeftReductiveMonoidInstance (mempty :: OffsetPositioned Text),
+                             LeftReductiveMonoidInstance (mempty :: Measured Text),
+                             LeftReductiveMonoidInstance (mempty :: Stateful (Sum Integer) Text)]
    where upcast (LeftCancellativeMonoidInstance i) = LeftReductiveMonoidInstance i
 
 rightReductiveInstances = map upcast rightCancellativeInstances
@@ -235,7 +240,11 @@ rightReductiveInstances = map upcast rightCancellativeInstances
                               RightReductiveMonoidInstance (mempty :: Concat Lazy.ByteString),
                               RightReductiveMonoidInstance (mempty :: Concat Text),
                               RightReductiveMonoidInstance (mempty :: Concat Lazy.Text),
-                              RightReductiveMonoidInstance (mempty :: Concat (Dual Text))]
+                              RightReductiveMonoidInstance (mempty :: Concat (Dual Text)),
+                              RightReductiveMonoidInstance (mempty :: LinePositioned Text),
+                              RightReductiveMonoidInstance (mempty :: OffsetPositioned Text),
+                              RightReductiveMonoidInstance (mempty :: Measured Text),
+                              RightReductiveMonoidInstance (mempty :: Stateful (Sum Integer) Text)]
    where upcast (RightCancellativeMonoidInstance i) = RightReductiveMonoidInstance i
 
 reductiveInstances = map upcast cancellativeInstances
