@@ -1,4 +1,8 @@
 
+Version 0.5
+---------------
+Fixed issue #24, unlawful LeftReductiveMonoid instance for Map
+
 Version 0.4.6.1
 ---------------
 Bumped the containers dependency upper bounds
