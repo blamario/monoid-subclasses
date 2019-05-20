@@ -490,9 +490,9 @@ instance GCDMonoid IntSet.IntSet where
 
 -- Map instances
 
-instance Ord k => LeftReductiveMonoid (Map.Map k a) where
-   isPrefixOf = Map.isSubmapOfBy (\_ _-> True)
-   stripPrefix a b | Map.isSubmapOfBy (\_ _-> True) a b = Just (b Map.\\ a)
+instance (Ord k, Eq a) => LeftReductiveMonoid (Map.Map k a) where
+   isPrefixOf = Map.isSubmapOf
+   stripPrefix a b | Map.isSubmapOf a b = Just (b Map.\\ a)
                    | otherwise = Nothing
 
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
@@ -500,14 +500,14 @@ instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
 
 -- IntMap instances
 
-instance LeftReductiveMonoid (IntMap.IntMap a) where
-   isPrefixOf = IntMap.isSubmapOfBy (\_ _-> True)
-   stripPrefix a b | IntMap.isSubmapOfBy (\_ _-> True) a b = Just (b IntMap.\\ a)
+instance Eq a => LeftReductiveMonoid (IntMap.IntMap a) where
+   isPrefixOf = IntMap.isSubmapOf
+   stripPrefix a b | IntMap.isSubmapOf a b = Just (b IntMap.\\ a)
                    | otherwise = Nothing
 
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
    commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
-                                      (const IntMap.empty) (const IntMap.empty)
+                                       (const IntMap.empty) (const IntMap.empty)
 
 -- List instances
 
