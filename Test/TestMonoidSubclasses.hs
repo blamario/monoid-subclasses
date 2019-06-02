@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2018 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -89,9 +89,9 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | GCDTest (GCDMonoidInstance -> Property)
           | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
 
-data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) => 
+data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) =>
                                  CommutativeMonoidInstance a
-data NullMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) => 
+data NullMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) =>
                           NullMonoidInstance a
 data PositiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, PositiveMonoid a) =>
                               PositiveMonoidInstance a
@@ -99,30 +99,30 @@ data FactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq
                                FactorialMonoidInstance a
 data StableFactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a) =>
                                      StableFactorialMonoidInstance a
-data TextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => 
+data TextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) =>
                              TextualMonoidInstance a
 data StableTextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a,
                                               TextualMonoid a) =>
                                    StableTextualMonoidInstance a
-data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftReductiveMonoid a) => 
+data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftReductiveMonoid a) =>
                                    LeftReductiveMonoidInstance a
-data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightReductiveMonoid a) => 
+data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightReductiveMonoid a) =>
                                     RightReductiveMonoidInstance a
-data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, ReductiveMonoid a) => 
+data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, ReductiveMonoid a) =>
                                ReductiveMonoidInstance a
 data LeftCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftCancellativeMonoid a) => 
                                       LeftCancellativeMonoidInstance a
-data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightCancellativeMonoid a) => 
+data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightCancellativeMonoid a) =>
                                        RightCancellativeMonoidInstance a
-data CancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a) => 
+data CancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a) =>
                                   CancellativeMonoidInstance a
-data LeftGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftGCDMonoid a) => 
+data LeftGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftGCDMonoid a) =>
                              LeftGCDMonoidInstance a
-data RightGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightGCDMonoid a) => 
+data RightGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightGCDMonoid a) =>
                               RightGCDMonoidInstance a
-data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) => 
+data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) =>
                          GCDMonoidInstance a
-data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a, GCDMonoid a) => 
+data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a, GCDMonoid a) =>
                                      CancellativeGCDMonoidInstance a
 
 commutativeInstances :: [CommutativeMonoidInstance]
@@ -315,19 +315,11 @@ rightGCDInstances = map upcast gcdInstances
    where upcast (GCDMonoidInstance i) = RightGCDMonoidInstance i
 
 gcdInstances = map upcast cancellativeGCDInstances
-               ++ [GCDMonoidInstance (mempty :: Product Integer),
-                   GCDMonoidInstance (mempty :: Dual (Product Integer)),
-                   GCDMonoidInstance (mempty :: IntSet),
+               ++ [GCDMonoidInstance (mempty :: IntSet),
                    GCDMonoidInstance (mempty :: Set String)]
    where upcast (CancellativeGCDMonoidInstance i) = GCDMonoidInstance i
 
-cancellativeGCDInstances = [CancellativeGCDMonoidInstance (),
-                            CancellativeGCDMonoidInstance (mempty :: Sum Integer),
-                            CancellativeGCDMonoidInstance (mempty :: Dual (Sum Integer)),
-                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, Dual (Sum Integer))),
-                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, (), Dual (Sum Integer))),
-                            CancellativeGCDMonoidInstance (mempty :: ((Sum Integer, ()), Sum Integer, (),
-                                                                      Dual (Sum Integer)))]
+cancellativeGCDInstances = [CancellativeGCDMonoidInstance ()]
 
 main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
   where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
@@ -419,8 +411,12 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("cancellative </>", CancellativeTest checkUnAppend'),
          ("stripCommonPrefix 1", LeftGCDTest checkStripCommonPrefix1),
          ("stripCommonPrefix 2", LeftGCDTest checkStripCommonPrefix2),
+         ("stripCommonPrefix 3", LeftGCDTest checkStripCommonPrefix3),
+         ("stripCommonPrefix 4", LeftGCDTest checkStripCommonPrefix4),
          ("stripCommonSuffix 1", RightGCDTest checkStripCommonSuffix1),
          ("stripCommonSuffix 2", RightGCDTest checkStripCommonSuffix2),
+         ("stripCommonSuffix 3", RightGCDTest checkStripCommonSuffix3),
+         ("stripCommonSuffix 4", RightGCDTest checkStripCommonSuffix4),
          ("gcd", GCDTest checkGCD),
          ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD)
         ]
@@ -743,6 +739,16 @@ checkStripCommonPrefix2 (LeftGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: 
    where check (a, b) = p == commonPrefix a b && p <> a' == a && p <> b' == b
             where (p, a', b') = stripCommonPrefix a b
 
+checkStripCommonPrefix3 (LeftGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (p, as, bs) = p `isPrefixOf` commonPrefix a b
+            where a = p <> as
+                  b = p <> bs
+
+checkStripCommonPrefix4 (LeftGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (p, a, b) = not (c /= c' && c' `isPrefixOf` a && c' `isPrefixOf` b)
+            where c = commonPrefix a b
+                  c' = p <> c
+
 checkStripCommonSuffix1 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = stripCommonSuffix a b == (a', b', s)
             where s = commonSuffix a b
@@ -752,6 +758,16 @@ checkStripCommonSuffix1 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary ::
 checkStripCommonSuffix2 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = s == commonSuffix a b && a' <> s == a && b' <> s == b
             where (a', b', s) = stripCommonSuffix a b
+
+checkStripCommonSuffix3 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (ap, bp, s) = s `isSuffixOf` commonSuffix a b
+            where a = ap <> s
+                  b = bp <> s
+
+checkStripCommonSuffix4 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (a, b, s) = not (c /= c' && c' `isSuffixOf` a && c' `isSuffixOf` b)
+            where c = commonSuffix a b
+                  c' = c <> s
 
 checkGCD (GCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = d == commonPrefix a b

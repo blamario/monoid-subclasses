@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2017 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -75,6 +75,12 @@ class Monoid m => CommutativeMonoid m
 -- 
 -- > maybe a (b <>) (a </> b) == a
 -- > maybe a (<> b) (a </> b) == a
+--
+-- The '</>' operator is a synonym for both 'stripPrefix' and 'stripSuffix', which must be equivalent as '<>' is both
+-- associative and commutative.
+--
+-- > (</>) = flip stripPrefix
+-- > (</>) = flip stripSuffix
 class (CommutativeMonoid m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m where
    (</>) :: m -> m -> Maybe m
 
@@ -146,13 +152,22 @@ class RightReductiveMonoid m => RightCancellativeMonoid m
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the left side of two monoidal
 -- values. The methods' complexity should be no worse than linear in the length of the common prefix. The following laws
 -- must be respected:
--- 
+--
 -- > stripCommonPrefix a b == (p, a', b')
 -- >    where p = commonPrefix a b
 -- >          Just a' = stripPrefix p a
 -- >          Just b' = stripPrefix p b
 -- > p == commonPrefix a b && p <> a' == a && p <> b' == b
 -- >    where (p, a', b') = stripCommonPrefix a b
+--
+-- Furthermore, 'commonPrefix' must return the unique greatest common prefix that contains, as its prefix, any other
+-- prefix @x@ of both values:
+--
+-- > not (x `isPrefixOf` a && x `isPrefixOf` b) || x `isPrefixOf` commonPrefix a b
+--
+-- and it cannot itself be a suffix of any other common prefix @y@ of both values:
+--
+-- > not (y `isPrefixOf` a && y `isPrefixOf` b && commonPrefix a b `isSuffixOf` y)
 class LeftReductiveMonoid m => LeftGCDMonoid m where
    commonPrefix :: m -> m -> m
    stripCommonPrefix :: m -> m -> (m, m, m)
@@ -175,6 +190,15 @@ class LeftReductiveMonoid m => LeftGCDMonoid m where
 -- >          Just b' = stripSuffix p b
 -- > s == commonSuffix a b && a' <> s == a && b' <> s == b
 -- >    where (a', b', s) = stripCommonSuffix a b
+--
+-- Furthermore, 'commonSuffix' must return the unique greatest common suffix that contains, as its suffix, any other
+-- suffix @x@ of both values:
+--
+-- > not (x `isSuffixOf` a && x `isSuffixOf` b) || x `isSuffixOf` commonSuffix a b
+--
+-- and it cannot itself be a prefix of any other common suffix @y@ of both values:
+--
+-- > not (y `isSuffixOf` a && y `isSuffixOf` b && commonSuffix a b `isPrefixOf` y)
 class RightReductiveMonoid m => RightGCDMonoid m where
    commonSuffix :: m -> m -> m
    stripCommonSuffix :: m -> m -> (m, m, m)
@@ -254,9 +278,6 @@ instance Integral a => ReductiveMonoid (Sum a) where
 
 instance Integral a => CancellativeMonoid (Sum a)
 
-instance (Integral a, Ord a) => GCDMonoid (Sum a) where
-   gcd (Sum a) (Sum b) = Sum (min a b)
-
 instance Integral a => LeftReductiveMonoid (Sum a) where
    stripPrefix a b = b </> a
 
@@ -267,36 +288,21 @@ instance Integral a => LeftCancellativeMonoid (Sum a)
 
 instance Integral a => RightCancellativeMonoid (Sum a)
 
-instance (Integral a, Ord a) => LeftGCDMonoid (Sum a) where
-   commonPrefix a b = gcd a b
-
-instance (Integral a, Ord a) => RightGCDMonoid (Sum a) where
-   commonSuffix a b = gcd a b
-
 -- Product instances
 
 instance Num a => CommutativeMonoid (Product a)
 
 instance Integral a => ReductiveMonoid (Product a) where
-   Product 0 </> Product 0 = Just (Product 0)
+   Product 0 </> Product 0 = Just (Product 1)
    Product _ </> Product 0 = Nothing
    Product a </> Product b = if remainder == 0 then Just (Product quotient) else Nothing
       where (quotient, remainder) = quotRem a b
-
-instance Integral a => GCDMonoid (Product a) where
-   gcd (Product a) (Product b) = Product (Prelude.gcd a b)
 
 instance Integral a => LeftReductiveMonoid (Product a) where
    stripPrefix a b = b </> a
 
 instance Integral a => RightReductiveMonoid (Product a) where
    stripSuffix a b = b </> a
-
-instance Integral a => LeftGCDMonoid (Product a) where
-   commonPrefix a b = gcd a b
-
-instance Integral a => RightGCDMonoid (Product a) where
-   commonSuffix a b = gcd a b
 
 -- Pair instances
 
