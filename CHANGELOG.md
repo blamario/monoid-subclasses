@@ -5,6 +5,8 @@ Version 0.5
 * Tightened the laws of GCD classes, dropped instances for Sum and Product
 * Introduced the `MonoidWith[Left|Right]Monus` classes
 * Introduced the `OverlappingGCDMonoid` class
+* Added the instances of type `Sum Natural` and `Product Natural`
+* Using the language extensions 'FlexibleInstances' and 'OverlappingInstances'
 
 Version 0.4.6.1
 ---------------

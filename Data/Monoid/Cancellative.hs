@@ -32,7 +32,7 @@
 -- 
 -- * 'RightGCDMonoid'
 
-{-# LANGUAGE Haskell2010, Trustworthy #-}
+{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Cancellative (
    -- * Symmetric, commutative monoid classes
@@ -63,6 +63,7 @@ import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import Data.Sequence (ViewL((:<)), ViewR((:>)), (<|), (|>))
 import qualified Data.Vector as Vector
+import Numeric.Natural (Natural)
 
 import Prelude hiding (gcd)
 
@@ -372,6 +373,42 @@ instance Integral a => LeftCancellativeMonoid (Sum a)
 
 instance Integral a => RightCancellativeMonoid (Sum a)
 
+instance {-# OVERLAPS #-} ReductiveMonoid (Sum Natural) where
+   Sum a </> Sum b
+      | a < b = Nothing
+      | otherwise = Just $ Sum (a - b)
+
+instance {-# OVERLAPS #-} LeftReductiveMonoid (Sum Natural) where
+   stripPrefix a b = b </> a
+
+instance {-# OVERLAPS #-} RightReductiveMonoid (Sum Natural) where
+   stripSuffix a b = b </> a
+
+instance MonoidWithMonus (Sum Natural) where
+   Sum a <\> Sum b
+      | a > b = Sum (a - b)
+      | otherwise = Sum 0
+
+instance GCDMonoid (Sum Natural) where
+   gcd (Sum a) (Sum b) = Sum (min a b)
+
+instance MonoidWithLeftMonus (Sum Natural) where
+   stripPrefixOverlap = flip (<\>)
+
+instance MonoidWithRightMonus (Sum Natural) where
+   stripSuffixOverlap = flip (<\>)
+
+instance LeftGCDMonoid (Sum Natural) where
+   commonPrefix a b = gcd a b
+
+instance RightGCDMonoid (Sum Natural) where
+   commonSuffix a b = gcd a b
+
+instance OverlappingGCDMonoid (Sum Natural) where
+   overlap a b = gcd a b
+   stripOverlap (Sum a) (Sum b) = (Sum $ a - c, Sum c, Sum $ b - c)
+      where c = min a b
+
 -- Product instances
 
 instance Num a => CommutativeMonoid (Product a)
@@ -387,6 +424,31 @@ instance Integral a => LeftReductiveMonoid (Product a) where
 
 instance Integral a => RightReductiveMonoid (Product a) where
    stripSuffix a b = b </> a
+
+instance MonoidWithMonus (Product Natural) where
+   Product 0 <\> Product 0 = Product 1
+   Product a <\> Product b = Product (a `div` Prelude.gcd a b)
+
+instance GCDMonoid (Product Natural) where
+   gcd (Product a) (Product b) = Product (Prelude.gcd a b)
+
+instance MonoidWithLeftMonus (Product Natural) where
+   stripPrefixOverlap = flip (<\>)
+
+instance MonoidWithRightMonus (Product Natural) where
+   stripSuffixOverlap = flip (<\>)
+
+instance LeftGCDMonoid (Product Natural) where
+   commonPrefix a b = gcd a b
+
+instance RightGCDMonoid (Product Natural) where
+   commonSuffix a b = gcd a b
+
+instance OverlappingGCDMonoid (Product Natural) where
+   overlap a b = gcd a b
+   stripOverlap (Product 0) (Product 0) = (Product 1, Product 0, Product 1)
+   stripOverlap (Product a) (Product b) = (Product $ div a c, Product c, Product $ div b c)
+      where c = Prelude.gcd a b
 
 -- Pair instances
 

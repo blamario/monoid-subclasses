@@ -31,6 +31,7 @@ import Data.String (IsString, fromString)
 import Data.Char (isLetter)
 import Data.Int (Int16)
 import Data.Word (Word, Word8)
+import Numeric.Natural (Natural)
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as Lazy (ByteString)
@@ -162,6 +163,8 @@ positiveInstances = map upcast stableFactorialInstances
                          PositiveMonoidInstance (mempty :: All),
                          PositiveMonoidInstance (mempty :: Any),
                          PositiveMonoidInstance (mempty :: (Maybe (Sum Integer))),
+                         PositiveMonoidInstance (mempty :: (Product Natural)),
+                         PositiveMonoidInstance (mempty :: (Sum Natural)),
                          PositiveMonoidInstance (mempty :: (First Char)),
                          PositiveMonoidInstance (mempty :: (Last Int)),
                          PositiveMonoidInstance (mempty :: String),
@@ -273,7 +276,10 @@ rightMonusInstances = map upcast monusInstances
                  ++ []
    where upcast (MonoidWithMonusInstance i) = MonoidWithRightMonusInstance i
 
-monusInstances = [MonoidWithMonusInstance (mempty :: IntSet),
+monusInstances = [MonoidWithMonusInstance (mempty :: Product Natural),
+                  MonoidWithMonusInstance (mempty :: Sum Natural),
+                  MonoidWithMonusInstance (mempty :: Dual (Product Natural)),
+                  MonoidWithMonusInstance (mempty :: IntSet),
                   MonoidWithMonusInstance (mempty :: Set String)]
 
 leftCancellativeInstances = map upcast cancellativeInstances
@@ -338,7 +344,9 @@ rightGCDInstances = map upcast gcdInstances
    where upcast (GCDMonoidInstance i) = RightGCDMonoidInstance i
 
 gcdInstances = map upcast cancellativeGCDInstances
-               ++ [GCDMonoidInstance (mempty :: IntSet),
+               ++ [GCDMonoidInstance (mempty :: Product Natural),
+                   GCDMonoidInstance (mempty :: Dual (Product Natural)),
+                   GCDMonoidInstance (mempty :: IntSet),
                    GCDMonoidInstance (mempty :: Set String)]
    where upcast (CancellativeGCDMonoidInstance i) = GCDMonoidInstance i
 

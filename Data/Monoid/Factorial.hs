@@ -7,7 +7,7 @@
 -- | This module defines the 'FactorialMonoid' class and some of its instances.
 -- 
 
-{-# LANGUAGE Haskell2010, Trustworthy #-}
+{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Factorial (
    -- * Classes
@@ -34,6 +34,7 @@ import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Data.Int (Int64)
 import Data.Numbers.Primes (primeFactors)
+import Numeric.Natural (Natural)
 
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 
@@ -817,6 +818,7 @@ instance StableFactorialMonoid Text.Text
 instance StableFactorialMonoid LazyText.Text
 instance StableFactorialMonoid (Sequence.Seq a)
 instance StableFactorialMonoid (Vector.Vector a)
+instance StableFactorialMonoid (Sum Natural)
 
 -- | A 'Monad.mapM' equivalent.
 mapM :: (FactorialMonoid a, Monoid b, Monad m) => (a -> m b) -> a -> m b

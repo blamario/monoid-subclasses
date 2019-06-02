@@ -7,7 +7,7 @@
 -- | This module defines the MonoidNull class and some of its instances.
 -- 
 
-{-# LANGUAGE Haskell2010, Trustworthy #-}
+{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Null (
    MonoidNull(..), PositiveMonoid
@@ -26,6 +26,7 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
+import Numeric.Natural (Natural)
 
 import Prelude hiding (null)
 
@@ -130,6 +131,8 @@ instance PositiveMonoid ByteString.ByteString
 instance PositiveMonoid LazyByteString.ByteString
 instance PositiveMonoid Text.Text
 instance PositiveMonoid LazyText.Text
+instance PositiveMonoid (Product Natural)
+instance PositiveMonoid (Sum Natural)
 instance Monoid a => PositiveMonoid (Maybe a)
 instance PositiveMonoid (First a)
 instance PositiveMonoid (Last a)
