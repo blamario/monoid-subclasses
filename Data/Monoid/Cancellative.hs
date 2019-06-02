@@ -36,11 +36,12 @@
 
 module Data.Monoid.Cancellative (
    -- * Symmetric, commutative monoid classes
-   CommutativeMonoid, ReductiveMonoid(..), CancellativeMonoid, GCDMonoid(..),
+   CommutativeMonoid, ReductiveMonoid(..), CancellativeMonoid, MonoidWithMonus(..), GCDMonoid(..),
    -- * Asymmetric monoid classes
    LeftReductiveMonoid(..), RightReductiveMonoid(..),
    LeftCancellativeMonoid, RightCancellativeMonoid,
-   LeftGCDMonoid(..), RightGCDMonoid(..)
+   MonoidWithLeftMonus(..), MonoidWithRightMonus(..),
+   LeftGCDMonoid(..), RightGCDMonoid(..), OverlappingGCDMonoid(..)
    )
 where
 
@@ -86,6 +87,16 @@ class (CommutativeMonoid m, LeftReductiveMonoid m, RightReductiveMonoid m) => Re
 
 infix 5 </>
 
+-- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
+-- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
+--
+-- > (<\>) = flip stripPrefixOverlap
+-- > (<\>) = flip stripSuffixOverlap
+class (CommutativeMonoid m, MonoidWithLeftMonus m, MonoidWithRightMonus m) => MonoidWithMonus m where
+   (<\>) :: m -> m -> m
+
+infix 5 <\>
+
 -- | Subclass of 'ReductiveMonoid' where '</>' is a complete inverse of the Monoid '<>' operation. The class instances
 -- must satisfy the following additional laws:
 --
@@ -99,12 +110,12 @@ class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) =
 -- > gcd a b == commonPrefix a b == commonSuffix a b
 -- > Just a' = a </> p && Just b' = b </> p
 -- >    where p = gcd a b
--- 
+--
 -- If a 'GCDMonoid' happens to also be a 'CancellativeMonoid', it should additionally satisfy the following laws:
--- 
+--
 -- > gcd (a <> b) (a <> c) == a <> gcd b c
 -- > gcd (a <> c) (b <> c) == gcd a b <> c
-class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m) => GCDMonoid m where
+class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
 -- | Class of monoids with a left inverse of 'Data.Monoid.mappend', satisfying the following law:
@@ -136,6 +147,38 @@ class Monoid m => RightReductiveMonoid m where
 
    isSuffixOf a b = isJust (stripSuffix a b)
    {-# MINIMAL stripSuffix #-}
+
+-- | Subclass of 'LeftReductiveMonoid' with a 'stripPrefixOverlap' operation, satisfying the property:
+--
+-- > b `isSuffixOf` (a <> stripPrefixOverlap a b)
+--
+-- The result of `stripPrefixOverlap` must be the unique least value that satisfies the above property. It must be the
+-- least in the sense that it is contained in any other value @x@ that satifies the same equation @b `isSuffixOf` (a
+-- <> x)@:
+--
+-- > stripPrefixOverlap a b `isSuffixOf` x
+--
+-- and it must be unique so that it contains no other value @y@ that satisfies the equation @b `isSuffixOf` (a <> y)@:
+--
+-- > not ((y `isSuffixOf` stripPrefixOverlap a b) && y /= stripPrefixOverlap a b && y /= mempty)
+class LeftReductiveMonoid m => MonoidWithLeftMonus m where
+   stripPrefixOverlap :: m -> m -> m
+
+-- | Subclass of 'RightReductiveMonoid' with a 'stripSuffixOverlap' operation, satisfying the property:
+--
+-- > b `isPrefixOf` (stripSuffixOverlap a b <> a)
+--
+-- The result of `stripSuffixOverlap` must be the unique least value that satisfies the above property. It must be the
+-- least in the sense that it is contained in any other value @x@ that satifies the same equation @b `isPrefixOf` (x
+-- <> a)@:
+--
+-- > stripSuffixOverlap a b `isPrefixOf` x
+--
+-- and it must be unique so that it contains no other value @y@ that satisfies the equation @b `isPrefixOf` (y <> a)@
+--
+-- > not ((y `isPrefixOf` stripSuffixOverlap a b) && y /= stripSuffixOverlap a b && y /= mempty)
+class RightReductiveMonoid m => MonoidWithRightMonus m where
+   stripSuffixOverlap :: m -> m -> m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
 -- additional law:
@@ -211,6 +254,20 @@ class RightReductiveMonoid m => RightGCDMonoid m where
             Just y' = stripSuffix s y
    {-# MINIMAL commonSuffix | stripCommonSuffix #-}
 
+-- | Class of monoids for which the greatest overlap can be found between any two values, such that
+--
+-- > a == a' <> overlap a b
+-- > b == overlap a b <> b'
+--
+-- The methods must satisfy the following laws:
+--
+-- > stripOverlap a b == (stripSuffixOverlap b a, overlap a b, stripPrefixOverlap a b)
+-- > stripSuffixOverlap b a <> overlap a b == a
+-- > overlap a b <> stripPrefixOverlap a b == b
+class (MonoidWithLeftMonus m, MonoidWithRightMonus m) => OverlappingGCDMonoid m where
+   overlap :: m -> m -> m
+   stripOverlap :: m -> m -> (m, m, m)
+
 -- Unit instances
 
 instance CommutativeMonoid ()
@@ -219,6 +276,9 @@ instance ReductiveMonoid () where
    () </> () = Just ()
 
 instance CancellativeMonoid ()
+
+instance MonoidWithMonus () where
+   () <\> () = ()
 
 instance GCDMonoid () where
    gcd () () = ()
@@ -233,11 +293,21 @@ instance LeftCancellativeMonoid ()
 
 instance RightCancellativeMonoid ()
 
+instance MonoidWithLeftMonus () where
+   stripPrefixOverlap () () = ()
+
+instance MonoidWithRightMonus () where
+   stripSuffixOverlap () () = ()
+
 instance LeftGCDMonoid () where
    commonPrefix () () = ()
 
 instance RightGCDMonoid () where
    commonSuffix () () = ()
+
+instance OverlappingGCDMonoid () where
+   overlap () () = ()
+   stripOverlap () () = ((), (), ())
 
 -- Dual instances
 
@@ -251,6 +321,9 @@ instance CancellativeMonoid a => CancellativeMonoid (Dual a)
 instance GCDMonoid a => GCDMonoid (Dual a) where
    gcd (Dual a) (Dual b) = Dual (gcd a b)
 
+instance MonoidWithMonus a => MonoidWithMonus (Dual a) where
+   Dual a <\> Dual b = Dual (a <\> b)
+
 instance LeftReductiveMonoid a => RightReductiveMonoid (Dual a) where
    stripSuffix (Dual a) (Dual b) = fmap Dual (stripPrefix a b)
    Dual a `isSuffixOf` Dual b = a `isPrefixOf` b
@@ -263,11 +336,22 @@ instance LeftCancellativeMonoid a => RightCancellativeMonoid (Dual a)
 
 instance RightCancellativeMonoid a => LeftCancellativeMonoid (Dual a)
 
+instance MonoidWithLeftMonus a => MonoidWithRightMonus (Dual a) where
+   stripSuffixOverlap (Dual a) (Dual b) = Dual (stripPrefixOverlap a b)
+
+instance MonoidWithRightMonus a => MonoidWithLeftMonus (Dual a) where
+   stripPrefixOverlap (Dual a) (Dual b) = Dual (stripSuffixOverlap a b)
+
 instance LeftGCDMonoid a => RightGCDMonoid (Dual a) where
    commonSuffix (Dual a) (Dual b) = Dual (commonPrefix a b)
 
 instance RightGCDMonoid a => LeftGCDMonoid (Dual a) where
    commonPrefix (Dual a) (Dual b) = Dual (commonSuffix a b)
+
+instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Dual a) where
+   overlap (Dual a) (Dual b) = Dual (overlap b a)
+   stripOverlap (Dual a) (Dual b) = (Dual s, Dual o, Dual p)
+      where (p, o, s) = stripOverlap b a
 
 -- Sum instances
 
@@ -334,11 +418,23 @@ instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b) => LeftCancellativ
 
 instance (RightCancellativeMonoid a, RightCancellativeMonoid b) => RightCancellativeMonoid (a, b)
 
+instance (MonoidWithLeftMonus a, MonoidWithLeftMonus b) => MonoidWithLeftMonus (a, b) where
+   stripPrefixOverlap (a1, b1) (a2, b2) = (stripPrefixOverlap a1 a2, stripPrefixOverlap b1 b2)
+
+instance (MonoidWithRightMonus a, MonoidWithRightMonus b) => MonoidWithRightMonus (a, b) where
+   stripSuffixOverlap (a1, b1) (a2, b2) = (stripSuffixOverlap a1 a2, stripSuffixOverlap b1 b2)
+
 instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (a, b) where
    commonPrefix (a, b) (c, d) = (commonPrefix a c, commonPrefix b d)
 
 instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (a, b) where
    commonSuffix (a, b) (c, d) = (commonSuffix a c, commonSuffix b d)
+
+instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b) => OverlappingGCDMonoid (a, b) where
+   overlap (a1, b1) (a2, b2) = (overlap a1 a2, overlap b1 b2)
+   stripOverlap (a1, b1) (a2, b2) = ((ap, bp), (ao, bo), (as, bs))
+      where (ap, ao, as) = stripOverlap a1 a2
+            (bp, bo, bs) = stripOverlap b1 b2
 
 -- Triple instances
 
@@ -367,11 +463,25 @@ instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMo
 instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c) =>
          RightCancellativeMonoid (a, b, c)
 
+instance (MonoidWithLeftMonus a, MonoidWithLeftMonus b, MonoidWithLeftMonus c) => MonoidWithLeftMonus (a, b, c) where
+   stripPrefixOverlap (a1, b1, c1) (a2, b2, c2) = (stripPrefixOverlap a1 a2, stripPrefixOverlap b1 b2, stripPrefixOverlap c1 c2)
+
+instance (MonoidWithRightMonus a, MonoidWithRightMonus b, MonoidWithRightMonus c) => MonoidWithRightMonus (a, b, c) where
+   stripSuffixOverlap (a1, b1, c1) (a2, b2, c2) = (stripSuffixOverlap a1 a2, stripSuffixOverlap b1 b2, stripSuffixOverlap c1 c2)
+
 instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c) => LeftGCDMonoid (a, b, c) where
    commonPrefix (a1, b1, c1) (a2, b2, c2) = (commonPrefix a1 a2, commonPrefix b1 b2, commonPrefix c1 c2)
 
 instance (RightGCDMonoid a, RightGCDMonoid b, RightGCDMonoid c) => RightGCDMonoid (a, b, c) where
    commonSuffix (a1, b1, c1) (a2, b2, c2) = (commonSuffix a1 a2, commonSuffix b1 b2, commonSuffix c1 c2)
+
+instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c) =>
+         OverlappingGCDMonoid (a, b, c) where
+   overlap (a1, b1, c1) (a2, b2, c2) = (overlap a1 a2, overlap b1 b2, overlap c1 c2)
+   stripOverlap (a1, b1, c1) (a2, b2, c2) = ((ap, bp, cp), (ao, bo, co), (as, bs, cs))
+      where (ap, ao, as) = stripOverlap a1 a2
+            (bp, bo, bs) = stripOverlap b1 b2
+            (cp, co, cs) = stripOverlap c1 c2
 
 -- Quadruple instances
 
@@ -408,6 +518,16 @@ instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMo
 instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c, RightCancellativeMonoid d) =>
          RightCancellativeMonoid (a, b, c, d)
 
+instance (MonoidWithLeftMonus a, MonoidWithLeftMonus b, MonoidWithLeftMonus c, MonoidWithLeftMonus d) =>
+         MonoidWithLeftMonus (a, b, c, d) where
+   stripPrefixOverlap (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      (stripPrefixOverlap a1 a2, stripPrefixOverlap b1 b2, stripPrefixOverlap c1 c2, stripPrefixOverlap d1 d2)
+
+instance (MonoidWithRightMonus a, MonoidWithRightMonus b, MonoidWithRightMonus c, MonoidWithRightMonus d) =>
+         MonoidWithRightMonus (a, b, c, d) where
+   stripSuffixOverlap (a1, b1, c1, d1) (a2, b2, c2, d2) =
+      (stripSuffixOverlap a1 a2, stripSuffixOverlap b1 b2, stripSuffixOverlap c1 c2, stripSuffixOverlap d1 d2)
+
 instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c, LeftGCDMonoid d) => LeftGCDMonoid (a, b, c, d) where
    commonPrefix (a1, b1, c1, d1) (a2, b2, c2, d2) =
       (commonPrefix a1 a2, commonPrefix b1 b2, commonPrefix c1 c2, commonPrefix d1 d2)
@@ -415,6 +535,15 @@ instance (LeftGCDMonoid a, LeftGCDMonoid b, LeftGCDMonoid c, LeftGCDMonoid d) =>
 instance (RightGCDMonoid a, RightGCDMonoid b, RightGCDMonoid c, RightGCDMonoid d) => RightGCDMonoid (a, b, c, d) where
    commonSuffix (a1, b1, c1, d1) (a2, b2, c2, d2) =
       (commonSuffix a1 a2, commonSuffix b1 b2, commonSuffix c1 c2, commonSuffix d1 d2)
+
+instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c, OverlappingGCDMonoid d) =>
+         OverlappingGCDMonoid (a, b, c, d) where
+   overlap (a1, b1, c1, d1) (a2, b2, c2, d2) = (overlap a1 a2, overlap b1 b2, overlap c1 c2, overlap d1 d2)
+   stripOverlap (a1, b1, c1, d1) (a2, b2, c2, d2) = ((ap, bp, cp, dp), (ao, bo, co, dm), (as, bs, cs, ds))
+      where (ap, ao, as) = stripOverlap a1 a2
+            (bp, bo, bs) = stripOverlap b1 b2
+            (cp, co, cs) = stripOverlap c1 c2
+            (dp, dm, ds) = stripOverlap d1 d2
 
 -- Maybe instances
 
@@ -448,6 +577,13 @@ instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
 
 instance Ord a => CommutativeMonoid (Set.Set a)
 
+instance Ord a => ReductiveMonoid (Set.Set a) where
+   a </> b | Set.isSubsetOf b a = Just (a Set.\\ b)
+           | otherwise = Nothing
+
+instance Ord a => MonoidWithMonus (Set.Set a) where
+   (<\>) = (Set.\\)
+
 instance Ord a => LeftReductiveMonoid (Set.Set a) where
    isPrefixOf = Set.isSubsetOf
    stripPrefix a b = b </> a
@@ -456,9 +592,11 @@ instance Ord a => RightReductiveMonoid (Set.Set a) where
    isSuffixOf = Set.isSubsetOf
    stripSuffix a b = b </> a
 
-instance Ord a => ReductiveMonoid (Set.Set a) where
-   a </> b | Set.isSubsetOf b a = Just (a Set.\\ b)
-           | otherwise = Nothing
+instance Ord a => MonoidWithLeftMonus (Set.Set a) where
+   stripPrefixOverlap a b = b <\> a
+
+instance Ord a => MonoidWithRightMonus (Set.Set a) where
+   stripSuffixOverlap a b = b <\> a
 
 instance Ord a => LeftGCDMonoid (Set.Set a) where
    commonPrefix = Set.intersection
@@ -466,12 +604,23 @@ instance Ord a => LeftGCDMonoid (Set.Set a) where
 instance Ord a => RightGCDMonoid (Set.Set a) where
    commonSuffix = Set.intersection
 
+instance Ord a => OverlappingGCDMonoid (Set.Set a) where
+   overlap = Set.intersection
+   stripOverlap a b = (Set.difference a b, Set.intersection a b, Set.difference b a)
+
 instance Ord a => GCDMonoid (Set.Set a) where
    gcd = Set.intersection
 
 -- IntSet instances
 
 instance CommutativeMonoid IntSet.IntSet
+
+instance ReductiveMonoid IntSet.IntSet where
+   a </> b | IntSet.isSubsetOf b a = Just (a IntSet.\\ b)
+           | otherwise = Nothing
+
+instance MonoidWithMonus IntSet.IntSet where
+   (<\>) = (IntSet.\\)
 
 instance LeftReductiveMonoid IntSet.IntSet where
    isPrefixOf = IntSet.isSubsetOf
@@ -481,15 +630,21 @@ instance RightReductiveMonoid IntSet.IntSet where
    isSuffixOf = IntSet.isSubsetOf
    stripSuffix a b = b </> a
 
-instance ReductiveMonoid IntSet.IntSet where
-   a </> b | IntSet.isSubsetOf b a = Just (a IntSet.\\ b)
-           | otherwise = Nothing
+instance MonoidWithLeftMonus IntSet.IntSet where
+   stripPrefixOverlap a b = b <\> a
+
+instance MonoidWithRightMonus IntSet.IntSet where
+   stripSuffixOverlap a b = b <\> a
 
 instance LeftGCDMonoid IntSet.IntSet where
    commonPrefix = IntSet.intersection
 
 instance RightGCDMonoid IntSet.IntSet where
    commonSuffix = IntSet.intersection
+
+instance OverlappingGCDMonoid IntSet.IntSet where
+   overlap = IntSet.intersection
+   stripOverlap a b = (IntSet.difference a b, IntSet.intersection a b, IntSet.difference b a)
 
 instance GCDMonoid IntSet.IntSet where
    gcd = IntSet.intersection

@@ -1,7 +1,10 @@
 
 Version 0.5
 ---------------
-Fixed issue #24, unlawful LeftReductiveMonoid instance for Map
+* Fixed issue #24, unlawful LeftReductiveMonoid instance for Map
+* Tightened the laws of GCD classes, dropped instances for Sum and Product
+* Introduced the `MonoidWith[Left|Right]Monus` classes
+* Introduced the `OverlappingGCDMonoid` class
 
 Version 0.4.6.1
 ---------------
