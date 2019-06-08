@@ -273,7 +273,8 @@ leftMonusInstances = map upcast monusInstances
    where upcast (MonoidWithMonusInstance i) = MonoidWithLeftMonusInstance i
 
 rightMonusInstances = map upcast monusInstances
-                 ++ []
+                 ++ [MonoidWithRightMonusInstance (mempty :: IntMap Char),
+                     MonoidWithRightMonusInstance (mempty :: Map Char Int)]
    where upcast (MonoidWithMonusInstance i) = MonoidWithRightMonusInstance i
 
 monusInstances = [MonoidWithMonusInstance (mempty :: Product Natural),
@@ -774,18 +775,18 @@ checkStripPrefixOverlap3 (MonoidWithLeftMonusInstance (_ :: a)) = forAll (arbitr
             where b' = stripPrefixOverlap a b
 
 checkStripSuffixOverlap1 (MonoidWithRightMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
-   where check (a, b) = o `isPrefixOf` b && b `isPrefixOf` (o <> a)
-            where o = stripSuffixOverlap a b
+   where check (a, b) = o `isPrefixOf` a && a `isPrefixOf` (o <> b)
+            where o = stripSuffixOverlap b a
 
 checkStripSuffixOverlap2 (MonoidWithRightMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
-   where check (ap, o, bs) = b `isPrefixOf` (b' <> a) && b' `isPrefixOf` bs
+   where check (ap, o, bs) = a `isPrefixOf` (a' <> b) && a' `isPrefixOf` ap
             where a = ap <> o
                   b = o <> bs
-                  b' = stripSuffixOverlap a b
+                  a' = stripSuffixOverlap b a
 
 checkStripSuffixOverlap3 (MonoidWithRightMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
-   where check (a, b) = all (\(p, _)-> null p || not (b `isPrefixOf` (p <> a))) (splitPrimeSuffix b')
-            where b' = stripSuffixOverlap a b
+   where check (a, b) = all (\(p, _)-> null p || not (a `isPrefixOf` (p <> b))) (splitPrimeSuffix a')
+            where a' = stripSuffixOverlap b a
 
 checkStripPrefix' (LeftCancellativeMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = stripPrefix a (a <> b) == Just b

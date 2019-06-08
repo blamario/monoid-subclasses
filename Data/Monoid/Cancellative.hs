@@ -162,7 +162,7 @@ class Monoid m => RightReductiveMonoid m where
 -- and it must be unique so that it contains no other value @y@ that satisfies the equation @b `isSuffixOf` (a <> y)@:
 --
 -- > not ((y `isSuffixOf` stripPrefixOverlap a b) && y /= stripPrefixOverlap a b && y /= mempty)
-class LeftReductiveMonoid m => MonoidWithLeftMonus m where
+class RightReductiveMonoid m => MonoidWithLeftMonus m where
    stripPrefixOverlap :: m -> m -> m
 
 -- | Subclass of 'RightReductiveMonoid' with a 'stripSuffixOverlap' operation, satisfying the property:
@@ -178,7 +178,7 @@ class LeftReductiveMonoid m => MonoidWithLeftMonus m where
 -- and it must be unique so that it contains no other value @y@ that satisfies the equation @b `isPrefixOf` (y <> a)@
 --
 -- > not ((y `isPrefixOf` stripSuffixOverlap a b) && y /= stripSuffixOverlap a b && y /= mempty)
-class RightReductiveMonoid m => MonoidWithRightMonus m where
+class LeftReductiveMonoid m => MonoidWithRightMonus m where
    stripSuffixOverlap :: m -> m -> m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
@@ -721,6 +721,9 @@ instance (Ord k, Eq a) => LeftReductiveMonoid (Map.Map k a) where
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
    commonPrefix = Map.mergeWithKey (\_ a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
 
+instance (Ord k, Eq a) => MonoidWithRightMonus (Map.Map k a) where
+   stripSuffixOverlap a b = Map.differenceWith (\x y-> if x == y then Nothing else Just x) b a
+
 -- IntMap instances
 
 instance Eq a => LeftReductiveMonoid (IntMap.IntMap a) where
@@ -731,6 +734,9 @@ instance Eq a => LeftReductiveMonoid (IntMap.IntMap a) where
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
    commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
                                        (const IntMap.empty) (const IntMap.empty)
+
+instance Eq a => MonoidWithRightMonus (IntMap.IntMap a) where
+   stripSuffixOverlap a b = IntMap.differenceWith (\x y-> if x == y then Nothing else Just x) b a
 
 -- List instances
 
