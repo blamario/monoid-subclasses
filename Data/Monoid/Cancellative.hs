@@ -119,7 +119,7 @@ class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) =
 class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
--- | Class of monoids with a left inverse of 'Data.Monoid.mappend', satisfying the following law:
+-- | Class of monoids with a left inverse of 'Data.Monoid.mappend', satisfying the following laws:
 -- 
 -- > isPrefixOf a b == isJust (stripPrefix a b)
 -- > maybe b (a <>) (stripPrefix a b) == b
@@ -134,7 +134,7 @@ class Monoid m => LeftReductiveMonoid m where
    isPrefixOf a b = isJust (stripPrefix a b)
    {-# MINIMAL stripPrefix #-}
 
--- | Class of monoids with a right inverse of 'Data.Monoid.mappend', satisfying the following law:
+-- | Class of monoids with a right inverse of 'Data.Monoid.mappend', satisfying the following laws:
 -- 
 -- > isSuffixOf a b == isJust (stripSuffix a b)
 -- > maybe b (<> a) (stripSuffix a b) == b
@@ -162,7 +162,7 @@ class Monoid m => RightReductiveMonoid m where
 -- and it must be unique so that it contains no other value @y@ that satisfies the equation @b `isSuffixOf` (a <> y)@:
 --
 -- > not ((y `isSuffixOf` stripPrefixOverlap a b) && y /= stripPrefixOverlap a b && y /= mempty)
-class RightReductiveMonoid m => MonoidWithLeftMonus m where
+class LeftReductiveMonoid m => MonoidWithLeftMonus m where
    stripPrefixOverlap :: m -> m -> m
 
 -- | Subclass of 'RightReductiveMonoid' with a 'stripSuffixOverlap' operation, satisfying the property:
@@ -178,7 +178,7 @@ class RightReductiveMonoid m => MonoidWithLeftMonus m where
 -- and it must be unique so that it contains no other value @y@ that satisfies the equation @b `isPrefixOf` (y <> a)@
 --
 -- > not ((y `isPrefixOf` stripSuffixOverlap a b) && y /= stripSuffixOverlap a b && y /= mempty)
-class LeftReductiveMonoid m => MonoidWithRightMonus m where
+class RightReductiveMonoid m => MonoidWithRightMonus m where
    stripSuffixOverlap :: m -> m -> m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
@@ -718,8 +718,16 @@ instance (Ord k, Eq a) => LeftReductiveMonoid (Map.Map k a) where
    stripPrefix a b | Map.isSubmapOf a b = Just (b Map.\\ a)
                    | otherwise = Nothing
 
+instance (Ord k, Eq a) => RightReductiveMonoid (Map.Map k a) where
+   isSuffixOf = Map.isSubmapOfBy (const $ const True)
+   stripSuffix a b | a `isSuffixOf` b = Just (stripSuffixOverlap a b)
+                   | otherwise = Nothing
+
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
    commonPrefix = Map.mergeWithKey (\_ a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
+
+instance (Ord k, Eq v) => MonoidWithLeftMonus (Map.Map k v) where
+    stripPrefixOverlap = flip Map.difference
 
 instance (Ord k, Eq a) => MonoidWithRightMonus (Map.Map k a) where
    stripSuffixOverlap a b = Map.differenceWith (\x y-> if x == y then Nothing else Just x) b a
@@ -731,9 +739,17 @@ instance Eq a => LeftReductiveMonoid (IntMap.IntMap a) where
    stripPrefix a b | IntMap.isSubmapOf a b = Just (b IntMap.\\ a)
                    | otherwise = Nothing
 
+instance Eq a => RightReductiveMonoid (IntMap.IntMap a) where
+   isSuffixOf = IntMap.isSubmapOfBy (const $ const True)
+   stripSuffix a b | a `isSuffixOf` b = Just (stripSuffixOverlap a b)
+                   | otherwise = Nothing
+
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
    commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
                                        (const IntMap.empty) (const IntMap.empty)
+
+instance Eq a => MonoidWithLeftMonus (IntMap.IntMap a) where
+   stripPrefixOverlap = flip IntMap.difference
 
 instance Eq a => MonoidWithRightMonus (IntMap.IntMap a) where
    stripSuffixOverlap a b = IntMap.differenceWith (\x y-> if x == y then Nothing else Just x) b a

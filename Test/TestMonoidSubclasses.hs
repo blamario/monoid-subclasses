@@ -235,6 +235,7 @@ leftReductiveInstances = map upcast leftCancellativeInstances
                              LeftReductiveMonoidInstance (mempty :: IntSet),
                              LeftReductiveMonoidInstance (mempty :: Set Integer),
                              LeftReductiveMonoidInstance (mempty :: IntMap Char),
+                             LeftReductiveMonoidInstance (mempty :: Map Char Int),
                              LeftReductiveMonoidInstance (mempty :: Concat String),
                              LeftReductiveMonoidInstance (mempty :: Concat ByteString),
                              LeftReductiveMonoidInstance (mempty :: Concat Lazy.ByteString),
@@ -250,6 +251,8 @@ leftReductiveInstances = map upcast leftCancellativeInstances
 rightReductiveInstances = map upcast rightCancellativeInstances
                           ++ [RightReductiveMonoidInstance (mempty :: Product Integer),
                               RightReductiveMonoidInstance (mempty :: IntSet),
+                              RightReductiveMonoidInstance (mempty :: Map Char Int),
+                              RightReductiveMonoidInstance (mempty :: IntMap Char),
                               RightReductiveMonoidInstance (mempty :: Set String),
                               RightReductiveMonoidInstance (mempty :: Concat ByteString),
                               RightReductiveMonoidInstance (mempty :: Concat Lazy.ByteString),
@@ -269,7 +272,8 @@ reductiveInstances = map upcast cancellativeInstances
    where upcast (CancellativeMonoidInstance i) = ReductiveMonoidInstance i
 
 leftMonusInstances = map upcast monusInstances
-                 ++ []
+                 ++ [MonoidWithLeftMonusInstance (mempty :: IntMap Char),
+                     MonoidWithLeftMonusInstance (mempty :: Map Char Int)]
    where upcast (MonoidWithMonusInstance i) = MonoidWithLeftMonusInstance i
 
 rightMonusInstances = map upcast monusInstances
