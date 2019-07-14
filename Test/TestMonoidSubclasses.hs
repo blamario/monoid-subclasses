@@ -66,8 +66,8 @@ import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
                               foldl, foldl', foldr, length, reverse, span, spanMaybe, split, splitAt)
 import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
-                                 MonoidWithMonus, MonoidWithLeftMonus, MonoidWithRightMonus,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
+                                 MonoidWithMonus, OverlappingGCDMonoid,
                                  (<\>), (</>), gcd,
                                  isPrefixOf, stripPrefix, stripPrefixOverlap, commonPrefix, stripCommonPrefix,
                                  isSuffixOf, stripSuffix, stripSuffixOverlap, commonSuffix, stripCommonSuffix)
@@ -115,11 +115,9 @@ data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightR
                                     RightReductiveMonoidInstance a
 data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, ReductiveMonoid a) =>
                                ReductiveMonoidInstance a
-data MonoidWithLeftMonusInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidWithLeftMonus a,
-                                              RightReductiveMonoid a, FactorialMonoid a) =>
+data MonoidWithLeftMonusInstance = forall a. (Arbitrary a, Show a, Eq a, OverlappingGCDMonoid a, FactorialMonoid a) =>
                                    MonoidWithLeftMonusInstance a
-data MonoidWithRightMonusInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidWithRightMonus a,
-                                               LeftReductiveMonoid a, FactorialMonoid a) =>
+data MonoidWithRightMonusInstance = forall a. (Arbitrary a, Show a, Eq a, OverlappingGCDMonoid a, FactorialMonoid a) =>
                                     MonoidWithRightMonusInstance a
 data MonoidWithMonusInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidWithMonus a, FactorialMonoid a) =>
                                MonoidWithMonusInstance a
