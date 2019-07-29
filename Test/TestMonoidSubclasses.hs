@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2018 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -31,6 +31,7 @@ import Data.String (IsString, fromString)
 import Data.Char (isLetter)
 import Data.Int (Int16)
 import Data.Word (Word, Word8)
+import Numeric.Natural (Natural)
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as Lazy (ByteString)
@@ -72,7 +73,10 @@ import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
 import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
-                                 gcd, commonPrefix, stripCommonPrefix, commonSuffix, stripCommonSuffix)
+                                 MonoidWithMonus, OverlappingGCDMonoid,
+                                 (<\>), (</>), gcd,
+                                 isPrefixOf, stripPrefix, stripPrefixOverlap, commonPrefix, stripCommonPrefix,
+                                 isSuffixOf, stripSuffix, stripSuffixOverlap, commonSuffix, stripCommonSuffix)
 import Data.Monoid.Textual (TextualMonoid)
 import qualified Data.Monoid.Textual as Textual
 
@@ -85,6 +89,9 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | LeftReductiveTest (LeftReductiveMonoidInstance -> Property)
           | RightReductiveTest (RightReductiveMonoidInstance -> Property)
           | ReductiveTest (ReductiveMonoidInstance -> Property)
+          | LeftMonusTest (MonoidWithLeftMonusInstance -> Property)
+          | RightMonusTest (MonoidWithRightMonusInstance -> Property)
+          | MonusTest (MonoidWithMonusInstance -> Property)
           | LeftCancellativeTest (LeftCancellativeMonoidInstance -> Property)
           | RightCancellativeTest (RightCancellativeMonoidInstance -> Property)
           | CancellativeTest (CancellativeMonoidInstance -> Property)
@@ -93,9 +100,9 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | GCDTest (GCDMonoidInstance -> Property)
           | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
 
-data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) => 
+data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) =>
                                  CommutativeMonoidInstance a
-data NullMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) => 
+data NullMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) =>
                           NullMonoidInstance a
 data PositiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, PositiveMonoid a) =>
                               PositiveMonoidInstance a
@@ -103,30 +110,36 @@ data FactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq
                                FactorialMonoidInstance a
 data StableFactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a) =>
                                      StableFactorialMonoidInstance a
-data TextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) => 
+data TextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) =>
                              TextualMonoidInstance a
 data StableTextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a,
                                               TextualMonoid a) =>
                                    StableTextualMonoidInstance a
-data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftReductiveMonoid a) => 
+data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftReductiveMonoid a) =>
                                    LeftReductiveMonoidInstance a
-data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightReductiveMonoid a) => 
+data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightReductiveMonoid a) =>
                                     RightReductiveMonoidInstance a
-data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, ReductiveMonoid a) => 
+data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, ReductiveMonoid a) =>
                                ReductiveMonoidInstance a
-data LeftCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftCancellativeMonoid a) => 
+data MonoidWithLeftMonusInstance = forall a. (Arbitrary a, Show a, Eq a, OverlappingGCDMonoid a, FactorialMonoid a) =>
+                                   MonoidWithLeftMonusInstance a
+data MonoidWithRightMonusInstance = forall a. (Arbitrary a, Show a, Eq a, OverlappingGCDMonoid a, FactorialMonoid a) =>
+                                    MonoidWithRightMonusInstance a
+data MonoidWithMonusInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidWithMonus a, FactorialMonoid a) =>
+                               MonoidWithMonusInstance a
+data LeftCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftCancellativeMonoid a) =>
                                       LeftCancellativeMonoidInstance a
-data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightCancellativeMonoid a) => 
+data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightCancellativeMonoid a) =>
                                        RightCancellativeMonoidInstance a
-data CancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a) => 
+data CancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a) =>
                                   CancellativeMonoidInstance a
-data LeftGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftGCDMonoid a) => 
+data LeftGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftGCDMonoid a) =>
                              LeftGCDMonoidInstance a
-data RightGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightGCDMonoid a) => 
+data RightGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightGCDMonoid a) =>
                               RightGCDMonoidInstance a
-data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) => 
+data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) =>
                          GCDMonoidInstance a
-data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a, GCDMonoid a) => 
+data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a, GCDMonoid a) =>
                                      CancellativeGCDMonoidInstance a
 
 commutativeInstances :: [CommutativeMonoidInstance]
@@ -154,6 +167,8 @@ positiveInstances = map upcast stableFactorialInstances
                          PositiveMonoidInstance (mempty :: All),
                          PositiveMonoidInstance (mempty :: Any),
                          PositiveMonoidInstance (mempty :: (Maybe (Sum Integer))),
+                         PositiveMonoidInstance (mempty :: (Product Natural)),
+                         PositiveMonoidInstance (mempty :: (Sum Natural)),
                          PositiveMonoidInstance (mempty :: (First Char)),
                          PositiveMonoidInstance (mempty :: (Last Int)),
                          PositiveMonoidInstance (mempty :: String),
@@ -223,23 +238,35 @@ leftReductiveInstances = map upcast leftCancellativeInstances
                          ++ [LeftReductiveMonoidInstance (mempty :: Sum Integer),
                              LeftReductiveMonoidInstance (mempty :: IntSet),
                              LeftReductiveMonoidInstance (mempty :: Set Integer),
+                             LeftReductiveMonoidInstance (mempty :: IntMap Char),
+                             LeftReductiveMonoidInstance (mempty :: Map Char Int),
                              LeftReductiveMonoidInstance (mempty :: Concat String),
                              LeftReductiveMonoidInstance (mempty :: Concat ByteString),
                              LeftReductiveMonoidInstance (mempty :: Concat Lazy.ByteString),
                              LeftReductiveMonoidInstance (mempty :: Concat Text),
                              LeftReductiveMonoidInstance (mempty :: Concat Lazy.Text),
-                             LeftReductiveMonoidInstance (mempty :: Concat (Dual Text))]
+                             LeftReductiveMonoidInstance (mempty :: Concat (Dual Text)),
+                             LeftReductiveMonoidInstance (mempty :: LinePositioned Text),
+                             LeftReductiveMonoidInstance (mempty :: OffsetPositioned Text),
+                             LeftReductiveMonoidInstance (mempty :: Measured Text),
+                             LeftReductiveMonoidInstance (mempty :: Stateful (Sum Integer) Text)]
    where upcast (LeftCancellativeMonoidInstance i) = LeftReductiveMonoidInstance i
 
 rightReductiveInstances = map upcast rightCancellativeInstances
                           ++ [RightReductiveMonoidInstance (mempty :: Product Integer),
                               RightReductiveMonoidInstance (mempty :: IntSet),
+                              RightReductiveMonoidInstance (mempty :: Map Char Int),
+                              RightReductiveMonoidInstance (mempty :: IntMap Char),
                               RightReductiveMonoidInstance (mempty :: Set String),
                               RightReductiveMonoidInstance (mempty :: Concat ByteString),
                               RightReductiveMonoidInstance (mempty :: Concat Lazy.ByteString),
                               RightReductiveMonoidInstance (mempty :: Concat Text),
                               RightReductiveMonoidInstance (mempty :: Concat Lazy.Text),
-                              RightReductiveMonoidInstance (mempty :: Concat (Dual Text))]
+                              RightReductiveMonoidInstance (mempty :: Concat (Dual Text)),
+                              RightReductiveMonoidInstance (mempty :: LinePositioned Text),
+                              RightReductiveMonoidInstance (mempty :: OffsetPositioned Text),
+                              RightReductiveMonoidInstance (mempty :: Measured Text),
+                              RightReductiveMonoidInstance (mempty :: Stateful (Sum Integer) Text)]
    where upcast (RightCancellativeMonoidInstance i) = RightReductiveMonoidInstance i
 
 reductiveInstances = map upcast cancellativeInstances
@@ -247,6 +274,22 @@ reductiveInstances = map upcast cancellativeInstances
                          ReductiveMonoidInstance (mempty :: IntSet),
                          ReductiveMonoidInstance (mempty :: Set Integer)]
    where upcast (CancellativeMonoidInstance i) = ReductiveMonoidInstance i
+
+leftMonusInstances = map upcast monusInstances
+                 ++ [MonoidWithLeftMonusInstance (mempty :: IntMap Char),
+                     MonoidWithLeftMonusInstance (mempty :: Map Char Int)]
+   where upcast (MonoidWithMonusInstance i) = MonoidWithLeftMonusInstance i
+
+rightMonusInstances = map upcast monusInstances
+                 ++ [MonoidWithRightMonusInstance (mempty :: IntMap Char),
+                     MonoidWithRightMonusInstance (mempty :: Map Char Int)]
+   where upcast (MonoidWithMonusInstance i) = MonoidWithRightMonusInstance i
+
+monusInstances = [MonoidWithMonusInstance (mempty :: Product Natural),
+                  MonoidWithMonusInstance (mempty :: Sum Natural),
+                  MonoidWithMonusInstance (mempty :: Dual (Product Natural)),
+                  MonoidWithMonusInstance (mempty :: IntSet),
+                  MonoidWithMonusInstance (mempty :: Set String)]
 
 leftCancellativeInstances = map upcast cancellativeInstances
                             ++ [LeftCancellativeMonoidInstance (mempty :: String),
@@ -310,19 +353,13 @@ rightGCDInstances = map upcast gcdInstances
    where upcast (GCDMonoidInstance i) = RightGCDMonoidInstance i
 
 gcdInstances = map upcast cancellativeGCDInstances
-               ++ [GCDMonoidInstance (mempty :: Product Integer),
-                   GCDMonoidInstance (mempty :: Dual (Product Integer)),
+               ++ [GCDMonoidInstance (mempty :: Product Natural),
+                   GCDMonoidInstance (mempty :: Dual (Product Natural)),
                    GCDMonoidInstance (mempty :: IntSet),
                    GCDMonoidInstance (mempty :: Set String)]
    where upcast (CancellativeGCDMonoidInstance i) = GCDMonoidInstance i
 
-cancellativeGCDInstances = [CancellativeGCDMonoidInstance (),
-                            CancellativeGCDMonoidInstance (mempty :: Sum Integer),
-                            CancellativeGCDMonoidInstance (mempty :: Dual (Sum Integer)),
-                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, Dual (Sum Integer))),
-                            CancellativeGCDMonoidInstance (mempty :: (Sum Integer, (), Dual (Sum Integer))),
-                            CancellativeGCDMonoidInstance (mempty :: ((Sum Integer, ()), Sum Integer, (),
-                                                                      Dual (Sum Integer)))]
+cancellativeGCDInstances = [CancellativeGCDMonoidInstance ()]
 
 main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
   where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
@@ -340,6 +377,9 @@ checkInstances (ReductiveTest checkType) = (map checkType reductiveInstances)
 checkInstances (LeftCancellativeTest checkType) = (map checkType leftCancellativeInstances) 
 checkInstances (RightCancellativeTest checkType) = (map checkType rightCancellativeInstances) 
 checkInstances (CancellativeTest checkType) = (map checkType cancellativeInstances) 
+checkInstances (LeftMonusTest checkType) = (map checkType leftMonusInstances)
+checkInstances (RightMonusTest checkType) = (map checkType rightMonusInstances)
+checkInstances (MonusTest checkType) = (map checkType monusInstances)
 checkInstances (LeftGCDTest checkType) = (map checkType leftGCDInstances) 
 checkInstances (RightGCDTest checkType) = (map checkType rightGCDInstances) 
 checkInstances (GCDTest checkType) = (map checkType gcdInstances)  
@@ -405,6 +445,12 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("Textual.takeWhile_", TextualTest checkTextualTakeWhile_),
          ("Textual.dropWhile_", TextualTest checkTextualDropWhile_),
          ("stripPrefix", LeftReductiveTest checkStripPrefix),
+         ("stripPrefixOverlap 1", LeftMonusTest checkStripPrefixOverlap1),
+         ("stripPrefixOverlap 2", LeftMonusTest checkStripPrefixOverlap2),
+         ("stripPrefixOverlap 3", LeftMonusTest checkStripPrefixOverlap3),
+         ("stripSuffixOverlap 1", RightMonusTest checkStripSuffixOverlap1),
+         ("stripSuffixOverlap 2", RightMonusTest checkStripSuffixOverlap2),
+         ("stripSuffixOverlap 3", RightMonusTest checkStripSuffixOverlap3),
          ("isPrefixOf", LeftReductiveTest checkIsPrefixOf),
          ("stripSuffix", RightReductiveTest checkStripSuffix),
          ("isSuffixOf", RightReductiveTest checkIsSuffixOf),
@@ -414,8 +460,12 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("cancellative </>", CancellativeTest checkUnAppend'),
          ("stripCommonPrefix 1", LeftGCDTest checkStripCommonPrefix1),
          ("stripCommonPrefix 2", LeftGCDTest checkStripCommonPrefix2),
+         ("stripCommonPrefix 3", LeftGCDTest checkStripCommonPrefix3),
+         ("stripCommonPrefix 4", LeftGCDTest checkStripCommonPrefix4),
          ("stripCommonSuffix 1", RightGCDTest checkStripCommonSuffix1),
          ("stripCommonSuffix 2", RightGCDTest checkStripCommonSuffix2),
+         ("stripCommonSuffix 3", RightGCDTest checkStripCommonSuffix3),
+         ("stripCommonSuffix 4", RightGCDTest checkStripCommonSuffix4),
          ("gcd", GCDTest checkGCD),
          ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD)
         ]
@@ -515,9 +565,12 @@ checkFactorsFromString (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: G
 
 checkTextualMap (TextualMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
-   where check1 a = Textual.map succ a == Textual.concatMap (Textual.singleton . succ) a
+   where check1 a = Textual.map wrapSucc a == Textual.concatMap (Textual.singleton . wrapSucc) a
                     && Textual.map id a == a
-         check2 s = Textual.map succ (fromString s :: a) == fromString (List.map succ s)
+         check2 s = Textual.map wrapSucc (fromString s :: a) == fromString (List.map wrapSucc s)
+         wrapSucc c
+            | c == maxBound = minBound
+            | otherwise = succ c
 
 checkConcatMap (TextualMonoidInstance (_ :: a)) = 
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
@@ -715,6 +768,34 @@ checkUnAppend (ReductiveMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, 
    where check (a, b) = maybe a (b <>) (a </> b) == a
                         && maybe a (<> b) (a </> b) == a
 
+checkStripPrefixOverlap1 (MonoidWithLeftMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = o `isSuffixOf` b && b `isSuffixOf` (a <> o)
+            where o = stripPrefixOverlap a b
+
+checkStripPrefixOverlap2 (MonoidWithLeftMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (ap, o, bs) = b `isSuffixOf` (a <> b') && b' `isSuffixOf` bs
+            where a = ap <> o
+                  b = o <> bs
+                  b' = stripPrefixOverlap a b
+
+checkStripPrefixOverlap3 (MonoidWithLeftMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = all (\(_, s)-> null s || not (b `isSuffixOf` (a <> s))) (splitPrimePrefix b')
+            where b' = stripPrefixOverlap a b
+
+checkStripSuffixOverlap1 (MonoidWithRightMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = o `isPrefixOf` a && a `isPrefixOf` (o <> b)
+            where o = stripSuffixOverlap b a
+
+checkStripSuffixOverlap2 (MonoidWithRightMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (ap, o, bs) = a `isPrefixOf` (a' <> b) && a' `isPrefixOf` ap
+            where a = ap <> o
+                  b = o <> bs
+                  a' = stripSuffixOverlap b a
+
+checkStripSuffixOverlap3 (MonoidWithRightMonusInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = all (\(p, _)-> null p || not (a `isPrefixOf` (p <> b))) (splitPrimeSuffix a')
+            where a' = stripSuffixOverlap b a
+
 checkStripPrefix' (LeftCancellativeMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = stripPrefix a (a <> b) == Just b
 
@@ -735,6 +816,16 @@ checkStripCommonPrefix2 (LeftGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: 
    where check (a, b) = p == commonPrefix a b && p <> a' == a && p <> b' == b
             where (p, a', b') = stripCommonPrefix a b
 
+checkStripCommonPrefix3 (LeftGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (p, as, bs) = p `isPrefixOf` commonPrefix a b
+            where a = p <> as
+                  b = p <> bs
+
+checkStripCommonPrefix4 (LeftGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (p, a, b) = not (c /= c' && c' `isPrefixOf` a && c' `isPrefixOf` b)
+            where c = commonPrefix a b
+                  c' = p <> c
+
 checkStripCommonSuffix1 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = stripCommonSuffix a b == (a', b', s)
             where s = commonSuffix a b
@@ -744,6 +835,16 @@ checkStripCommonSuffix1 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary ::
 checkStripCommonSuffix2 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = s == commonSuffix a b && a' <> s == a && b' <> s == b
             where (a', b', s) = stripCommonSuffix a b
+
+checkStripCommonSuffix3 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (ap, bp, s) = s `isSuffixOf` commonSuffix a b
+            where a = ap <> s
+                  b = bp <> s
+
+checkStripCommonSuffix4 (RightGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
+   where check (a, b, s) = not (c /= c' && c' `isSuffixOf` a && c' `isSuffixOf` b)
+            where c = commonSuffix a b
+                  c' = c <> s
 
 checkGCD (GCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = d == commonPrefix a b

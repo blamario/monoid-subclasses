@@ -99,10 +99,6 @@ instance PositiveMonoid a => Monoid (Concat a) where
    mempty = Leaf mempty
    mappend = (<>)
 
-instance PositiveMonoid a => Monoid (Concat a) where
-   mempty = Leaf mempty
-   mappend = (<>)
-
 instance PositiveMonoid a => MonoidNull (Concat a) where
    null (Leaf x) = null x
    null _ = False

@@ -129,22 +129,8 @@ instance (StableFactorialMonoid m, TextualMonoid m) => Semigroup (LinePositioned
 
 instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m) where
    mempty = pure mempty
-   mappend (LinePositioned p1 l1 lp1 c1) (LinePositioned p2 l2 lp2 c2)
    mappend = (<>)
    {-# INLINE mempty #-}
-   {-# INLINE mappend #-}
-
-instance StableFactorialMonoid m => Monoid (OffsetPositioned m) where
-   mempty = pure mempty
-   mappend = (<>)
-   {-# INLINE mempty #-}
-   {-# INLINE mappend #-}
-
-instance (StableFactorialMonoid m, TextualMonoid m) => Monoid (LinePositioned m) where
-   mempty = pure mempty
-   mappend = (<>)
-   {-# INLINE mempty #-}
-   {-# INLINE mappend #-}
 
 instance (StableFactorialMonoid m, MonoidNull m) => MonoidNull (OffsetPositioned m) where
    null = null . extractOffset
@@ -262,8 +248,6 @@ instance StableFactorialSemigroup m => FactorialSemigroup (OffsetPositioned m) w
    {-# INLINE foldl' #-}
    {-# INLINE foldr #-}
    {-# INLINE foldMap #-}
-   {-# INLINE length #-}
-   {-# INLINE reverse #-}
 
 instance StableFactorialMonoid m => FactorialMonoid (OffsetPositioned m) where
    splitPrimePrefix (OffsetPositioned p c) = fmap rewrap (splitPrimePrefix c)
@@ -318,9 +302,10 @@ instance (StableFactorialMonoid m, TextualMonoid m) => FactorialSemigroup (LineP
    foldMap f (LinePositioned p0 l0 lp0 c) = appEndo (Factorial.foldMap f' c) (const mempty) p0 l0 lp0
       where -- f' :: m -> Endo (Int -> Int -> Int -> m)
             f' prime = Endo (\cont p l lp-> f (LinePositioned p l lp prime)
-                                            `mempty` if characterPrefix prime == Just '\n'
-                                                     then cont (succ p) (succ l) p
-                                                     else cont (succ p) l lp)
+                                            <>
+                                            if characterPrefix prime == Just '\n'
+                                            then cont (succ p) (succ l) p
+                                            else cont (succ p) l lp)
    length = length . extractLines
    reverse (LinePositioned p l lp c) = LinePositioned p l lp (Factorial.reverse c)
    {-# INLINE primePrefix #-}

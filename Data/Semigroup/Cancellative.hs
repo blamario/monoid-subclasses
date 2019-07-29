@@ -25,7 +25,7 @@
 -- 
 -- * 'RightCancellativeSemigroup'
 
-{-# LANGUAGE Haskell2010, Trustworthy #-}
+{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Semigroup.Cancellative (
    -- * Symmetric, commutative semigroup classes
@@ -50,6 +50,7 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
+import Numeric.Natural (Natural)
 
 -- | Class of all Abelian ({i.e.}, commutative) semigroups that satisfy the commutativity property:
 -- 
@@ -61,6 +62,12 @@ class Semigroup m => CommutativeSemigroup m
 -- 
 -- > maybe a (b <>) (a </> b) == a
 -- > maybe a (<> b) (a </> b) == a
+--
+-- The '</>' operator is a synonym for both 'stripPrefix' and 'stripSuffix', which must be equivalent as '<>' is both
+-- associative and commutative.
+--
+-- > (</>) = flip stripPrefix
+-- > (</>) = flip stripSuffix
 class (CommutativeSemigroup m, LeftReductiveSemigroup m, RightReductiveSemigroup m) => ReductiveSemigroup m where
    (</>) :: m -> m -> Maybe m
 
@@ -173,6 +180,17 @@ instance Integral a => RightReductiveSemigroup (Sum a) where
 instance Integral a => LeftCancellativeSemigroup (Sum a)
 
 instance Integral a => RightCancellativeSemigroup (Sum a)
+
+instance {-# OVERLAPS #-} ReductiveSemigroup (Sum Natural) where
+   Sum a </> Sum b
+      | a < b = Nothing
+      | otherwise = Just $ Sum (a - b)
+
+instance {-# OVERLAPS #-} LeftReductiveSemigroup (Sum Natural) where
+   stripPrefix a b = b </> a
+
+instance {-# OVERLAPS #-} RightReductiveSemigroup (Sum Natural) where
+   stripSuffix a b = b </> a
 
 -- Product instances
 
@@ -320,16 +338,26 @@ instance ReductiveSemigroup IntSet.IntSet where
 
 -- Map instances
 
-instance Ord k => LeftReductiveSemigroup (Map.Map k a) where
-   isPrefixOf = Map.isSubmapOfBy (\_ _-> True)
-   stripPrefix a b | Map.isSubmapOfBy (\_ _-> True) a b = Just (b Map.\\ a)
+instance (Ord k, Eq a) => LeftReductiveSemigroup (Map.Map k a) where
+   isPrefixOf = Map.isSubmapOf
+   stripPrefix a b | Map.isSubmapOf a b = Just (b Map.\\ a)
+                   | otherwise = Nothing
+
+instance (Ord k, Eq a) => RightReductiveSemigroup (Map.Map k a) where
+   isSuffixOf = Map.isSubmapOfBy (const $ const True)
+   stripSuffix a b | a `isSuffixOf` b = Just (Map.differenceWith (\x y-> if x == y then Nothing else Just x) b a)
                    | otherwise = Nothing
 
 -- IntMap instances
 
-instance LeftReductiveSemigroup (IntMap.IntMap a) where
-   isPrefixOf = IntMap.isSubmapOfBy (\_ _-> True)
-   stripPrefix a b | IntMap.isSubmapOfBy (\_ _-> True) a b = Just (b IntMap.\\ a)
+instance Eq a => LeftReductiveSemigroup (IntMap.IntMap a) where
+   isPrefixOf = IntMap.isSubmapOf
+   stripPrefix a b | IntMap.isSubmapOf a b = Just (b IntMap.\\ a)
+                   | otherwise = Nothing
+
+instance Eq a => RightReductiveSemigroup (IntMap.IntMap a) where
+   isSuffixOf = IntMap.isSubmapOfBy (const $ const True)
+   stripSuffix a b | a `isSuffixOf` b = Just (IntMap.differenceWith (\x y-> if x == y then Nothing else Just x) b a)
                    | otherwise = Nothing
 
 -- List instances

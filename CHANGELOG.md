@@ -1,5 +1,18 @@
 
-Version 0.4.5
+Version 0.5
+---------------
+* Fixed issue #24, unlawful LeftReductiveMonoid instance for Map
+* Tightened the laws of GCD classes, dropped instances for Sum and Product
+* Introduced the `MonoidWith[Left|Right]Monus` classes
+* Introduced the `OverlappingGCDMonoid` class
+* Added the instances of type `Sum Natural` and `Product Natural`
+* Using the language extensions 'FlexibleInstances' and 'OverlappingInstances'
+
+Version 0.4.6.1
+---------------
+Bumped the containers dependency upper bounds
+
+Version 0.4.6
 ---------------
 Added the Semigroup instances to fix the compilation errors with base-4.11
 

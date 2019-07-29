@@ -10,7 +10,7 @@ The monoid-subclasses package has been released [on Hackage](http://hackage.hask
         (a <> b) </> a == Just b
         (a <> b) </> b == Just a
 
-    Every group (<em>i.e.</em>, every `Monoid a` with the operation `inverse :: a -> a`) is a `CancellativeMonoid` where `a </> b = Just (a <> inverse b)` but not every `CancellativeMonoid` is a group.
+    Every group (<em>i.e.</em>, every `Monoid a` with the operation `inverse :: a -> a`) is a cancellative monoid where `a </> b = Just (a <> inverse b)` but not every `CancellativeMonoid` is a group.
   * [GCDMonoid](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-Cancellative.html#t:GCDMonoid) is a subclass of `ReductiveMonoid` that provides the `gcd` operation for getting the greatest common denominator for two given monoid values.
   * [MonoidNull](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-Null.html) class provides the Boolean `null` operation that checks if the argument monoid is `mempty`.
   * [FactorialMonoid](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-Factorial.html) class represents monoids that can be split up into irreducible factors.

@@ -7,7 +7,7 @@
 -- | This module defines the 'FactorialSemigroup' class and some of its instances.
 -- 
 
-{-# LANGUAGE Haskell2010, Trustworthy #-}
+{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Semigroup.Factorial (
    -- * Classes
@@ -33,6 +33,7 @@ import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Data.List.NonEmpty (nonEmpty)
 import Data.Numbers.Primes (primeFactors)
+import Numeric.Natural (Natural)
 
 import Data.Monoid.Null (MonoidNull(null))
 
@@ -415,10 +416,11 @@ instance StableFactorialSemigroup Text.Text
 instance StableFactorialSemigroup LazyText.Text
 instance StableFactorialSemigroup (Sequence.Seq a)
 instance StableFactorialSemigroup (Vector.Vector a)
+instance StableFactorialSemigroup (Sum Natural)
 
 -- | A 'Monad.mapM' equivalent.
 mapM :: (FactorialSemigroup a, Monoid b, Monad m) => (a -> m b) -> a -> m b
-mapM f = ($ return mempty) . appEndo . Data.Semigroup.Factorial.foldMap (Endo . Monad.liftM2 mappend . f)
+mapM f = ($ return mempty) . appEndo . Data.Semigroup.Factorial.foldMap (Endo . Monad.liftM2 (<>) . f)
 
 -- | A 'Monad.mapM_' equivalent.
 mapM_ :: (FactorialSemigroup a, Applicative m) => (a -> m b) -> a -> m ()

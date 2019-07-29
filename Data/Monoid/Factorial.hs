@@ -7,7 +7,7 @@
 -- | This module defines the 'FactorialMonoid' class and some of its instances.
 -- 
 
-{-# LANGUAGE Haskell2010, Trustworthy #-}
+{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Factorial (
    -- * Classes
@@ -17,6 +17,7 @@ module Data.Monoid.Factorial (
    )
 where
 
+import Control.Monad (liftM2)
 import Control.Arrow (first)
 import Data.Monoid -- (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
@@ -32,6 +33,7 @@ import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Data.Int (Int64)
+import Numeric.Natural (Natural)
 
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup, mapM, mapM_)
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -551,3 +553,4 @@ instance StableFactorialMonoid Text.Text
 instance StableFactorialMonoid LazyText.Text
 instance StableFactorialMonoid (Sequence.Seq a)
 instance StableFactorialMonoid (Vector.Vector a)
+instance StableFactorialMonoid (Sum Natural)
