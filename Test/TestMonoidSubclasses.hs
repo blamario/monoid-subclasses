@@ -70,7 +70,7 @@ import Data.Semigroup.Cancellative (Commutative, Reductive,
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
                               splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
-import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
+import Data.Monoid.Cancellative (ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
                                  Monus, OverlappingGCDMonoid,
@@ -100,7 +100,7 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | GCDTest (GCDMonoidInstance -> Property)
           | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
 
-data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CommutativeMonoid a) =>
+data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Commutative a, Monoid a) =>
                                  CommutativeMonoidInstance a
 data NullMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidNull a) =>
                           NullMonoidInstance a

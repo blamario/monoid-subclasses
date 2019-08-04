@@ -32,7 +32,7 @@
 -- 
 -- * 'RightGCDMonoid'
 
-{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Cancellative (
    module Data.Semigroup.Cancellative,
@@ -69,17 +69,18 @@ import Prelude hiding (gcd)
 -- | Class of all Abelian ({i.e.}, commutative) monoids that satisfy the commutativity property:
 -- 
 -- > a <> b == b <> a
-class (Monoid m, Commutative m) => CommutativeMonoid m
+{-# DEPRECATED CommutativeMonoid "Use Data.Semigroup.Cancellative.Commutative instead." #-}
+type CommutativeMonoid m = (Monoid m, Commutative m)
 
 -- | Class of Abelian monoids with a partial inverse for the '<>' operation.
-class (CommutativeMonoid m, Reductive m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m
+class (Commutative m, Monoid m, Reductive m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m
 
 -- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
 -- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
 --
 -- > (<\>) = flip stripPrefixOverlap
 -- > (<\>) = flip stripSuffixOverlap
-class (CommutativeMonoid m, OverlappingGCDMonoid m) => Monus m where
+class (Commutative m, Monoid m, OverlappingGCDMonoid m) => Monus m where
    (<\>) :: m -> m -> m
 
 infix 5 <\>
@@ -227,7 +228,6 @@ class (LeftReductiveMonoid m, RightReductiveMonoid m) => OverlappingGCDMonoid m 
 
 -- Unit instances
 
-instance CommutativeMonoid ()
 instance ReductiveMonoid ()
 instance CancellativeMonoid ()
 instance LeftReductiveMonoid ()
@@ -255,7 +255,6 @@ instance OverlappingGCDMonoid () where
 
 -- Dual instances
 
-instance CommutativeMonoid a => CommutativeMonoid (Dual a)
 instance ReductiveMonoid a => ReductiveMonoid (Dual a)
 instance CancellativeMonoid a => CancellativeMonoid (Dual a)
 instance LeftReductiveMonoid a => RightReductiveMonoid (Dual a)
@@ -284,7 +283,6 @@ instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Dual a) where
 
 -- Sum instances
 
-instance Num a => CommutativeMonoid (Sum a)
 instance Integral a => ReductiveMonoid (Sum a)
 instance Integral a => CancellativeMonoid (Sum a)
 instance Integral a => LeftReductiveMonoid (Sum a)
@@ -319,7 +317,6 @@ instance OverlappingGCDMonoid (Sum Natural) where
 
 -- Product instances
 
-instance Num a => CommutativeMonoid (Product a)
 instance Integral a => ReductiveMonoid (Product a)
 instance Integral a => LeftReductiveMonoid (Product a)
 instance Integral a => RightReductiveMonoid (Product a)
@@ -347,7 +344,6 @@ instance OverlappingGCDMonoid (Product Natural) where
 
 -- Pair instances
 
-instance (CommutativeMonoid a, CommutativeMonoid b) => CommutativeMonoid (a, b)
 instance (ReductiveMonoid a, ReductiveMonoid b) => ReductiveMonoid (a, b)
 instance (CancellativeMonoid a, CancellativeMonoid b) => CancellativeMonoid (a, b)
 instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (a, b)
@@ -374,7 +370,6 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b) => OverlappingGCDMonoi
 
 -- Triple instances
 
-instance (CommutativeMonoid a, CommutativeMonoid b, CommutativeMonoid c) => CommutativeMonoid (a, b, c)
 instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c) => ReductiveMonoid (a, b, c)
 instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c) => CancellativeMonoid (a, b, c)
 instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c) => LeftReductiveMonoid (a, b, c)
@@ -405,8 +400,6 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c
 
 -- Quadruple instances
 
-instance (CommutativeMonoid a, CommutativeMonoid b, CommutativeMonoid c, CommutativeMonoid d) =>
-         CommutativeMonoid (a, b, c, d)
 instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c, ReductiveMonoid d) => ReductiveMonoid (a, b, c, d)
 instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c, CancellativeMonoid d) =>
          CancellativeMonoid (a, b, c, d)
@@ -466,7 +459,6 @@ instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
 
 -- Set instances
 
-instance Ord a => CommutativeMonoid (Set.Set a)
 instance Ord a => LeftReductiveMonoid (Set.Set a)
 instance Ord a => RightReductiveMonoid (Set.Set a)
 instance Ord a => ReductiveMonoid (Set.Set a)
@@ -491,7 +483,6 @@ instance Ord a => GCDMonoid (Set.Set a) where
 
 -- IntSet instances
 
-instance CommutativeMonoid IntSet.IntSet
 instance LeftReductiveMonoid IntSet.IntSet
 instance RightReductiveMonoid IntSet.IntSet
 instance ReductiveMonoid IntSet.IntSet
