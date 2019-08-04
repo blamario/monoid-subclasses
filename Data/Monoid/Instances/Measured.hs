@@ -21,7 +21,7 @@ import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
-import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
+import Data.Monoid.Cancellative (LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -59,12 +59,8 @@ instance StableFactorialMonoid a => PositiveMonoid (Measured a)
 instance (LeftReductive a, StableFactorialSemigroup a) => LeftReductive (Measured a) where
    stripPrefix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripPrefix x y)
 
-instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Measured a)
-
 instance (RightReductive a, StableFactorialSemigroup a) => RightReductive (Measured a) where
    stripSuffix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripSuffix x y)
-
-instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Measured a)
 
 instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Measured a) where
    commonPrefix (Measured _ x) (Measured _ y) = measure (commonPrefix x y)

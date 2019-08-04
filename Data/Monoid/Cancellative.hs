@@ -70,10 +70,13 @@ import Prelude hiding (gcd)
 -- 
 -- > a <> b == b <> a
 {-# DEPRECATED CommutativeMonoid "Use Data.Semigroup.Cancellative.Commutative instead." #-}
+{-# DEPRECATED ReductiveMonoid "Use Data.Semigroup.Cancellative.Reductive instead." #-}
+{-# DEPRECATED LeftReductiveMonoid "Use Data.Semigroup.Cancellative.LeftReductive instead." #-}
+{-# DEPRECATED RightReductiveMonoid "Use Data.Semigroup.Cancellative.RightReductive instead." #-}
 type CommutativeMonoid m = (Monoid m, Commutative m)
-
--- | Class of Abelian monoids with a partial inverse for the '<>' operation.
-class (Commutative m, Monoid m, Reductive m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m
+type ReductiveMonoid m = (Monoid m, Reductive m)
+type LeftReductiveMonoid m = (Monoid m, LeftReductive m)
+type RightReductiveMonoid m = (Monoid m, RightReductive m)
 
 -- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
 -- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
@@ -105,26 +108,6 @@ class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) =
 -- > gcd (a <> c) (b <> c) == gcd a b <> c
 class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
-
--- | Class of monoids with a left inverse of '<>', satisfying the following laws:
--- 
--- > isPrefixOf a b == isJust (stripPrefix a b)
--- > maybe b (a <>) (stripPrefix a b) == b
--- > a `isPrefixOf` (a <> b)
--- 
--- | Every instance definition has to implement at least the 'stripPrefix' method. Its complexity should be no worse
--- than linear in the length of the prefix argument.
-class (Monoid m, LeftReductive m) => LeftReductiveMonoid m
-
--- | Class of monoids with a right inverse of '<>', satisfying the following laws:
--- 
--- > isSuffixOf a b == isJust (stripSuffix a b)
--- > maybe b (<> a) (stripSuffix a b) == b
--- > b `isSuffixOf` (a <> b)
--- 
--- | Every instance definition has to implement at least the 'stripSuffix' method. Its complexity should be no worse
--- than linear in the length of the suffix argument.
-class (Monoid m, RightReductive m) => RightReductiveMonoid m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
 -- additional law:
@@ -228,10 +211,7 @@ class (LeftReductiveMonoid m, RightReductiveMonoid m) => OverlappingGCDMonoid m 
 
 -- Unit instances
 
-instance ReductiveMonoid ()
 instance CancellativeMonoid ()
-instance LeftReductiveMonoid ()
-instance RightReductiveMonoid ()
 instance LeftCancellativeMonoid ()
 instance RightCancellativeMonoid ()
 
@@ -255,10 +235,7 @@ instance OverlappingGCDMonoid () where
 
 -- Dual instances
 
-instance ReductiveMonoid a => ReductiveMonoid (Dual a)
 instance CancellativeMonoid a => CancellativeMonoid (Dual a)
-instance LeftReductiveMonoid a => RightReductiveMonoid (Dual a)
-instance RightReductiveMonoid a => LeftReductiveMonoid (Dual a)
 instance LeftCancellativeMonoid a => RightCancellativeMonoid (Dual a)
 instance RightCancellativeMonoid a => LeftCancellativeMonoid (Dual a)
 
@@ -283,16 +260,9 @@ instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Dual a) where
 
 -- Sum instances
 
-instance Integral a => ReductiveMonoid (Sum a)
 instance Integral a => CancellativeMonoid (Sum a)
-instance Integral a => LeftReductiveMonoid (Sum a)
-instance Integral a => RightReductiveMonoid (Sum a)
 instance Integral a => LeftCancellativeMonoid (Sum a)
 instance Integral a => RightCancellativeMonoid (Sum a)
-
-instance {-# OVERLAPS #-} ReductiveMonoid (Sum Natural)
-instance {-# OVERLAPS #-} LeftReductiveMonoid (Sum Natural)
-instance {-# OVERLAPS #-} RightReductiveMonoid (Sum Natural)
 
 instance Monus (Sum Natural) where
    Sum a <\> Sum b
@@ -317,10 +287,6 @@ instance OverlappingGCDMonoid (Sum Natural) where
 
 -- Product instances
 
-instance Integral a => ReductiveMonoid (Product a)
-instance Integral a => LeftReductiveMonoid (Product a)
-instance Integral a => RightReductiveMonoid (Product a)
-
 instance Monus (Product Natural) where
    Product 0 <\> Product 0 = Product 1
    Product a <\> Product b = Product (a `div` Prelude.gcd a b)
@@ -344,10 +310,7 @@ instance OverlappingGCDMonoid (Product Natural) where
 
 -- Pair instances
 
-instance (ReductiveMonoid a, ReductiveMonoid b) => ReductiveMonoid (a, b)
 instance (CancellativeMonoid a, CancellativeMonoid b) => CancellativeMonoid (a, b)
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (a, b)
-instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (a, b)
 instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b) => LeftCancellativeMonoid (a, b)
 instance (RightCancellativeMonoid a, RightCancellativeMonoid b) => RightCancellativeMonoid (a, b)
 
@@ -370,10 +333,7 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b) => OverlappingGCDMonoi
 
 -- Triple instances
 
-instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c) => ReductiveMonoid (a, b, c)
 instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c) => CancellativeMonoid (a, b, c)
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c) => LeftReductiveMonoid (a, b, c)
-instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c) => RightReductiveMonoid (a, b, c)
 instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c) =>
          LeftCancellativeMonoid (a, b, c)
 instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c) =>
@@ -400,13 +360,8 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c
 
 -- Quadruple instances
 
-instance (ReductiveMonoid a, ReductiveMonoid b, ReductiveMonoid c, ReductiveMonoid d) => ReductiveMonoid (a, b, c, d)
 instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c, CancellativeMonoid d) =>
          CancellativeMonoid (a, b, c, d)
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b, LeftReductiveMonoid c, LeftReductiveMonoid d) =>
-         LeftReductiveMonoid (a, b, c, d)
-instance (RightReductiveMonoid a, RightReductiveMonoid b, RightReductiveMonoid c, RightReductiveMonoid d) =>
-         RightReductiveMonoid (a, b, c, d)
 instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c, LeftCancellativeMonoid d) =>
          LeftCancellativeMonoid (a, b, c, d)
 instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c, RightCancellativeMonoid d) =>
@@ -438,9 +393,6 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c
 
 -- Maybe instances
 
-instance LeftReductiveMonoid x => LeftReductiveMonoid (Maybe x)
-instance RightReductiveMonoid x => RightReductiveMonoid (Maybe x)
-
 instance LeftGCDMonoid x => LeftGCDMonoid (Maybe x) where
    commonPrefix (Just x) (Just y) = Just (commonPrefix x y)
    commonPrefix _ _ = Nothing
@@ -458,10 +410,6 @@ instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
    stripCommonSuffix x y = (x, y, Nothing)
 
 -- Set instances
-
-instance Ord a => LeftReductiveMonoid (Set.Set a)
-instance Ord a => RightReductiveMonoid (Set.Set a)
-instance Ord a => ReductiveMonoid (Set.Set a)
 
 instance Ord a => Monus (Set.Set a) where
    (<\>) = (Set.\\)
@@ -483,10 +431,6 @@ instance Ord a => GCDMonoid (Set.Set a) where
 
 -- IntSet instances
 
-instance LeftReductiveMonoid IntSet.IntSet
-instance RightReductiveMonoid IntSet.IntSet
-instance ReductiveMonoid IntSet.IntSet
-
 instance Monus IntSet.IntSet where
    (<\>) = (IntSet.\\)
 
@@ -507,9 +451,6 @@ instance GCDMonoid IntSet.IntSet where
 
 -- Map instances
 
-instance (Ord k, Eq a) => LeftReductiveMonoid (Map.Map k a)
-instance (Ord k, Eq a) => RightReductiveMonoid (Map.Map k a)
-
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
    commonPrefix = Map.mergeWithKey (\_ a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
 
@@ -520,9 +461,6 @@ instance (Ord k, Eq v) => OverlappingGCDMonoid (Map.Map k v) where
     stripSuffixOverlap a b = Map.differenceWith (\x y-> if x == y then Nothing else Just x) b a
 
 -- IntMap instances
-
-instance Eq a => LeftReductiveMonoid (IntMap.IntMap a)
-instance Eq a => RightReductiveMonoid (IntMap.IntMap a)
 
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
    commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
@@ -536,7 +474,6 @@ instance Eq a => OverlappingGCDMonoid (IntMap.IntMap a) where
 
 -- List instances
 
-instance Eq x => LeftReductiveMonoid [x]
 instance Eq x => LeftCancellativeMonoid [x]
 
 instance Eq x => LeftGCDMonoid [x] where
@@ -549,8 +486,6 @@ instance Eq x => LeftGCDMonoid [x] where
 
 -- Seq instances
 
-instance Eq a => LeftReductiveMonoid (Sequence.Seq a)
-instance Eq a => RightReductiveMonoid (Sequence.Seq a)
 instance Eq a => LeftCancellativeMonoid (Sequence.Seq a)
 instance Eq a => RightCancellativeMonoid (Sequence.Seq a)
 
@@ -568,8 +503,6 @@ instance Eq a => RightGCDMonoid (Sequence.Seq a) where
 
 -- Vector instances
 
-instance Eq a => LeftReductiveMonoid (Vector.Vector a)
-instance Eq a => RightReductiveMonoid (Vector.Vector a)
 instance Eq a => LeftCancellativeMonoid (Vector.Vector a)
 instance Eq a => RightCancellativeMonoid (Vector.Vector a)
 
@@ -589,8 +522,6 @@ instance Eq a => RightGCDMonoid (Vector.Vector a) where
 
 -- ByteString instances
 
-instance LeftReductiveMonoid ByteString.ByteString
-instance RightReductiveMonoid ByteString.ByteString
 instance LeftCancellativeMonoid ByteString.ByteString
 instance RightCancellativeMonoid ByteString.ByteString
 
@@ -613,8 +544,6 @@ instance RightGCDMonoid ByteString.ByteString where
 
 -- Lazy ByteString instances
 
-instance LeftReductiveMonoid LazyByteString.ByteString
-instance RightReductiveMonoid LazyByteString.ByteString
 instance LeftCancellativeMonoid LazyByteString.ByteString
 instance RightCancellativeMonoid LazyByteString.ByteString
 
@@ -635,8 +564,6 @@ instance RightGCDMonoid LazyByteString.ByteString where
 
 -- Text instances
 
-instance LeftReductiveMonoid Text.Text
-instance RightReductiveMonoid Text.Text
 instance LeftCancellativeMonoid Text.Text
 instance RightCancellativeMonoid Text.Text
 
@@ -645,8 +572,6 @@ instance LeftGCDMonoid Text.Text where
 
 -- Lazy Text instances
 
-instance LeftReductiveMonoid LazyText.Text
-instance RightReductiveMonoid LazyText.Text
 instance LeftCancellativeMonoid LazyText.Text
 instance RightCancellativeMonoid LazyText.Text
 

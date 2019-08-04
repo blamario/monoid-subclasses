@@ -23,7 +23,7 @@ import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..), First(..), Sum(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
-import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
+import Data.Monoid.Cancellative (LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -105,7 +105,7 @@ instance PositiveMonoid a => MonoidNull (Concat a) where
 
 instance PositiveMonoid a => PositiveMonoid (Concat a)
 
-instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductive (Concat a) where
+instance (LeftReductive a, StableFactorialMonoid a) => LeftReductive (Concat a) where
    stripPrefix (Leaf x) (Leaf y) = Leaf <$> stripPrefix x y
    stripPrefix (xp :<> xs) y = stripPrefix xp y >>= stripPrefix xs
    stripPrefix x (yp :<> ys) = case (stripPrefix x yp, stripPrefix yp x)
@@ -113,17 +113,13 @@ instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductive (Conc
                                   (Nothing, Nothing) -> Nothing
                                   (Nothing, Just xs) -> stripPrefix xs ys
 
-instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a)
-
-instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductive (Concat a) where
+instance (RightReductive a, StableFactorialMonoid a) => RightReductive (Concat a) where
    stripSuffix (Leaf x) (Leaf y) = Leaf <$> stripSuffix x y
    stripSuffix (xp :<> xs) y = stripSuffix xs y >>= stripSuffix xp
    stripSuffix x (yp :<> ys) = case (stripSuffix x ys, stripSuffix ys x)
                                of (Just ysp, _) -> Just (yp <> ysp)
                                   (Nothing, Nothing) -> Nothing
                                   (Nothing, Just xp) -> stripSuffix xp yp
-
-instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Concat a)
 
 instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Concat a) where
    stripCommonPrefix (Leaf x) (Leaf y) = map3 Leaf (stripCommonPrefix x y)

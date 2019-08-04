@@ -70,8 +70,7 @@ import Data.Semigroup.Cancellative (Commutative, Reductive,
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
                               splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
-import Data.Monoid.Cancellative (ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
-                                 CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
+import Data.Monoid.Cancellative (CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
                                  Monus, OverlappingGCDMonoid,
                                  (<\>), (</>), gcd,
@@ -115,11 +114,11 @@ data TextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a
 data StableTextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a,
                                               TextualMonoid a) =>
                                    StableTextualMonoidInstance a
-data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftReductiveMonoid a) =>
+data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, LeftReductive a) =>
                                    LeftReductiveMonoidInstance a
-data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightReductiveMonoid a) =>
+data RightReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, RightReductive a) =>
                                     RightReductiveMonoidInstance a
-data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, ReductiveMonoid a) =>
+data ReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, Reductive a) =>
                                ReductiveMonoidInstance a
 data MonoidWithLeftMonusInstance = forall a. (Arbitrary a, Show a, Eq a, OverlappingGCDMonoid a, FactorialMonoid a) =>
                                    MonoidWithLeftMonusInstance a
@@ -864,9 +863,8 @@ textualFactors = map characterize . factors
    where characterize prime = maybe (Left prime) Right (Textual.characterPrefix prime)
 
 newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
-                                                 Semigroup, LeftReductive, LeftCancellative,
-                                                 StableFactorialSemigroup,
-                                                 Monoid, LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid,
+                                                 Semigroup, LeftReductive, LeftCancellative, StableFactorialSemigroup,
+                                                 Monoid, LeftCancellativeMonoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, StableFactorialMonoid, IsString)
 
 instance FactorialSemigroup TestString where

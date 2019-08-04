@@ -27,7 +27,7 @@ import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
-import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid(..), RightReductiveMonoid, RightGCDMonoid(..))
+import Data.Monoid.Cancellative (LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -86,9 +86,6 @@ instance (RightReductive a, RightReductive b) => RightReductive (Stateful a b) w
    stripSuffix (Stateful x) (Stateful x') = Stateful <$> stripSuffix x x'
    {-# INLINE stripSuffix #-}
    {-# INLINE isSuffixOf #-}
-
-instance (LeftReductiveMonoid a, LeftReductiveMonoid b) => LeftReductiveMonoid (Stateful a b)
-instance (RightReductiveMonoid a, RightReductiveMonoid b) => RightReductiveMonoid (Stateful a b)
 
 instance (LeftGCDMonoid a, LeftGCDMonoid b) => LeftGCDMonoid (Stateful a b) where
    commonPrefix (Stateful x) (Stateful x') = Stateful (commonPrefix x x')
