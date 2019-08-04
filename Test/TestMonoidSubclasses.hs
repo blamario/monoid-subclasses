@@ -70,9 +70,7 @@ import Data.Semigroup.Cancellative (Commutative, Reductive,
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
                               splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
-import Data.Monoid.Cancellative (CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
-                                 GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
-                                 Monus, OverlappingGCDMonoid,
+import Data.Monoid.Cancellative (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, OverlappingGCDMonoid, Monus,
                                  (<\>), (</>), gcd,
                                  isPrefixOf, stripPrefix, stripPrefixOverlap, commonPrefix, stripCommonPrefix,
                                  isSuffixOf, stripSuffix, stripSuffixOverlap, commonSuffix, stripCommonSuffix)
@@ -126,11 +124,11 @@ data MonoidWithRightMonusInstance = forall a. (Arbitrary a, Show a, Eq a, Overla
                                     MonoidWithRightMonusInstance a
 data MonusInstance = forall a. (Arbitrary a, Show a, Eq a, Monus a, FactorialMonoid a) =>
                                MonusInstance a
-data LeftCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftCancellativeMonoid a) =>
+data LeftCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, LeftCancellative a) =>
                                       LeftCancellativeMonoidInstance a
-data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightCancellativeMonoid a) =>
+data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, RightCancellative a) =>
                                        RightCancellativeMonoidInstance a
-data CancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a) =>
+data CancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, Cancellative a) =>
                                   CancellativeMonoidInstance a
 data LeftGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftGCDMonoid a) =>
                              LeftGCDMonoidInstance a
@@ -138,7 +136,7 @@ data RightGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightGCDMono
                               RightGCDMonoidInstance a
 data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) =>
                          GCDMonoidInstance a
-data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, CancellativeMonoid a, GCDMonoid a) =>
+data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, Cancellative a, GCDMonoid a) =>
                                      CancellativeGCDMonoidInstance a
 
 commutativeInstances :: [CommutativeMonoidInstance]
@@ -864,7 +862,7 @@ textualFactors = map characterize . factors
 
 newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
                                                  Semigroup, LeftReductive, LeftCancellative, StableFactorialSemigroup,
-                                                 Monoid, LeftCancellativeMonoid, LeftGCDMonoid,
+                                                 Monoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, StableFactorialMonoid, IsString)
 
 instance FactorialSemigroup TestString where

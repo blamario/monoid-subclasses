@@ -4,33 +4,19 @@
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
--- | This module defines the 'Monoid' => 'ReductiveMonoid' => ('CancellativeMonoid', 'GCDMonoid') class hierarchy. 
+-- | This module defines the 'GCDMonoid' and 'Monus' subclasses of the 'Monoid' class.
 --
--- The 'ReductiveMonoid' class introduces operation '</>' which is the inverse of '<>'. For the 'Sum' monoid, this
--- operation is subtraction; for 'Product' it is division and for 'Set' it's the set difference. A 'ReductiveMonoid' is
--- not a full group because '</>' may return 'Nothing'.
+-- The 'GCDMonoid' subclass adds the 'gcd' operation which takes two monoidal arguments and finds their greatest
+-- common divisor, or (more generally) the greatest monoid that can be extracted with the '</>' operation from both.
 --
--- The 'CancellativeMonoid' subclass does not add any operation but it provides the additional guarantee that '<>' can
--- always be undone with '</>'. Thus 'Sum' is a 'CancellativeMonoid' but 'Product' is not because @(0*n)/0@ is not
--- defined.
---
--- The 'GCDMonoid' subclass adds the 'gcd' operation which takes two monoidal arguments and finds their greatest common
--- divisor, or (more generally) the greatest monoid that can be extracted with the '</>' operation from both.
---
--- All monoid subclasses listed above are for Abelian, /i.e./, commutative or symmetric monoids. Since most practical
--- monoids in Haskell are not Abelian, each of the these classes has two symmetric superclasses:
--- 
--- * 'LeftReductiveMonoid'
--- 
--- * 'LeftCancellativeMonoid'
+-- The two above classes are for Abelian, /i.e./, commutative monoids. Since most practical monoids in Haskell are not
+-- Abelian, there are also three symmetric superclasses:
 -- 
 -- * 'LeftGCDMonoid'
 -- 
--- * 'RightReductiveMonoid'
--- 
--- * 'RightCancellativeMonoid'
--- 
 -- * 'RightGCDMonoid'
+-- 
+-- * 'OverlappingGCDMonoid'
 
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
 
@@ -73,10 +59,16 @@ import Prelude hiding (gcd)
 {-# DEPRECATED ReductiveMonoid "Use Data.Semigroup.Cancellative.Reductive instead." #-}
 {-# DEPRECATED LeftReductiveMonoid "Use Data.Semigroup.Cancellative.LeftReductive instead." #-}
 {-# DEPRECATED RightReductiveMonoid "Use Data.Semigroup.Cancellative.RightReductive instead." #-}
+{-# DEPRECATED CancellativeMonoid "Use Data.Semigroup.Cancellative.Cancellative instead." #-}
+{-# DEPRECATED LeftCancellativeMonoid "Use Data.Semigroup.Cancellative.LeftCancellative instead." #-}
+{-# DEPRECATED RightCancellativeMonoid "Use Data.Semigroup.Cancellative.RightCancellative instead." #-}
 type CommutativeMonoid m = (Monoid m, Commutative m)
 type ReductiveMonoid m = (Monoid m, Reductive m)
 type LeftReductiveMonoid m = (Monoid m, LeftReductive m)
 type RightReductiveMonoid m = (Monoid m, RightReductive m)
+type CancellativeMonoid m = (Monoid m, Cancellative m)
+type LeftCancellativeMonoid m = (Monoid m, LeftCancellative m)
+type RightCancellativeMonoid m = (Monoid m, RightCancellative m)
 
 -- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
 -- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
@@ -88,13 +80,6 @@ class (Commutative m, Monoid m, OverlappingGCDMonoid m) => Monus m where
 
 infix 5 <\>
 
--- | Subclass of 'ReductiveMonoid' where '</>' is a complete inverse of the Monoid '<>' operation. The class instances
--- must satisfy the following additional laws:
---
--- > (a <> b) </> a == Just b
--- > (a <> b) </> b == Just a
-class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) => CancellativeMonoid m
-
 -- | Class of Abelian monoids that allow the greatest common divisor to be found for any two given values. The
 -- operations must satisfy the following laws:
 --
@@ -102,24 +87,12 @@ class (LeftCancellativeMonoid m, RightCancellativeMonoid m, ReductiveMonoid m) =
 -- > Just a' = a </> p && Just b' = b </> p
 -- >    where p = gcd a b
 --
--- If a 'GCDMonoid' happens to also be a 'CancellativeMonoid', it should additionally satisfy the following laws:
+-- If a 'GCDMonoid' happens to also be 'Cancellative', it should additionally satisfy the following laws:
 --
 -- > gcd (a <> b) (a <> c) == a <> gcd b c
 -- > gcd (a <> c) (b <> c) == gcd a b <> c
 class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
-
--- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
--- additional law:
---
--- > stripPrefix a (a <> b) == Just b
-class (LeftCancellative m, LeftReductiveMonoid m) => LeftCancellativeMonoid m
-
--- | Subclass of 'RightReductiveMonoid' where 'stripSuffix' is a complete inverse of '<>', satisfying the following
--- additional law:
---
--- > stripSuffix b (a <> b) == Just a
-class (RightCancellative m, RightReductiveMonoid m) => RightCancellativeMonoid m
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the left side of two monoidal
 -- values. The methods' complexity should be no worse than linear in the length of the common prefix. The following laws
@@ -211,10 +184,6 @@ class (LeftReductiveMonoid m, RightReductiveMonoid m) => OverlappingGCDMonoid m 
 
 -- Unit instances
 
-instance CancellativeMonoid ()
-instance LeftCancellativeMonoid ()
-instance RightCancellativeMonoid ()
-
 instance Monus () where
    () <\> () = ()
 
@@ -234,10 +203,6 @@ instance OverlappingGCDMonoid () where
    stripSuffixOverlap () () = ()
 
 -- Dual instances
-
-instance CancellativeMonoid a => CancellativeMonoid (Dual a)
-instance LeftCancellativeMonoid a => RightCancellativeMonoid (Dual a)
-instance RightCancellativeMonoid a => LeftCancellativeMonoid (Dual a)
 
 instance GCDMonoid a => GCDMonoid (Dual a) where
    gcd (Dual a) (Dual b) = Dual (gcd a b)
@@ -259,10 +224,6 @@ instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Dual a) where
    stripSuffixOverlap (Dual a) (Dual b) = Dual (stripPrefixOverlap a b)
 
 -- Sum instances
-
-instance Integral a => CancellativeMonoid (Sum a)
-instance Integral a => LeftCancellativeMonoid (Sum a)
-instance Integral a => RightCancellativeMonoid (Sum a)
 
 instance Monus (Sum Natural) where
    Sum a <\> Sum b
@@ -310,10 +271,6 @@ instance OverlappingGCDMonoid (Product Natural) where
 
 -- Pair instances
 
-instance (CancellativeMonoid a, CancellativeMonoid b) => CancellativeMonoid (a, b)
-instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b) => LeftCancellativeMonoid (a, b)
-instance (RightCancellativeMonoid a, RightCancellativeMonoid b) => RightCancellativeMonoid (a, b)
-
 instance (GCDMonoid a, GCDMonoid b) => GCDMonoid (a, b) where
    gcd (a, b) (c, d) = (gcd a c, gcd b d)
 
@@ -332,12 +289,6 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b) => OverlappingGCDMonoi
    stripSuffixOverlap (a1, b1) (a2, b2) = (stripSuffixOverlap a1 a2, stripSuffixOverlap b1 b2)
 
 -- Triple instances
-
-instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c) => CancellativeMonoid (a, b, c)
-instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c) =>
-         LeftCancellativeMonoid (a, b, c)
-instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c) =>
-         RightCancellativeMonoid (a, b, c)
 
 instance (GCDMonoid a, GCDMonoid b, GCDMonoid c) => GCDMonoid (a, b, c) where
    gcd (a1, b1, c1) (a2, b2, c2) = (gcd a1 a2, gcd b1 b2, gcd c1 c2)
@@ -359,13 +310,6 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c
    stripSuffixOverlap (a1, b1, c1) (a2, b2, c2) = (stripSuffixOverlap a1 a2, stripSuffixOverlap b1 b2, stripSuffixOverlap c1 c2)
 
 -- Quadruple instances
-
-instance (CancellativeMonoid a, CancellativeMonoid b, CancellativeMonoid c, CancellativeMonoid d) =>
-         CancellativeMonoid (a, b, c, d)
-instance (LeftCancellativeMonoid a, LeftCancellativeMonoid b, LeftCancellativeMonoid c, LeftCancellativeMonoid d) =>
-         LeftCancellativeMonoid (a, b, c, d)
-instance (RightCancellativeMonoid a, RightCancellativeMonoid b, RightCancellativeMonoid c, RightCancellativeMonoid d) =>
-         RightCancellativeMonoid (a, b, c, d)
 
 instance (GCDMonoid a, GCDMonoid b, GCDMonoid c, GCDMonoid d) => GCDMonoid (a, b, c, d) where
    gcd (a1, b1, c1, d1) (a2, b2, c2, d2) = (gcd a1 a2, gcd b1 b2, gcd c1 c2, gcd d1 d2)
@@ -474,8 +418,6 @@ instance Eq a => OverlappingGCDMonoid (IntMap.IntMap a) where
 
 -- List instances
 
-instance Eq x => LeftCancellativeMonoid [x]
-
 instance Eq x => LeftGCDMonoid [x] where
    commonPrefix (x:xs) (y:ys) | x == y = x : commonPrefix xs ys
    commonPrefix _ _ = []
@@ -485,9 +427,6 @@ instance Eq x => LeftGCDMonoid [x] where
             strip' f x y = (f [], x, y)
 
 -- Seq instances
-
-instance Eq a => LeftCancellativeMonoid (Sequence.Seq a)
-instance Eq a => RightCancellativeMonoid (Sequence.Seq a)
 
 instance Eq a => LeftGCDMonoid (Sequence.Seq a) where
    stripCommonPrefix = findCommonPrefix Sequence.empty
@@ -502,9 +441,6 @@ instance Eq a => RightGCDMonoid (Sequence.Seq a) where
                                              _ -> (a, b, suffix)
 
 -- Vector instances
-
-instance Eq a => LeftCancellativeMonoid (Vector.Vector a)
-instance Eq a => RightCancellativeMonoid (Vector.Vector a)
 
 instance Eq a => LeftGCDMonoid (Vector.Vector a) where
    stripCommonPrefix x y = (xp, xs, Vector.drop maxPrefixLength y)
@@ -521,9 +457,6 @@ instance Eq a => RightGCDMonoid (Vector.Vector a) where
                where (yp, ys) = Vector.splitAt (succ n) y
 
 -- ByteString instances
-
-instance LeftCancellativeMonoid ByteString.ByteString
-instance RightCancellativeMonoid ByteString.ByteString
 
 instance LeftGCDMonoid ByteString.ByteString where
    stripCommonPrefix x y = (xp, xs, ByteString.unsafeDrop maxPrefixLength y)
@@ -544,9 +477,6 @@ instance RightGCDMonoid ByteString.ByteString where
 
 -- Lazy ByteString instances
 
-instance LeftCancellativeMonoid LazyByteString.ByteString
-instance RightCancellativeMonoid LazyByteString.ByteString
-
 instance LeftGCDMonoid LazyByteString.ByteString where
    stripCommonPrefix x y = (xp, xs, LazyByteString.drop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (LazyByteString.length x `min` LazyByteString.length y)
@@ -564,16 +494,10 @@ instance RightGCDMonoid LazyByteString.ByteString where
 
 -- Text instances
 
-instance LeftCancellativeMonoid Text.Text
-instance RightCancellativeMonoid Text.Text
-
 instance LeftGCDMonoid Text.Text where
    stripCommonPrefix x y = maybe (Text.empty, x, y) id (Text.commonPrefixes x y)
 
 -- Lazy Text instances
-
-instance LeftCancellativeMonoid LazyText.Text
-instance RightCancellativeMonoid LazyText.Text
 
 instance LeftGCDMonoid LazyText.Text where
    stripCommonPrefix x y = maybe (LazyText.empty, x, y) id (LazyText.commonPrefixes x y)

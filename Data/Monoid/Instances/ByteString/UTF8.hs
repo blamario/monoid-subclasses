@@ -57,7 +57,7 @@ import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), LeftCancellative)
 import Data.Semigroup.Factorial (FactorialSemigroup(..))
-import Data.Monoid.Cancellative (LeftCancellativeMonoid, LeftGCDMonoid(..))
+import Data.Monoid.Cancellative (LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
@@ -104,7 +104,6 @@ instance LeftReductive ByteStringUTF8 where
    {-# INLINE isPrefixOf #-}
 
 instance LeftCancellative ByteStringUTF8
-instance LeftCancellativeMonoid ByteStringUTF8
 
 instance LeftGCDMonoid ByteStringUTF8 where
    commonPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = ByteStringUTF8 (commonPrefix a b)

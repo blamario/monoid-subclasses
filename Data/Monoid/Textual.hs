@@ -26,7 +26,8 @@ import qualified Data.Sequence as Sequence
 import Data.String (IsString(fromString))
 import Data.Int (Int64)
 
-import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid)
+import Data.Semigroup.Cancellative (LeftReductive)
+import Data.Monoid.Cancellative (LeftGCDMonoid)
 import Data.Monoid.Factorial (FactorialMonoid)
 import qualified Data.Monoid.Factorial as Factorial
 
@@ -80,7 +81,7 @@ import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, fol
 -- > dropWhile (const False) (const False)
 -- > toString undefined . fromString
 
-class (IsString t, LeftReductiveMonoid t, LeftGCDMonoid t, FactorialMonoid t) => TextualMonoid t where
+class (IsString t, LeftReductive t, LeftGCDMonoid t, FactorialMonoid t) => TextualMonoid t where
    -- | Contructs a new data type instance Like 'fromString', but from a 'Text' input instead of 'String'.
    --
    -- > fromText == fromString . Text.unpack
