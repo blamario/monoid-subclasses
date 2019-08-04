@@ -1,5 +1,5 @@
 {-
-    Copyright 2014-2018 Mario Blazevic
+    Copyright 2014-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -31,7 +31,7 @@ import Data.String (IsString(..))
 
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..), Endo(..))
-import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -144,7 +144,7 @@ instance StableFactorialMonoid m => PositiveMonoid (OffsetPositioned m)
 
 instance (StableFactorialMonoid m, TextualMonoid m) => PositiveMonoid (LinePositioned m)
 
-instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveSemigroup (OffsetPositioned m) where
+instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductive (OffsetPositioned m) where
    isPrefixOf (OffsetPositioned _ c1) (OffsetPositioned _ c2) = isPrefixOf c1 c2
    stripPrefix (OffsetPositioned _ c1) (OffsetPositioned p c2) = fmap (OffsetPositioned (p + length c1)) (stripPrefix c1 c2)
    {-# INLINE isPrefixOf #-}
@@ -152,7 +152,7 @@ instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveSemigr
 
 instance (StableFactorialMonoid m, LeftReductiveMonoid m) => LeftReductiveMonoid (OffsetPositioned m)
 
-instance (StableFactorialMonoid m, TextualMonoid m) => LeftReductiveSemigroup (LinePositioned m) where
+instance (StableFactorialMonoid m, TextualMonoid m) => LeftReductive (LinePositioned m) where
    isPrefixOf a b = isPrefixOf (extractLines a) (extractLines b)
    stripPrefix LinePositioned{extractLines= c1} (LinePositioned p l lpos c2) =
       let (lines, columns) = linesColumns' c1
@@ -187,7 +187,7 @@ instance (StableFactorialMonoid m, TextualMonoid m, LeftGCDMonoid m) => LeftGCDM
    {-# INLINE commonPrefix #-}
    {-# INLINE stripCommonPrefix #-}
 
-instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductiveSemigroup (OffsetPositioned m) where
+instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductive (OffsetPositioned m) where
    isSuffixOf (OffsetPositioned _ c1) (OffsetPositioned _ c2) = isSuffixOf c1 c2
    stripSuffix (OffsetPositioned _ c1) (OffsetPositioned p c2) = fmap (OffsetPositioned p) (stripSuffix c1 c2)
    {-# INLINE isSuffixOf #-}
@@ -196,7 +196,7 @@ instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductiveSemi
 instance (StableFactorialMonoid m, RightReductiveMonoid m) => RightReductiveMonoid (OffsetPositioned m)
 
 instance (StableFactorialMonoid m, TextualMonoid m, RightReductiveMonoid m) =>
-         RightReductiveSemigroup (LinePositioned m) where
+         RightReductive (LinePositioned m) where
    isSuffixOf LinePositioned{extractLines=c1} LinePositioned{extractLines=c2} = isSuffixOf c1 c2
    stripSuffix (LinePositioned p l lp c1) LinePositioned{extractLines=c2} =
       fmap (LinePositioned p l lp) (stripSuffix c1 c2)

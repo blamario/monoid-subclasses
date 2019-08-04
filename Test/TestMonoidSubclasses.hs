@@ -63,9 +63,9 @@ import Data.Monoid (Monoid, mempty, mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
 import Data.Semigroup.Factorial (FactorialSemigroup, StableFactorialSemigroup, 
                                  factors, primePrefix, primeSuffix, foldl, foldl', foldr, length, reverse)
-import Data.Semigroup.Cancellative (CommutativeSemigroup, ReductiveSemigroup,
-                                    LeftReductiveSemigroup, RightReductiveSemigroup,
-                                    CancellativeSemigroup, LeftCancellativeSemigroup, RightCancellativeSemigroup,
+import Data.Semigroup.Cancellative (Commutative, Reductive,
+                                    LeftReductive, RightReductive,
+                                    Cancellative, LeftCancellative, RightCancellative,
                                     (</>), isPrefixOf, stripPrefix, isSuffixOf, stripSuffix)
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
@@ -73,7 +73,7 @@ import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
 import Data.Monoid.Cancellative (CommutativeMonoid, ReductiveMonoid, LeftReductiveMonoid, RightReductiveMonoid,
                                  CancellativeMonoid, LeftCancellativeMonoid, RightCancellativeMonoid,
                                  GCDMonoid, LeftGCDMonoid, RightGCDMonoid,
-                                 MonoidWithMonus, OverlappingGCDMonoid,
+                                 Monus, OverlappingGCDMonoid,
                                  (<\>), (</>), gcd,
                                  isPrefixOf, stripPrefix, stripPrefixOverlap, commonPrefix, stripCommonPrefix,
                                  isSuffixOf, stripSuffix, stripSuffixOverlap, commonSuffix, stripCommonSuffix)
@@ -91,7 +91,7 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | ReductiveTest (ReductiveMonoidInstance -> Property)
           | LeftMonusTest (MonoidWithLeftMonusInstance -> Property)
           | RightMonusTest (MonoidWithRightMonusInstance -> Property)
-          | MonusTest (MonoidWithMonusInstance -> Property)
+          | MonusTest (MonusInstance -> Property)
           | LeftCancellativeTest (LeftCancellativeMonoidInstance -> Property)
           | RightCancellativeTest (RightCancellativeMonoidInstance -> Property)
           | CancellativeTest (CancellativeMonoidInstance -> Property)
@@ -125,8 +125,8 @@ data MonoidWithLeftMonusInstance = forall a. (Arbitrary a, Show a, Eq a, Overlap
                                    MonoidWithLeftMonusInstance a
 data MonoidWithRightMonusInstance = forall a. (Arbitrary a, Show a, Eq a, OverlappingGCDMonoid a, FactorialMonoid a) =>
                                     MonoidWithRightMonusInstance a
-data MonoidWithMonusInstance = forall a. (Arbitrary a, Show a, Eq a, MonoidWithMonus a, FactorialMonoid a) =>
-                               MonoidWithMonusInstance a
+data MonusInstance = forall a. (Arbitrary a, Show a, Eq a, Monus a, FactorialMonoid a) =>
+                               MonusInstance a
 data LeftCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LeftCancellativeMonoid a) =>
                                       LeftCancellativeMonoidInstance a
 data RightCancellativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightCancellativeMonoid a) =>
@@ -278,18 +278,18 @@ reductiveInstances = map upcast cancellativeInstances
 leftMonusInstances = map upcast monusInstances
                  ++ [MonoidWithLeftMonusInstance (mempty :: IntMap Char),
                      MonoidWithLeftMonusInstance (mempty :: Map Char Int)]
-   where upcast (MonoidWithMonusInstance i) = MonoidWithLeftMonusInstance i
+   where upcast (MonusInstance i) = MonoidWithLeftMonusInstance i
 
 rightMonusInstances = map upcast monusInstances
                  ++ [MonoidWithRightMonusInstance (mempty :: IntMap Char),
                      MonoidWithRightMonusInstance (mempty :: Map Char Int)]
-   where upcast (MonoidWithMonusInstance i) = MonoidWithRightMonusInstance i
+   where upcast (MonusInstance i) = MonoidWithRightMonusInstance i
 
-monusInstances = [MonoidWithMonusInstance (mempty :: Product Natural),
-                  MonoidWithMonusInstance (mempty :: Sum Natural),
-                  MonoidWithMonusInstance (mempty :: Dual (Product Natural)),
-                  MonoidWithMonusInstance (mempty :: IntSet),
-                  MonoidWithMonusInstance (mempty :: Set String)]
+monusInstances = [MonusInstance (mempty :: Product Natural),
+                  MonusInstance (mempty :: Sum Natural),
+                  MonusInstance (mempty :: Dual (Product Natural)),
+                  MonusInstance (mempty :: IntSet),
+                  MonusInstance (mempty :: Set String)]
 
 leftCancellativeInstances = map upcast cancellativeInstances
                             ++ [LeftCancellativeMonoidInstance (mempty :: String),
@@ -864,7 +864,7 @@ textualFactors = map characterize . factors
    where characterize prime = maybe (Left prime) Right (Textual.characterPrefix prime)
 
 newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
-                                                 Semigroup, LeftReductiveSemigroup, LeftCancellativeSemigroup,
+                                                 Semigroup, LeftReductive, LeftCancellative,
                                                  StableFactorialSemigroup,
                                                  Monoid, LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, StableFactorialMonoid, IsString)

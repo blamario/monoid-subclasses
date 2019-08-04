@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2018 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -55,7 +55,7 @@ import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, u
 
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
-import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), LeftCancellativeSemigroup)
+import Data.Semigroup.Cancellative (LeftReductive(..), LeftCancellative)
 import Data.Semigroup.Factorial (FactorialSemigroup(..))
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftCancellativeMonoid, LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
@@ -97,13 +97,13 @@ instance MonoidNull ByteStringUTF8 where
    null (ByteStringUTF8 b) = ByteString.null b
    {-# INLINE null #-}
 
-instance LeftReductiveSemigroup ByteStringUTF8 where
+instance LeftReductive ByteStringUTF8 where
    stripPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = fmap ByteStringUTF8 (stripPrefix a b)
    {-# INLINE stripPrefix #-}
    ByteStringUTF8 a `isPrefixOf` ByteStringUTF8 b = a `isPrefixOf` b
    {-# INLINE isPrefixOf #-}
 
-instance LeftCancellativeSemigroup ByteStringUTF8
+instance LeftCancellative ByteStringUTF8
 instance LeftReductiveMonoid ByteStringUTF8
 instance LeftCancellativeMonoid ByteStringUTF8
 

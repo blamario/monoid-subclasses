@@ -1,9 +1,9 @@
 
-Version 0.5
+Version 1.0
 ---------------
 * Fixed issue #24, unlawful LeftReductiveMonoid instance for Map
 * Tightened the laws of GCD classes, dropped instances for Sum and Product
-* Introduced the `MonoidWith[Left|Right]Monus` classes
+* Introduced the `Monus` class
 * Introduced the `OverlappingGCDMonoid` class
 * Added the instances of type `Sum Natural` and `Product Natural`
 * Using the language extensions 'FlexibleInstances' and 'OverlappingInstances'

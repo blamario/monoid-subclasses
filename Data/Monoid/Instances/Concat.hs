@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2018 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -21,7 +21,7 @@ import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..), First(..), Sum(..))
-import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -105,7 +105,7 @@ instance PositiveMonoid a => MonoidNull (Concat a) where
 
 instance PositiveMonoid a => PositiveMonoid (Concat a)
 
-instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveSemigroup (Concat a) where
+instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductive (Concat a) where
    stripPrefix (Leaf x) (Leaf y) = Leaf <$> stripPrefix x y
    stripPrefix (xp :<> xs) y = stripPrefix xp y >>= stripPrefix xs
    stripPrefix x (yp :<> ys) = case (stripPrefix x yp, stripPrefix yp x)
@@ -115,7 +115,7 @@ instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveSemigr
 
 instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Concat a)
 
-instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveSemigroup (Concat a) where
+instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductive (Concat a) where
    stripSuffix (Leaf x) (Leaf y) = Leaf <$> stripSuffix x y
    stripSuffix (xp :<> xs) y = stripSuffix xs y >>= stripSuffix xp
    stripSuffix x (yp :<> ys) = case (stripSuffix x ys, stripSuffix ys x)

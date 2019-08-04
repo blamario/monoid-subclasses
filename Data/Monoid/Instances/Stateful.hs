@@ -1,5 +1,5 @@
 {-
-    Copyright 2013-2018 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -25,7 +25,7 @@ import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
-import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, LeftGCDMonoid(..), RightReductiveMonoid, RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -75,13 +75,13 @@ instance (MonoidNull a, MonoidNull b) => MonoidNull (Stateful a b) where
 
 instance (PositiveMonoid a, PositiveMonoid b) => PositiveMonoid (Stateful a b)
 
-instance (LeftReductiveSemigroup a, LeftReductiveSemigroup b) => LeftReductiveSemigroup (Stateful a b) where
+instance (LeftReductive a, LeftReductive b) => LeftReductive (Stateful a b) where
    isPrefixOf (Stateful x) (Stateful x') = isPrefixOf x x'
    stripPrefix (Stateful x) (Stateful x') = Stateful <$> stripPrefix x x'
    {-# INLINE isPrefixOf #-}
    {-# INLINE stripPrefix #-}
 
-instance (RightReductiveSemigroup a, RightReductiveSemigroup b) => RightReductiveSemigroup (Stateful a b) where
+instance (RightReductive a, RightReductive b) => RightReductive (Stateful a b) where
    isSuffixOf (Stateful x) (Stateful x') = isSuffixOf x x'
    stripSuffix (Stateful x) (Stateful x') = Stateful <$> stripSuffix x x'
    {-# INLINE stripSuffix #-}

@@ -37,7 +37,7 @@
 module Data.Monoid.Cancellative (
    module Data.Semigroup.Cancellative,
    -- * Symmetric, commutative monoid classes
-   CommutativeMonoid, ReductiveMonoid, CancellativeMonoid, MonoidWithMonus(..), GCDMonoid(..),
+   CommutativeMonoid, ReductiveMonoid, CancellativeMonoid, Monus(..), GCDMonoid(..),
    -- * Asymmetric monoid classes
    LeftReductiveMonoid, RightReductiveMonoid,
    LeftCancellativeMonoid, RightCancellativeMonoid,
@@ -69,17 +69,17 @@ import Prelude hiding (gcd)
 -- | Class of all Abelian ({i.e.}, commutative) monoids that satisfy the commutativity property:
 -- 
 -- > a <> b == b <> a
-class (Monoid m, CommutativeSemigroup m) => CommutativeMonoid m
+class (Monoid m, Commutative m) => CommutativeMonoid m
 
 -- | Class of Abelian monoids with a partial inverse for the '<>' operation.
-class (CommutativeMonoid m, ReductiveSemigroup m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m
+class (CommutativeMonoid m, Reductive m, LeftReductiveMonoid m, RightReductiveMonoid m) => ReductiveMonoid m
 
 -- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
 -- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
 --
 -- > (<\>) = flip stripPrefixOverlap
 -- > (<\>) = flip stripSuffixOverlap
-class (CommutativeMonoid m, OverlappingGCDMonoid m) => MonoidWithMonus m where
+class (CommutativeMonoid m, OverlappingGCDMonoid m) => Monus m where
    (<\>) :: m -> m -> m
 
 infix 5 <\>
@@ -113,7 +113,7 @@ class (ReductiveMonoid m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoi
 -- 
 -- | Every instance definition has to implement at least the 'stripPrefix' method. Its complexity should be no worse
 -- than linear in the length of the prefix argument.
-class (Monoid m, LeftReductiveSemigroup m) => LeftReductiveMonoid m
+class (Monoid m, LeftReductive m) => LeftReductiveMonoid m
 
 -- | Class of monoids with a right inverse of '<>', satisfying the following laws:
 -- 
@@ -123,19 +123,19 @@ class (Monoid m, LeftReductiveSemigroup m) => LeftReductiveMonoid m
 -- 
 -- | Every instance definition has to implement at least the 'stripSuffix' method. Its complexity should be no worse
 -- than linear in the length of the suffix argument.
-class (Monoid m, RightReductiveSemigroup m) => RightReductiveMonoid m
+class (Monoid m, RightReductive m) => RightReductiveMonoid m
 
 -- | Subclass of 'LeftReductiveMonoid' where 'stripPrefix' is a complete inverse of '<>', satisfying the following
 -- additional law:
 --
 -- > stripPrefix a (a <> b) == Just b
-class (LeftCancellativeSemigroup m, LeftReductiveMonoid m) => LeftCancellativeMonoid m
+class (LeftCancellative m, LeftReductiveMonoid m) => LeftCancellativeMonoid m
 
 -- | Subclass of 'RightReductiveMonoid' where 'stripSuffix' is a complete inverse of '<>', satisfying the following
 -- additional law:
 --
 -- > stripSuffix b (a <> b) == Just a
-class (RightCancellativeSemigroup m, RightReductiveMonoid m) => RightCancellativeMonoid m
+class (RightCancellative m, RightReductiveMonoid m) => RightCancellativeMonoid m
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the left side of two monoidal
 -- values. The methods' complexity should be no worse than linear in the length of the common prefix. The following laws
@@ -235,7 +235,7 @@ instance RightReductiveMonoid ()
 instance LeftCancellativeMonoid ()
 instance RightCancellativeMonoid ()
 
-instance MonoidWithMonus () where
+instance Monus () where
    () <\> () = ()
 
 instance GCDMonoid () where
@@ -266,7 +266,7 @@ instance RightCancellativeMonoid a => LeftCancellativeMonoid (Dual a)
 instance GCDMonoid a => GCDMonoid (Dual a) where
    gcd (Dual a) (Dual b) = Dual (gcd a b)
 
-instance MonoidWithMonus a => MonoidWithMonus (Dual a) where
+instance Monus a => Monus (Dual a) where
    Dual a <\> Dual b = Dual (a <\> b)
 
 instance LeftGCDMonoid a => RightGCDMonoid (Dual a) where
@@ -296,7 +296,7 @@ instance {-# OVERLAPS #-} ReductiveMonoid (Sum Natural)
 instance {-# OVERLAPS #-} LeftReductiveMonoid (Sum Natural)
 instance {-# OVERLAPS #-} RightReductiveMonoid (Sum Natural)
 
-instance MonoidWithMonus (Sum Natural) where
+instance Monus (Sum Natural) where
    Sum a <\> Sum b
       | a > b = Sum (a - b)
       | otherwise = Sum 0
@@ -324,7 +324,7 @@ instance Integral a => ReductiveMonoid (Product a)
 instance Integral a => LeftReductiveMonoid (Product a)
 instance Integral a => RightReductiveMonoid (Product a)
 
-instance MonoidWithMonus (Product Natural) where
+instance Monus (Product Natural) where
    Product 0 <\> Product 0 = Product 1
    Product a <\> Product b = Product (a `div` Prelude.gcd a b)
 
@@ -471,7 +471,7 @@ instance Ord a => LeftReductiveMonoid (Set.Set a)
 instance Ord a => RightReductiveMonoid (Set.Set a)
 instance Ord a => ReductiveMonoid (Set.Set a)
 
-instance Ord a => MonoidWithMonus (Set.Set a) where
+instance Ord a => Monus (Set.Set a) where
    (<\>) = (Set.\\)
 
 instance Ord a => LeftGCDMonoid (Set.Set a) where
@@ -496,7 +496,7 @@ instance LeftReductiveMonoid IntSet.IntSet
 instance RightReductiveMonoid IntSet.IntSet
 instance ReductiveMonoid IntSet.IntSet
 
-instance MonoidWithMonus IntSet.IntSet where
+instance Monus IntSet.IntSet where
    (<\>) = (IntSet.\\)
 
 instance LeftGCDMonoid IntSet.IntSet where

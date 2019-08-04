@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2018 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -19,7 +19,7 @@ import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
-import Data.Semigroup.Cancellative (LeftReductiveSemigroup(..), RightReductiveSemigroup(..))
+import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
 import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
 import Data.Monoid.Cancellative (LeftReductiveMonoid, RightReductiveMonoid, LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
@@ -56,12 +56,12 @@ instance StableFactorialMonoid a => MonoidNull (Measured a) where
 
 instance StableFactorialMonoid a => PositiveMonoid (Measured a)
 
-instance (LeftReductiveSemigroup a, StableFactorialSemigroup a) => LeftReductiveSemigroup (Measured a) where
+instance (LeftReductive a, StableFactorialSemigroup a) => LeftReductive (Measured a) where
    stripPrefix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripPrefix x y)
 
 instance (LeftReductiveMonoid a, StableFactorialMonoid a) => LeftReductiveMonoid (Measured a)
 
-instance (RightReductiveSemigroup a, StableFactorialSemigroup a) => RightReductiveSemigroup (Measured a) where
+instance (RightReductive a, StableFactorialSemigroup a) => RightReductive (Measured a) where
    stripSuffix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripSuffix x y)
 
 instance (RightReductiveMonoid a, StableFactorialMonoid a) => RightReductiveMonoid (Measured a)
