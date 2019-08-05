@@ -23,7 +23,8 @@ Source-repository head
 
 Library
   Exposed-Modules:   Data.Semigroup.Cancellative, Data.Semigroup.Factorial,
-                     Data.Monoid.Cancellative, Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
+                     Data.Monoid.Cancellative, Data.Monoid.GCD, Data.Monoid.Monus,
+                     Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
                      Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.CharVector,
                      Data.Monoid.Instances.Concat, Data.Monoid.Instances.Measured, Data.Monoid.Instances.Positioned,
                      Data.Monoid.Instances.Stateful

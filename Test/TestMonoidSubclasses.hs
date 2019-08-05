@@ -70,10 +70,10 @@ import Data.Semigroup.Cancellative (Commutative, Reductive,
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
                               splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
-import Data.Monoid.Cancellative (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, OverlappingGCDMonoid, Monus,
-                                 (<\>), (</>), gcd,
-                                 isPrefixOf, stripPrefix, stripPrefixOverlap, commonPrefix, stripCommonPrefix,
-                                 isSuffixOf, stripSuffix, stripSuffixOverlap, commonSuffix, stripCommonSuffix)
+import Data.Monoid.GCD (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, gcd,
+                        commonPrefix, stripCommonPrefix,
+                        commonSuffix, stripCommonSuffix)
+import Data.Monoid.Monus (OverlappingGCDMonoid, Monus, (<\>), stripPrefixOverlap, stripSuffixOverlap)
 import Data.Monoid.Textual (TextualMonoid)
 import qualified Data.Monoid.Textual as Textual
 

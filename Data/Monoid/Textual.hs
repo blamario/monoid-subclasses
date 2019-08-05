@@ -27,7 +27,7 @@ import Data.String (IsString(fromString))
 import Data.Int (Int64)
 
 import Data.Semigroup.Cancellative (LeftReductive)
-import Data.Monoid.Cancellative (LeftGCDMonoid)
+import Data.Monoid.GCD (LeftGCDMonoid)
 import Data.Monoid.Factorial (FactorialMonoid)
 import qualified Data.Monoid.Factorial as Factorial
 
