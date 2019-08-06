@@ -56,7 +56,7 @@ import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, u
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), LeftCancellative)
-import Data.Semigroup.Factorial (FactorialSemigroup(..))
+import Data.Semigroup.Factorial (Factorial(..))
 import Data.Monoid.GCD (LeftGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(..), PositiveMonoid)
 import Data.Monoid.Factorial (FactorialMonoid(..))
@@ -125,7 +125,7 @@ instance IsString ByteStringUTF8 where
 
 instance PositiveMonoid ByteStringUTF8
 
-instance FactorialSemigroup ByteStringUTF8 where
+instance Factorial ByteStringUTF8 where
    primePrefix utf8@(ByteStringUTF8 bs)
       | ByteString.null bs = utf8
       | unsafeHead bs < 0x80 = ByteStringUTF8 (ByteString.take 1 bs)

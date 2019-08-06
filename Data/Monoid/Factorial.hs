@@ -7,11 +7,11 @@
 -- | This module defines the 'FactorialMonoid' class and some of its instances.
 -- 
 
-{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Factorial (
    -- * Classes
-   FactorialSemigroup(..), FactorialMonoid(..), StableFactorialMonoid,
+   Factorial(..), FactorialMonoid(..), StableFactorial, StableFactorialMonoid,
    -- * Monad function equivalents
    mapM, mapM_
    )
@@ -35,7 +35,7 @@ import qualified Data.Vector as Vector
 import Data.Int (Int64)
 import Numeric.Natural (Natural)
 
-import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup, mapM, mapM_)
+import Data.Semigroup.Factorial (Factorial(..), StableFactorial, mapM, mapM_)
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 
 import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, mapM, mapM_, max, min,
@@ -51,7 +51,7 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 --
 -- prop> factors "abc" == ["a", "b", "c"]
 -- 
--- The methods of this class satisfy the following laws in addition to those of 'FactorialSemigroup':
+-- The methods of this class satisfy the following laws in addition to those of 'Factorial':
 -- 
 -- > null == List.null . factors
 -- > factors == unfoldr splitPrimePrefix == List.reverse . unfoldr (fmap swap . splitPrimeSuffix)
@@ -76,7 +76,7 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 --
 -- A minimal instance definition should implement 'splitPrimePrefix' for performance reasons, and other methods where
 -- beneficial.
-class (FactorialSemigroup m, MonoidNull m) => FactorialMonoid m where
+class (Factorial m, MonoidNull m) => FactorialMonoid m where
    -- | Splits the argument into its prime prefix and the remaining suffix. Returns 'Nothing' for 'mempty'.
    splitPrimePrefix :: m -> Maybe (m, m)
    -- | Splits the argument into its prime suffix and the remaining prefix. Returns 'Nothing' for 'mempty'.
@@ -148,10 +148,8 @@ class (FactorialSemigroup m, MonoidNull m) => FactorialMonoid m where
    take n p = fst (splitAt n p)
    {-# MINIMAL #-}
 
--- | A subclass of 'FactorialMonoid' whose instances satisfy this additional law:
---
--- > factors (a <> b) == factors a <> factors b
-class (StableFactorialSemigroup m, FactorialMonoid m, PositiveMonoid m) => StableFactorialMonoid m
+{-# DEPRECATED StableFactorialMonoid "Use Data.Semigroup.Factorial.StableFactorial instead." #-}
+type StableFactorialMonoid m = (StableFactorial m, FactorialMonoid m, PositiveMonoid m)
 
 instance FactorialMonoid () where
    splitPrimePrefix () = Nothing
@@ -543,14 +541,3 @@ instance FactorialMonoid (Vector.Vector a) where
    splitAt = Vector.splitAt
    drop = Vector.drop
    take = Vector.take
-
-instance StableFactorialMonoid ()
-instance StableFactorialMonoid a => StableFactorialMonoid (Dual a)
-instance StableFactorialMonoid [x]
-instance StableFactorialMonoid ByteString.ByteString
-instance StableFactorialMonoid LazyByteString.ByteString
-instance StableFactorialMonoid Text.Text
-instance StableFactorialMonoid LazyText.Text
-instance StableFactorialMonoid (Sequence.Seq a)
-instance StableFactorialMonoid (Vector.Vector a)
-instance StableFactorialMonoid (Sum Natural)

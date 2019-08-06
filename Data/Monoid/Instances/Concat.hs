@@ -22,10 +22,10 @@ import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..), First(..), Sum(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
-import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Semigroup.Factorial (Factorial(..), StableFactorial)
 import Data.Monoid.GCD (LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
-import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
+import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
@@ -105,7 +105,7 @@ instance PositiveMonoid a => MonoidNull (Concat a) where
 
 instance PositiveMonoid a => PositiveMonoid (Concat a)
 
-instance (LeftReductive a, StableFactorialMonoid a) => LeftReductive (Concat a) where
+instance (LeftReductive a, StableFactorial a, PositiveMonoid a) => LeftReductive (Concat a) where
    stripPrefix (Leaf x) (Leaf y) = Leaf <$> stripPrefix x y
    stripPrefix (xp :<> xs) y = stripPrefix xp y >>= stripPrefix xs
    stripPrefix x (yp :<> ys) = case (stripPrefix x yp, stripPrefix yp x)
@@ -113,7 +113,7 @@ instance (LeftReductive a, StableFactorialMonoid a) => LeftReductive (Concat a) 
                                   (Nothing, Nothing) -> Nothing
                                   (Nothing, Just xs) -> stripPrefix xs ys
 
-instance (RightReductive a, StableFactorialMonoid a) => RightReductive (Concat a) where
+instance (RightReductive a, StableFactorial a, PositiveMonoid a) => RightReductive (Concat a) where
    stripSuffix (Leaf x) (Leaf y) = Leaf <$> stripSuffix x y
    stripSuffix (xp :<> xs) y = stripSuffix xs y >>= stripSuffix xp
    stripSuffix x (yp :<> ys) = case (stripSuffix x ys, stripSuffix ys x)
@@ -121,7 +121,7 @@ instance (RightReductive a, StableFactorialMonoid a) => RightReductive (Concat a
                                   (Nothing, Nothing) -> Nothing
                                   (Nothing, Just xp) -> stripSuffix xp yp
 
-instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Concat a) where
+instance (LeftGCDMonoid a, StableFactorial a, PositiveMonoid a) => LeftGCDMonoid (Concat a) where
    stripCommonPrefix (Leaf x) (Leaf y) = map3 Leaf (stripCommonPrefix x y)
    stripCommonPrefix (xp :<> xs) y
       | null xps = (xp <> xsp, xss, yss)
@@ -134,7 +134,7 @@ instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Concat a) 
       where (ypp, xs, yps) = stripCommonPrefix x yp
             (ysp, xss, yss) = stripCommonPrefix xs ys
 
-instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Concat a) where
+instance (RightGCDMonoid a, StableFactorial a, PositiveMonoid a) => RightGCDMonoid (Concat a) where
    stripCommonSuffix (Leaf x) (Leaf y) = map3 Leaf (stripCommonSuffix x y)
    stripCommonSuffix (xp :<> xs) y
       | null xsp = (xpp, ypp, xps <> xs)
@@ -147,7 +147,7 @@ instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Concat a
       where (xp, ysp, yss) = stripCommonSuffix x ys
             (xpp, ypp, yps) = stripCommonSuffix xp yp
 
-instance (FactorialSemigroup a, PositiveMonoid a) => FactorialSemigroup (Concat a) where
+instance (Factorial a, PositiveMonoid a) => Factorial (Concat a) where
    factors c = toList c []
       where toList (Leaf x) rest
                | null x = rest
@@ -209,13 +209,12 @@ instance (FactorialMonoid a, PositiveMonoid a) => FactorialMonoid (Concat a) whe
             (yp, ys) = splitAt (n - k) y
             (xp, xs) = splitAt n x
 
-instance (FactorialSemigroup a, PositiveMonoid a) => StableFactorialSemigroup (Concat a)
-instance (FactorialMonoid a, PositiveMonoid a) => StableFactorialMonoid (Concat a)
+instance (Factorial a, PositiveMonoid a) => StableFactorial (Concat a)
 
 instance (IsString a) => IsString (Concat a) where
    fromString s = Leaf (fromString s)
 
-instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Concat a) where
+instance (Eq a, TextualMonoid a, StableFactorial a, PositiveMonoid a) => TextualMonoid (Concat a) where
    fromText t = Leaf (fromText t)
    singleton = Leaf . singleton
    splitCharacterPrefix (Leaf x) = (Leaf <$>) <$> splitCharacterPrefix x

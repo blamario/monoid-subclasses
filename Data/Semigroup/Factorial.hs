@@ -1,17 +1,17 @@
 {- 
-    Copyright 2013-2017 Mario Blazevic
+    Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
--- | This module defines the 'FactorialSemigroup' class and some of its instances.
+-- | This module defines the 'Semigroup' => 'Factorial' => 'StableFactorial' classes and some of their instances.
 -- 
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Semigroup.Factorial (
    -- * Classes
-   FactorialSemigroup(..), StableFactorialSemigroup,
+   Factorial(..), StableFactorial,
    -- * Monad function equivalents
    mapM, mapM_
    )
@@ -61,7 +61,7 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 --
 -- A minimal instance definition must implement 'factors' or 'foldr'. Other methods can and should be implemented only
 -- for performance reasons.
-class Semigroup m => FactorialSemigroup m where
+class Semigroup m => Factorial m where
    -- | Returns a list of all prime factors; inverse of mconcat.
    factors :: m -> [m]
    -- | The prime prefix; @primePrefix mempty == mempty@ for monoids.
@@ -93,37 +93,37 @@ class Semigroup m => FactorialSemigroup m where
    reverse s = maybe s sconcat (nonEmpty $ List.reverse $ factors s)
    {-# MINIMAL factors | foldr #-}
 
--- | A subclass of 'FactorialSemigroup' whose instances satisfy this additional law:
+-- | A subclass of 'Factorial' whose instances satisfy this additional law:
 --
 -- > factors (a <> b) == factors a <> factors b
-class FactorialSemigroup m => StableFactorialSemigroup m
+class Factorial m => StableFactorial m
 
-instance FactorialSemigroup () where
+instance Factorial () where
    factors () = []
    primePrefix () = ()
    primeSuffix () = ()
    length () = 0
    reverse = id
 
-instance FactorialSemigroup a => FactorialSemigroup (Dual a) where
+instance Factorial a => Factorial (Dual a) where
    factors (Dual a) = fmap Dual (reverse $ factors a)
    length (Dual a) = length a
    primePrefix (Dual a) = Dual (primeSuffix a)
    primeSuffix (Dual a) = Dual (primePrefix a)
    reverse (Dual a) = Dual (reverse a)
 
-instance (Integral a, Eq a) => FactorialSemigroup (Sum a) where
+instance (Integral a, Eq a) => Factorial (Sum a) where
    primePrefix (Sum a) = Sum (signum a )
    primeSuffix = primePrefix
    factors (Sum n) = replicate (fromIntegral $ abs n) (Sum $ signum n)
    length (Sum a) = abs (fromIntegral a)
    reverse = id
 
-instance Integral a => FactorialSemigroup (Product a) where
+instance Integral a => Factorial (Product a) where
    factors (Product a) = List.map Product (primeFactors a)
    reverse = id
 
-instance FactorialSemigroup a => FactorialSemigroup (Maybe a) where
+instance Factorial a => Factorial (Maybe a) where
    factors Nothing = []
    factors (Just a) = case factors a
                       of [] -> [Just a]
@@ -132,7 +132,7 @@ instance FactorialSemigroup a => FactorialSemigroup (Maybe a) where
    length (Just a) = max 1 (length a)
    reverse = fmap reverse
 
-instance (FactorialSemigroup a, FactorialSemigroup b, MonoidNull a, MonoidNull b) => FactorialSemigroup (a, b) where
+instance (Factorial a, Factorial b, MonoidNull a, MonoidNull b) => Factorial (a, b) where
    factors (a, b) = List.map (\a1-> (a1, mempty)) (factors a) ++ List.map ((,) mempty) (factors b)
    primePrefix (a, b) | null a = (a, primePrefix b)
                       | otherwise = (primePrefix a, mempty)
@@ -159,8 +159,8 @@ fromFst a = (a, mempty)
 fromSnd :: Monoid a => b -> (a, b)
 fromSnd b = (mempty, b)
 
-instance (FactorialSemigroup a, FactorialSemigroup b, FactorialSemigroup c,
-          MonoidNull a, MonoidNull b, MonoidNull c) => FactorialSemigroup (a, b, c) where
+instance (Factorial a, Factorial b, Factorial c,
+          MonoidNull a, MonoidNull b, MonoidNull c) => Factorial (a, b, c) where
    factors (a, b, c) = List.map (\a1-> (a1, mempty, mempty)) (factors a)
                        ++ List.map (\b1-> (mempty, b1, mempty)) (factors b)
                        ++ List.map (\c1-> (mempty, mempty, c1)) (factors c)
@@ -199,8 +199,8 @@ fromSndOf3 b = (mempty, b, mempty)
 fromThdOf3 :: (Monoid a, Monoid b) => c -> (a, b, c)
 fromThdOf3 c = (mempty, mempty, c)
 
-instance (FactorialSemigroup a, FactorialSemigroup b, FactorialSemigroup c, FactorialSemigroup d,
-          MonoidNull a, MonoidNull b, MonoidNull c, MonoidNull d) => FactorialSemigroup (a, b, c, d) where
+instance (Factorial a, Factorial b, Factorial c, Factorial d,
+          MonoidNull a, MonoidNull b, MonoidNull c, MonoidNull d) => Factorial (a, b, c, d) where
    factors (a, b, c, d) = List.map (\a1-> (a1, mempty, mempty, mempty)) (factors a)
                           ++ List.map (\b1-> (mempty, b1, mempty, mempty)) (factors b)
                           ++ List.map (\c1-> (mempty, mempty, c1, mempty)) (factors c)
@@ -251,7 +251,7 @@ fromThdOf4 c = (mempty, mempty, c, mempty)
 fromFthOf4 :: (Monoid a, Monoid b, Monoid c) => d -> (a, b, c, d)
 fromFthOf4 d = (mempty, mempty, mempty, d)
 
-instance FactorialSemigroup [x] where
+instance Factorial [x] where
    factors xs = List.map (:[]) xs
    primePrefix [] = []
    primePrefix (x:_) = [x]
@@ -267,7 +267,7 @@ instance FactorialSemigroup [x] where
    foldMap f = mconcat . List.map (f . (:[]))
    reverse = List.reverse
 
-instance FactorialSemigroup ByteString.ByteString where
+instance Factorial ByteString.ByteString where
    factors x = factorize (ByteString.length x) x
       where factorize 0 _ = []
             factorize n xs = xs1 : factorize (pred n) xs'
@@ -282,7 +282,7 @@ instance FactorialSemigroup ByteString.ByteString where
    length = ByteString.length
    reverse = ByteString.reverse
 
-instance FactorialSemigroup LazyByteString.ByteString where
+instance Factorial LazyByteString.ByteString where
    factors x = factorize (LazyByteString.length x) x
       where factorize 0 _ = []
             factorize n xs = xs1 : factorize (pred n) xs'
@@ -292,7 +292,7 @@ instance FactorialSemigroup LazyByteString.ByteString where
    length = fromIntegral . LazyByteString.length
    reverse = LazyByteString.reverse
 
-instance FactorialSemigroup Text.Text where
+instance Factorial Text.Text where
    factors = Text.chunksOf 1
    primePrefix = Text.take 1
    primeSuffix x = if Text.null x then Text.empty else Text.singleton (Text.last x)
@@ -305,7 +305,7 @@ instance FactorialSemigroup Text.Text where
    length = Text.length
    reverse = Text.reverse
 
-instance FactorialSemigroup LazyText.Text where
+instance Factorial LazyText.Text where
    factors = LazyText.chunksOf 1
    primePrefix = LazyText.take 1
    primeSuffix x = if LazyText.null x then LazyText.empty else LazyText.singleton (LazyText.last x)
@@ -318,7 +318,7 @@ instance FactorialSemigroup LazyText.Text where
    length = fromIntegral . LazyText.length
    reverse = LazyText.reverse
 
-instance Ord k => FactorialSemigroup (Map.Map k v) where
+instance Ord k => Factorial (Map.Map k v) where
    factors = List.map (uncurry Map.singleton) . Map.toAscList
    primePrefix map | Map.null map = map
                    | otherwise = uncurry Map.singleton $ Map.findMin map
@@ -333,7 +333,7 @@ instance Ord k => FactorialSemigroup (Map.Map k v) where
    length = Map.size
    reverse = id
 
-instance FactorialSemigroup (IntMap.IntMap a) where
+instance Factorial (IntMap.IntMap a) where
    factors = List.map (uncurry IntMap.singleton) . IntMap.toAscList
    primePrefix map | IntMap.null map = map
                    | otherwise = uncurry IntMap.singleton $ IntMap.findMin map
@@ -348,7 +348,7 @@ instance FactorialSemigroup (IntMap.IntMap a) where
    length = IntMap.size
    reverse = id
 
-instance FactorialSemigroup IntSet.IntSet where
+instance Factorial IntSet.IntSet where
    factors = List.map IntSet.singleton . IntSet.toAscList
    primePrefix set | IntSet.null set = set
                    | otherwise = IntSet.singleton $ IntSet.findMin set
@@ -363,7 +363,7 @@ instance FactorialSemigroup IntSet.IntSet where
    length = IntSet.size
    reverse = id
 
-instance FactorialSemigroup (Sequence.Seq a) where
+instance Factorial (Sequence.Seq a) where
    factors = List.map Sequence.singleton . Foldable.toList
    primePrefix = Sequence.take 1
    primeSuffix q = Sequence.drop (Sequence.length q - 1) q
@@ -376,7 +376,7 @@ instance FactorialSemigroup (Sequence.Seq a) where
    length = Sequence.length
    reverse = Sequence.reverse
 
-instance Ord a => FactorialSemigroup (Set.Set a) where
+instance Ord a => Factorial (Set.Set a) where
    factors = List.map Set.singleton . Set.toAscList
    primePrefix set | Set.null set = set
                    | otherwise = Set.singleton $ Set.findMin set
@@ -391,7 +391,7 @@ instance Ord a => FactorialSemigroup (Set.Set a) where
    length = Set.size
    reverse = id
 
-instance FactorialSemigroup (Vector.Vector a) where
+instance Factorial (Vector.Vector a) where
    factors x = factorize (Vector.length x) x
       where factorize 0 _ = []
             factorize n xs = xs1 : factorize (pred n) xs'
@@ -407,21 +407,21 @@ instance FactorialSemigroup (Vector.Vector a) where
    length = Vector.length
    reverse = Vector.reverse
 
-instance StableFactorialSemigroup ()
-instance StableFactorialSemigroup a => StableFactorialSemigroup (Dual a)
-instance StableFactorialSemigroup [x]
-instance StableFactorialSemigroup ByteString.ByteString
-instance StableFactorialSemigroup LazyByteString.ByteString
-instance StableFactorialSemigroup Text.Text
-instance StableFactorialSemigroup LazyText.Text
-instance StableFactorialSemigroup (Sequence.Seq a)
-instance StableFactorialSemigroup (Vector.Vector a)
-instance StableFactorialSemigroup (Sum Natural)
+instance StableFactorial ()
+instance StableFactorial a => StableFactorial (Dual a)
+instance StableFactorial [x]
+instance StableFactorial ByteString.ByteString
+instance StableFactorial LazyByteString.ByteString
+instance StableFactorial Text.Text
+instance StableFactorial LazyText.Text
+instance StableFactorial (Sequence.Seq a)
+instance StableFactorial (Vector.Vector a)
+instance StableFactorial (Sum Natural)
 
 -- | A 'Monad.mapM' equivalent.
-mapM :: (FactorialSemigroup a, Monoid b, Monad m) => (a -> m b) -> a -> m b
+mapM :: (Factorial a, Monoid b, Monad m) => (a -> m b) -> a -> m b
 mapM f = ($ return mempty) . appEndo . Data.Semigroup.Factorial.foldMap (Endo . Monad.liftM2 (<>) . f)
 
 -- | A 'Monad.mapM_' equivalent.
-mapM_ :: (FactorialSemigroup a, Applicative m) => (a -> m b) -> a -> m ()
+mapM_ :: (Factorial a, Applicative m) => (a -> m b) -> a -> m ()
 mapM_ f = foldr ((*>) . f) (pure ())

@@ -26,10 +26,10 @@ import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
-import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Semigroup.Factorial (Factorial(..), StableFactorial)
 import Data.Monoid.GCD (LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
-import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
+import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Semigroup.Factorial as Factorial
 import qualified Data.Monoid.Factorial as Factorial
@@ -98,8 +98,7 @@ instance (RightGCDMonoid a, RightGCDMonoid b) => RightGCDMonoid (Stateful a b) w
    commonSuffix (Stateful x) (Stateful x') = Stateful (commonSuffix x x')
    {-# INLINE commonSuffix #-}
 
-instance (MonoidNull a, MonoidNull b, FactorialSemigroup a, FactorialSemigroup b) =>
-         FactorialSemigroup (Stateful a b) where
+instance (FactorialMonoid a, FactorialMonoid b) => Factorial (Stateful a b) where
    factors (Stateful x) = List.map Stateful (factors x)
    length (Stateful x) = length x
    reverse (Stateful x) = Stateful (reverse x)
@@ -145,9 +144,7 @@ instance (FactorialMonoid a, FactorialMonoid b) => FactorialMonoid (Stateful a b
    {-# INLINE take #-}
    {-# INLINE drop #-}
 
-instance (StableFactorialMonoid a, StableFactorialMonoid b) => StableFactorialSemigroup (Stateful a b)
-
-instance (StableFactorialMonoid a, StableFactorialMonoid b) => StableFactorialMonoid (Stateful a b)
+instance (FactorialMonoid a, FactorialMonoid b, StableFactorial a, StableFactorial b) => StableFactorial (Stateful a b)
 
 instance (Monoid a, IsString b) => IsString (Stateful a b) where
    fromString = pure . fromString

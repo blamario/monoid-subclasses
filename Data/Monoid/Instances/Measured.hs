@@ -20,10 +20,10 @@ import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
-import Data.Semigroup.Factorial (FactorialSemigroup(..), StableFactorialSemigroup)
+import Data.Semigroup.Factorial (Factorial(..), StableFactorial)
 import Data.Monoid.GCD (LeftGCDMonoid(..), RightGCDMonoid(..))
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
-import Data.Monoid.Factorial (FactorialMonoid(..), StableFactorialMonoid)
+import Data.Monoid.Factorial (FactorialMonoid(..))
 import Data.Monoid.Textual (TextualMonoid(..))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
@@ -32,43 +32,43 @@ import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, ma
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt)
 
 -- | @'Measured' a@ is a wrapper around the 'FactorialMonoid' @a@ that memoizes the monoid's 'length' so it becomes a
--- constant-time operation. The parameter is restricted to the 'StableFactorialMonoid' class, which guarantees that
+-- constant-time operation. The parameter is restricted to the 'StableFactorial' class, which guarantees that
 -- @'length' (a <> b) == 'length' a + 'length' b@.
 
 data Measured a = Measured{_measuredLength :: Int, extract :: a} deriving (Eq, Show)
 
 -- | Create a new 'Measured' value.
-measure :: FactorialMonoid a => a -> Measured a
+measure :: Factorial a => a -> Measured a
 measure x = Measured (length x) x
 
 instance Ord a => Ord (Measured a) where
    compare (Measured _ x) (Measured _ y) = compare x y
 
-instance StableFactorialSemigroup a => Semigroup (Measured a) where
+instance StableFactorial a => Semigroup (Measured a) where
    Measured m a <> Measured n b = Measured (m + n) (a <> b)
 
-instance StableFactorialMonoid a => Monoid (Measured a) where
+instance (StableFactorial a, Monoid a) => Monoid (Measured a) where
    mempty = Measured 0 mempty
-   mappend (Measured m a) (Measured n b) = Measured (m + n) (mappend a b)
+   mappend = (<>)
 
-instance StableFactorialMonoid a => MonoidNull (Measured a) where
+instance (StableFactorial a, Monoid a) => MonoidNull (Measured a) where
    null (Measured n _) = n == 0
 
-instance StableFactorialMonoid a => PositiveMonoid (Measured a)
+instance (StableFactorial a, Monoid a) => PositiveMonoid (Measured a)
 
-instance (LeftReductive a, StableFactorialSemigroup a) => LeftReductive (Measured a) where
+instance (LeftReductive a, StableFactorial a) => LeftReductive (Measured a) where
    stripPrefix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripPrefix x y)
 
-instance (RightReductive a, StableFactorialSemigroup a) => RightReductive (Measured a) where
+instance (RightReductive a, StableFactorial a) => RightReductive (Measured a) where
    stripSuffix (Measured m x) (Measured n y) = fmap (Measured (n - m)) (stripSuffix x y)
 
-instance (LeftGCDMonoid a, StableFactorialMonoid a) => LeftGCDMonoid (Measured a) where
+instance (LeftGCDMonoid a, StableFactorial a) => LeftGCDMonoid (Measured a) where
    commonPrefix (Measured _ x) (Measured _ y) = measure (commonPrefix x y)
 
-instance (RightGCDMonoid a, StableFactorialMonoid a) => RightGCDMonoid (Measured a) where
+instance (RightGCDMonoid a, StableFactorial a) => RightGCDMonoid (Measured a) where
    commonSuffix (Measured _ x) (Measured _ y) = measure (commonSuffix x y)
 
-instance StableFactorialMonoid a => FactorialSemigroup (Measured a) where
+instance (StableFactorial a, MonoidNull a) => Factorial (Measured a) where
    factors (Measured _ x) = List.map (Measured 1) (factors x)
    primePrefix m@(Measured _ x) = if null x then m else Measured 1 (primePrefix x)
    primeSuffix m@(Measured _ x) = if null x then m else Measured 1 (primeSuffix x)
@@ -82,7 +82,7 @@ instance StableFactorialMonoid a => FactorialSemigroup (Measured a) where
    length (Measured n _) = n
    reverse (Measured n x) = Measured n (reverse x)
 
-instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
+instance (StableFactorial a, FactorialMonoid a) => FactorialMonoid (Measured a) where
    splitPrimePrefix (Measured n x) = case splitPrimePrefix x
                                      of Nothing -> Nothing
                                         Just (p, s) -> Just (Measured 1 p, Measured (n - 1) s)
@@ -99,13 +99,12 @@ instance StableFactorialMonoid a => FactorialMonoid (Measured a) where
                             | otherwise = (Measured m xp, Measured (n - m) xs)
       where (xp, xs) = splitAt m x
 
-instance StableFactorialMonoid a => StableFactorialSemigroup (Measured a)
-instance StableFactorialMonoid a => StableFactorialMonoid (Measured a)
+instance (StableFactorial a, MonoidNull a) => StableFactorial (Measured a)
 
 instance (FactorialMonoid a, IsString a) => IsString (Measured a) where
    fromString = measure . fromString
 
-instance (Eq a, TextualMonoid a, StableFactorialMonoid a) => TextualMonoid (Measured a) where
+instance (Eq a, StableFactorial a, TextualMonoid a) => TextualMonoid (Measured a) where
    fromText = measure . fromText
    singleton = Measured 1 . singleton
    splitCharacterPrefix (Measured n x) = (Measured (n - 1) <$>) <$> splitCharacterPrefix x

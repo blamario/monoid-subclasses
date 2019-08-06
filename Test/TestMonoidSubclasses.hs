@@ -61,14 +61,14 @@ import qualified Data.Monoid.Instances.Positioned as Positioned
 import Data.Semigroup (Semigroup, (<>))
 import Data.Monoid (Monoid, mempty, mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
-import Data.Semigroup.Factorial (FactorialSemigroup, StableFactorialSemigroup, 
+import Data.Semigroup.Factorial (Factorial, StableFactorial, 
                                  factors, primePrefix, primeSuffix, foldl, foldl', foldr, length, reverse)
 import Data.Semigroup.Cancellative (Commutative, Reductive,
                                     LeftReductive, RightReductive,
                                     Cancellative, LeftCancellative, RightCancellative,
                                     (</>), isPrefixOf, stripPrefix, isSuffixOf, stripSuffix)
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
-import Data.Monoid.Factorial (FactorialMonoid, StableFactorialMonoid,
+import Data.Monoid.Factorial (FactorialMonoid,
                               splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
 import Data.Monoid.GCD (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, gcd,
                         commonPrefix, stripCommonPrefix,
@@ -105,11 +105,13 @@ data PositiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, PositiveMono
                               PositiveMonoidInstance a
 data FactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, FactorialMonoid a) =>
                                FactorialMonoidInstance a
-data StableFactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a) =>
+data StableFactorialMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a,
+                                                StableFactorial a, FactorialMonoid a, PositiveMonoid a) =>
                                      StableFactorialMonoidInstance a
 data TextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, TextualMonoid a) =>
                              TextualMonoidInstance a
-data StableTextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a, StableFactorialMonoid a,
+data StableTextualMonoidInstance = forall a. (Arbitrary a, CoArbitrary a, Show a, Eq a,
+                                              StableFactorial a, FactorialMonoid a, PositiveMonoid a,
                                               TextualMonoid a) =>
                                    StableTextualMonoidInstance a
 data LeftReductiveMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, LeftReductive a) =>
@@ -861,11 +863,11 @@ textualFactors = map characterize . factors
    where characterize prime = maybe (Left prime) Right (Textual.characterPrefix prime)
 
 newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
-                                                 Semigroup, LeftReductive, LeftCancellative, StableFactorialSemigroup,
+                                                 Semigroup, LeftReductive, LeftCancellative, StableFactorial,
                                                  Monoid, LeftGCDMonoid,
-                                                 MonoidNull, PositiveMonoid, StableFactorialMonoid, IsString)
+                                                 MonoidNull, PositiveMonoid, IsString)
 
-instance FactorialSemigroup TestString where
+instance Factorial TestString where
    factors (TestString s) = TestString <$> factors s
 
 instance FactorialMonoid TestString where
