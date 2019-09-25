@@ -285,6 +285,13 @@ instance (RightCancellative a, RightCancellative b,
 
 -- Maybe instances
 
+instance Commutative x => Commutative (Maybe x)
+
+instance Reductive x => Reductive (Maybe x) where
+   Just x </> Just y = Just <$> x </> y
+   x </> Nothing = Just x
+   Nothing </> _ = Nothing
+
 instance LeftReductive x => LeftReductive (Maybe x) where
    stripPrefix Nothing y = Just y
    stripPrefix Just{} Nothing = Nothing

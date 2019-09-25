@@ -271,6 +271,7 @@ rightReductiveInstances = map upcast rightCancellativeInstances
 reductiveInstances = map upcast cancellativeInstances
                      ++ [ReductiveMonoidInstance (mempty :: Product Integer),
                          ReductiveMonoidInstance (mempty :: IntSet),
+                         ReductiveMonoidInstance (mempty :: Maybe IntSet),
                          ReductiveMonoidInstance (mempty :: Set Integer)]
    where upcast (CancellativeMonoidInstance i) = ReductiveMonoidInstance i
 
@@ -287,6 +288,7 @@ rightMonusInstances = map upcast monusInstances
 monusInstances = [MonusInstance (mempty :: Product Natural),
                   MonusInstance (mempty :: Sum Natural),
                   MonusInstance (mempty :: Dual (Product Natural)),
+                  MonusInstance (mempty :: Maybe (Product Natural)),
                   MonusInstance (mempty :: IntSet),
                   MonusInstance (mempty :: Set String)]
 

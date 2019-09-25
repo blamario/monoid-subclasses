@@ -29,6 +29,9 @@ import qualified Data.Vector as Vector
 import Numeric.Natural (Natural)
 
 import Data.Semigroup.Cancellative
+import Data.Monoid.Null (MonoidNull(null))
+
+import Prelude hiding (null)
 
 -- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
 -- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
@@ -164,6 +167,30 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c
       (stripSuffixOverlap a1 a2, stripSuffixOverlap b1 b2, stripSuffixOverlap c1 c2, stripSuffixOverlap d1 d2)
 
 -- Maybe instances
+
+instance (Monus a, MonoidNull a) => Monus (Maybe a) where
+   Just a <\> Just b = Just (a <\> b)
+   Nothing <\> _ = Nothing
+   x <\> Nothing = x
+
+instance (OverlappingGCDMonoid a, MonoidNull a) => OverlappingGCDMonoid (Maybe a) where
+   overlap (Just a) (Just b) = Just (overlap a b)
+   overlap _ _ = Nothing
+   stripOverlap (Just a) (Just b) = (Just a', Just o, Just b')
+      where (a', o, b') = stripOverlap a b
+   stripOverlap a b = (a, Nothing, b)
+   stripPrefixOverlap (Just a) (Just b)
+      | null b' = Nothing
+      | otherwise = Just b'
+      where b' = stripPrefixOverlap a b
+   stripPrefixOverlap Nothing x = x
+   stripPrefixOverlap _ Nothing = Nothing
+   stripSuffixOverlap (Just a) (Just b)
+      | null b' = Nothing
+      | otherwise = Just b'
+      where b' = stripSuffixOverlap a b
+   stripSuffixOverlap Nothing x = x
+   stripSuffixOverlap _ Nothing = Nothing
 
 -- Set instances
 
