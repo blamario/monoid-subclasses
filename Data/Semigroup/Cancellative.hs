@@ -364,6 +364,18 @@ instance Eq x => LeftReductive [x] where
    stripPrefix = List.stripPrefix
    isPrefixOf = List.isPrefixOf
 
+instance Eq x => RightReductive [x] where
+   isSuffixOf = List.isSuffixOf
+   stripSuffix xs0 ys0 = go1 xs0 ys0
+      where go1 (_:xs) (_:ys) = go1 xs ys
+            go1 [] ys = go2 id ys ys0
+            go1  _ [] = Nothing
+            go2 fy (_:zs) (y:ys) = go2 (fy . (y:)) zs ys
+            go2 fy [] ys
+               | xs0 == ys = Just (fy [])
+               | otherwise = Nothing
+            go2 _ [] _ = error "impossible"
+
 instance Eq x => LeftCancellative [x]
 
 -- Seq instances

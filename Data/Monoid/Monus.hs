@@ -69,6 +69,14 @@ class (Monoid m, LeftReductive m, RightReductive m) => OverlappingGCDMonoid m wh
    overlap :: m -> m -> m
    stripOverlap :: m -> m -> (m, m, m)
 
+   stripPrefixOverlap a b = b'
+      where (_, _, b') = stripOverlap a b
+   stripSuffixOverlap a b = b'
+      where (b', _, _) = stripOverlap b a
+   overlap a b = o
+      where (_, o, _) = stripOverlap a b
+   {-# MINIMAL stripOverlap #-}
+
 -- Unit instances
 
 instance Monus () where
@@ -231,6 +239,18 @@ instance Eq a => OverlappingGCDMonoid (IntMap.IntMap a) where
     stripSuffixOverlap a b = IntMap.differenceWith (\x y-> if x == y then Nothing else Just x) b a
 
 -- List instances
+
+instance Eq a => OverlappingGCDMonoid [a] where
+   overlap a b = go a
+      where go x | x `isPrefixOf` b = x
+                 | otherwise = go (tail x)
+   stripOverlap a b = go [] a
+      where go p o | Just s <- stripPrefix o b = (reverse p, o, s)
+                   | x:xs <- o = go (x:p) xs
+                   | otherwise = error "impossible"
+   stripPrefixOverlap a b = go a
+      where go x | Just s <- stripPrefix x b = s
+                 | otherwise = go (tail x)
 
 -- Seq instances
 
