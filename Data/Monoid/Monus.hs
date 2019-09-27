@@ -24,7 +24,7 @@ import qualified Data.IntSet as IntSet
 import qualified Data.Map as Map
 import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
-import Data.Sequence (ViewL((:<)), ViewR((:>)), (<|), (|>))
+import Data.Sequence (ViewL((:<)), (|>))
 import qualified Data.Vector as Vector
 import Numeric.Natural (Natural)
 
@@ -253,6 +253,16 @@ instance Eq a => OverlappingGCDMonoid [a] where
                  | otherwise = go (tail x)
 
 -- Seq instances
+
+instance Eq a => OverlappingGCDMonoid (Sequence.Seq a) where
+   overlap a b = go (Sequence.drop (Sequence.length a - Sequence.length b) a)
+      where go x | x `isPrefixOf` b = x
+                 | _ :< x' <- Sequence.viewl x = go x'
+                 | otherwise = error "impossible"
+   stripOverlap a b = uncurry go (Sequence.splitAt (Sequence.length a - Sequence.length b) a)
+      where go p o | Just s <- stripPrefix o b = (p, o, s)
+                   | x :< xs <- Sequence.viewl o = go (p |> x) xs
+                   | otherwise = error "impossible"
 
 -- Vector instances
 
