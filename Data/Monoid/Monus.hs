@@ -277,7 +277,25 @@ instance Eq a => OverlappingGCDMonoid (Vector.Vector a) where
 
 -- ByteString instances
 
+instance OverlappingGCDMonoid ByteString.ByteString where
+   stripOverlap a b = go (max alen blen)
+      where alen = ByteString.length a
+            blen = ByteString.length b
+            go i | as == bp = (ap, as, bs)
+                 | otherwise = go (pred i)
+               where (ap, as) = ByteString.splitAt (alen - i) a
+                     (bp, bs) = ByteString.splitAt i b
+
 -- Lazy ByteString instances
+
+instance OverlappingGCDMonoid LazyByteString.ByteString where
+   stripOverlap a b = go (max alen blen)
+      where alen = LazyByteString.length a
+            blen = LazyByteString.length b
+            go i | as == bp = (ap, as, bs)
+                 | otherwise = go (pred i)
+               where (ap, as) = LazyByteString.splitAt (alen - i) a
+                     (bp, bs) = LazyByteString.splitAt i b
 
 -- Text instances
 
