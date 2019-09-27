@@ -275,6 +275,7 @@ reductiveInstances = map upcast cancellativeInstances
 overlappingGCDMonoidInstances = map upcast monusInstances
                                ++ [OverlappingGCDMonoidInstance (mempty :: String),
                                    OverlappingGCDMonoidInstance (mempty :: Seq Int),
+                                   OverlappingGCDMonoidInstance (mempty :: Vector Char),
                                    OverlappingGCDMonoidInstance (mempty :: IntMap Char),
                                    OverlappingGCDMonoidInstance (mempty :: Map Char Int)]
    where upcast (MonusInstance i) = OverlappingGCDMonoidInstance i

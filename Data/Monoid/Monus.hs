@@ -266,6 +266,15 @@ instance Eq a => OverlappingGCDMonoid (Sequence.Seq a) where
 
 -- Vector instances
 
+instance Eq a => OverlappingGCDMonoid (Vector.Vector a) where
+   stripOverlap a b = go (max alen blen)
+      where alen = Vector.length a
+            blen = Vector.length b
+            go i | as == bp = (ap, as, bs)
+                 | otherwise = go (pred i)
+               where (ap, as) = Vector.splitAt (alen - i) a
+                     (bp, bs) = Vector.splitAt i b
+
 -- ByteString instances
 
 -- Lazy ByteString instances
