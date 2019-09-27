@@ -15,7 +15,6 @@ where
    
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Unsafe as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
@@ -299,4 +298,22 @@ instance OverlappingGCDMonoid LazyByteString.ByteString where
 
 -- Text instances
 
+instance OverlappingGCDMonoid Text.Text where
+   stripOverlap a b
+      | Text.null b = (a, b, b)
+      | otherwise = go (Text.breakOnAll (Text.take 1 b) a)
+      where go [] = (a, mempty, b)
+            go ((ap, as):breaks)
+               | Just bs <- Text.stripPrefix as b = (ap, as, bs)
+               | otherwise = go breaks
+
 -- Lazy Text instances
+
+instance OverlappingGCDMonoid LazyText.Text where
+   stripOverlap a b
+      | LazyText.null b = (a, b, b)
+      | otherwise = go (LazyText.breakOnAll (LazyText.take 1 b) a)
+      where go [] = (a, mempty, b)
+            go ((ap, as):breaks)
+               | Just bs <- LazyText.stripPrefix as b = (ap, as, bs)
+               | otherwise = go breaks

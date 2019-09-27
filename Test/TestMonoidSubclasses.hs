@@ -277,6 +277,8 @@ overlappingGCDMonoidInstances = map upcast monusInstances
                                    OverlappingGCDMonoidInstance (mempty :: Seq Int),
                                    OverlappingGCDMonoidInstance (mempty :: ByteString),
                                    OverlappingGCDMonoidInstance (mempty :: Lazy.ByteString),
+                                   OverlappingGCDMonoidInstance (mempty :: Text),
+                                   OverlappingGCDMonoidInstance (mempty :: Lazy.Text),
                                    OverlappingGCDMonoidInstance (mempty :: Vector Char),
                                    OverlappingGCDMonoidInstance (mempty :: IntMap Char),
                                    OverlappingGCDMonoidInstance (mempty :: Map Char Int)]
