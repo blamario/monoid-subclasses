@@ -374,7 +374,7 @@ instance Eq x => RightReductive [x] where
             go2 fy [] ys
                | xs0 == ys = Just (fy [])
                | otherwise = Nothing
-            go2 _ [] _ = error "impossible"
+            go2 _ _ _ = error "impossible"
 
 instance Eq x => LeftCancellative [x]
 
