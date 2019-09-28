@@ -22,6 +22,7 @@ Source-repository head
   location:          https://github.com/blamario/monoid-subclasses
 
 Library
+  hs-source-dirs:    src
   Exposed-Modules:   Data.Semigroup.Cancellative, Data.Semigroup.Factorial,
                      Data.Monoid.Cancellative, Data.Monoid.GCD, Data.Monoid.Monus,
                      Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
