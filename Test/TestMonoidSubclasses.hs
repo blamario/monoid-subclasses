@@ -343,6 +343,7 @@ leftGCDInstances = map upcast gcdInstances
 rightGCDInstances = map upcast gcdInstances
                    ++ [RightGCDMonoidInstance (mempty :: ByteString),
                        RightGCDMonoidInstance (mempty :: Lazy.ByteString),
+                       RightGCDMonoidInstance (mempty :: String),
                        RightGCDMonoidInstance (mempty :: Dual String),
                        RightGCDMonoidInstance (mempty :: (Seq Int, ByteString)),
                        RightGCDMonoidInstance (mempty :: Seq Int),

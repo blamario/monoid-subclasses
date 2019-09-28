@@ -86,8 +86,7 @@ class (LeftCancellative m, RightCancellative m, Reductive m) => Cancellative m
 -- > maybe b (a <>) (stripPrefix a b) == b
 -- > a `isPrefixOf` (a <> b)
 -- 
--- | Every instance definition has to implement at least the 'stripPrefix' method. Its complexity should be no worse
--- than linear in the length of the prefix argument.
+-- Every instance definition has to implement at least the 'stripPrefix' method.
 class Semigroup m => LeftReductive m where
    isPrefixOf :: m -> m -> Bool
    stripPrefix :: m -> m -> Maybe m
@@ -101,8 +100,7 @@ class Semigroup m => LeftReductive m where
 -- > maybe b (<> a) (stripSuffix a b) == b
 -- > b `isSuffixOf` (a <> b)
 -- 
--- | Every instance definition has to implement at least the 'stripSuffix' method. Its complexity should be no worse
--- than linear in the length of the suffix argument.
+-- Every instance definition has to implement at least the 'stripSuffix' method.
 class Semigroup m => RightReductive m where
    isSuffixOf :: m -> m -> Bool
    stripSuffix :: m -> m -> Maybe m
@@ -377,6 +375,8 @@ instance Eq x => RightReductive [x] where
             go2 _ _ _ = error "impossible"
 
 instance Eq x => LeftCancellative [x]
+
+instance Eq x => RightCancellative [x]
 
 -- Seq instances
 

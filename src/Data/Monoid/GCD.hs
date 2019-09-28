@@ -264,6 +264,23 @@ instance Eq x => LeftGCDMonoid [x] where
       where strip' f (x:xs) (y:ys) | x == y = strip' (f . (x :)) xs ys
             strip' f x y = (f [], x, y)
 
+instance Eq x => RightGCDMonoid [x] where
+   stripCommonSuffix x0 y0 = go1 x0 y0
+      where go1 (_:xs) (_:ys) = go1 xs ys
+            go1 [] [] = go2 id id id x0 y0
+            go1 [] ys = go2 id yp id x0 yr
+               where (yp, yr) = splitAtLengthOf id ys y0
+            go1 xs [] = go2 xp id id xr y0
+               where (xp, xr) = splitAtLengthOf id xs x0
+            go2 xp yp cs [] [] = (xp [], yp [], cs [])
+            go2 xp yp cs (x:xs) (y:ys)
+               | x == y = go2 xp yp (cs . (x:)) xs ys
+               | otherwise = go2 (xp . cs . (x:)) (yp . cs . (y:)) id xs ys
+            go2 _ _ _ _ _ = error "impossible"
+            splitAtLengthOf yp (_:xs) (y:ys) = splitAtLengthOf (yp . (y:)) xs ys
+            splitAtLengthOf yp [] ys = (yp, ys)
+            splitAtLengthOf _ _ _ = error "impossible"
+
 -- Seq instances
 
 instance Eq a => LeftGCDMonoid (Sequence.Seq a) where
