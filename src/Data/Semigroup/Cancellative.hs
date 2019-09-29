@@ -6,6 +6,8 @@
 
 -- | This module defines the 'Semigroup' => 'Reductive' => 'Cancellative' class hierarchy.
 --
+-- @since 1.0
+--
 -- The 'Reductive' class introduces operation '</>' which is the inverse of '<>'. For the 'Sum' monoid, this
 -- operation is subtraction; for 'Product' it is division and for 'Set' it's the set difference. A 'Reductive'
 -- is not a full group because '</>' may return 'Nothing'.
@@ -283,8 +285,10 @@ instance (RightCancellative a, RightCancellative b,
 
 -- Maybe instances
 
+-- | @since 1.0
 instance Commutative x => Commutative (Maybe x)
 
+-- | @since 1.0
 instance Reductive x => Reductive (Maybe x) where
    Just x </> Just y = Just <$> x </> y
    x </> Nothing = Just x
@@ -362,6 +366,8 @@ instance Eq x => LeftReductive [x] where
    stripPrefix = List.stripPrefix
    isPrefixOf = List.isPrefixOf
 
+-- | @since 1.0
+-- /O(m+n)/
 instance Eq x => RightReductive [x] where
    isSuffixOf = List.isSuffixOf
    stripSuffix xs0 ys0 = go1 xs0 ys0
@@ -376,6 +382,7 @@ instance Eq x => RightReductive [x] where
 
 instance Eq x => LeftCancellative [x]
 
+-- | @since 1.0
 instance Eq x => RightCancellative [x]
 
 -- Seq instances

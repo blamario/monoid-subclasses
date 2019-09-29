@@ -5,6 +5,8 @@
 -}
 
 -- | This module defines the 'OverlappingGCDMonoid' => 'Monus' subclasses of the 'Monoid' class.
+--
+-- @since 1.0
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
@@ -37,6 +39,8 @@ import Prelude hiding (null)
 --
 -- > (<\>) = flip stripPrefixOverlap
 -- > (<\>) = flip stripSuffixOverlap
+--
+-- @since 1.0
 class (Commutative m, Monoid m, OverlappingGCDMonoid m) => Monus m where
    (<\>) :: m -> m -> m
 
@@ -62,6 +66,8 @@ infix 5 <\>
 -- `isPrefixOf` b) && (y `isSuffixOf` a)@:
 --
 -- > not ((y `isPrefixOf` overlap a b) && (y `isSuffixOf` overlap a b) && y /= overlap a b)
+--
+-- @since 1.0
 class (Monoid m, LeftReductive m, RightReductive m) => OverlappingGCDMonoid m where
    stripPrefixOverlap :: m -> m -> m
    stripSuffixOverlap :: m -> m -> m

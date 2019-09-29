@@ -66,8 +66,7 @@ class (Monoid m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDM
    gcd :: m -> m -> m
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the left side of two monoidal
--- values. The methods' complexity should be no worse than linear in the length of the common prefix. The following laws
--- must be respected:
+-- values. The following laws must be respected:
 --
 -- > stripCommonPrefix a b == (p, a', b')
 -- >    where p = commonPrefix a b
@@ -97,8 +96,7 @@ class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
    {-# MINIMAL commonPrefix | stripCommonPrefix #-}
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the right side of two monoidal
--- values. The methods' complexity must be no worse than linear in the length of the common suffix. The following laws
--- must be respected:
+-- values. The following laws must be respected:
 -- 
 -- > stripCommonSuffix a b == (a', b', s)
 -- >    where s = commonSuffix a b
@@ -267,6 +265,8 @@ instance Eq x => LeftGCDMonoid [x] where
       where strip' f (x:xs) (y:ys) | x == y = strip' (f . (x :)) xs ys
             strip' f x y = (f [], x, y)
 
+-- | @since 1.0
+-- /O(m+n)/
 instance Eq x => RightGCDMonoid [x] where
    stripCommonSuffix x0 y0 = go1 x0 y0
       where go1 (_:xs) (_:ys) = go1 xs ys
@@ -355,6 +355,8 @@ instance RightGCDMonoid LazyByteString.ByteString where
 instance LeftGCDMonoid Text.Text where
    stripCommonPrefix x y = maybe (Text.empty, x, y) id (Text.commonPrefixes x y)
 
+-- | @since 1.0
+-- /O(suffixLength)/
 instance RightGCDMonoid Text.Text where
    stripCommonSuffix x@(Internal.Text xarr xoff xlen) y@(Internal.Text yarr yoff ylen) = go (pred xlen) (pred ylen)
       where go i j | i >= 0 && j >= 0 && xc == yc = go (i+xd) (j+yd)
@@ -369,6 +371,8 @@ instance RightGCDMonoid Text.Text where
 instance LeftGCDMonoid LazyText.Text where
    stripCommonPrefix x y = maybe (LazyText.empty, x, y) id (LazyText.commonPrefixes x y)
 
+-- | @since 1.0
+-- /O(m+n)/
 instance RightGCDMonoid LazyText.Text where
    stripCommonSuffix x0 y0
       | x0len < y0len = go id y0p id x0 y0s
