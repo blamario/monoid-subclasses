@@ -33,6 +33,9 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Unsafe as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
+import qualified Data.Text.Internal as Internal
+import qualified Data.Text.Internal.Lazy as LazyInternal
+import           Data.Text.Unsafe (lengthWord16, reverseIter)
 import qualified Data.Text.Lazy as LazyText
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
@@ -352,7 +355,47 @@ instance RightGCDMonoid LazyByteString.ByteString where
 instance LeftGCDMonoid Text.Text where
    stripCommonPrefix x y = maybe (Text.empty, x, y) id (Text.commonPrefixes x y)
 
+instance RightGCDMonoid Text.Text where
+   stripCommonSuffix x@(Internal.Text xarr xoff xlen) y@(Internal.Text yarr yoff ylen) = go (pred xlen) (pred ylen)
+      where go i j | i >= 0 && j >= 0 && xc == yc = go (i+xd) (j+yd)
+                   | otherwise = (Internal.text xarr xoff (succ i),
+                                  Internal.text yarr yoff (succ j),
+                                  Internal.text xarr (xoff+i+1) (xlen-i-1))
+               where (xc, xd) = reverseIter x i
+                     (yc, yd) = reverseIter y j
+
 -- Lazy Text instances
 
 instance LeftGCDMonoid LazyText.Text where
    stripCommonPrefix x y = maybe (LazyText.empty, x, y) id (LazyText.commonPrefixes x y)
+
+instance RightGCDMonoid LazyText.Text where
+   stripCommonSuffix x0 y0
+      | x0len < y0len = go id y0p id x0 y0s
+      | x0len > y0len = go x0p id id x0s y0
+      | otherwise = go id id id x0 y0
+      where (y0p, y0s) = splitWord16 id (y0len - x0len) y0
+            (x0p, x0s) = splitWord16 id (x0len - y0len) x0
+            x0len = lazyLengthWord16 x0
+            y0len = lazyLengthWord16 y0
+            lazyLengthWord16 = LazyText.foldlChunks addLength 0
+            addLength n x = n + lengthWord16 x
+            splitWord16 xp 0 x = (xp, x)
+            splitWord16 xp n (LazyInternal.Chunk x@(Internal.Text arr off len) xs)
+               | n < len = (xp . LazyInternal.chunk (Internal.Text arr off n),
+                            LazyInternal.chunk (Internal.Text arr (off+n) (len-n)) xs)
+               | otherwise = splitWord16 (xp . LazyInternal.chunk x) (n - len) xs
+            splitWord16 _ _ LazyInternal.Empty = error "impossible"
+            go xp yp cs LazyInternal.Empty LazyInternal.Empty = (xp mempty, yp mempty, cs mempty)
+            go xp yp cs (LazyInternal.Chunk x@(Internal.Text xarr xoff xlen) xs)
+                        (LazyInternal.Chunk y@(Internal.Text yarr yoff ylen) ys)
+               | xlen < ylen = go xp yp cs (LazyInternal.Chunk x xs)
+                                           (LazyInternal.Chunk (Internal.Text yarr yoff xlen) $
+                                            LazyInternal.Chunk (Internal.Text yarr (yoff+xlen) (ylen-xlen)) ys)
+               | xlen > ylen = go xp yp cs (LazyInternal.Chunk (Internal.Text xarr xoff ylen) $
+                                            LazyInternal.Chunk (Internal.Text xarr (xoff+ylen) (xlen-ylen)) xs)
+                                           (LazyInternal.Chunk y ys)
+               | x == y = go xp yp (cs . LazyInternal.chunk x) xs ys
+               | (x1p, y1p, c1s) <- stripCommonSuffix x y =
+                    go (xp . cs . LazyInternal.chunk x1p) (yp . cs . LazyInternal.chunk y1p) (LazyInternal.chunk c1s) xs ys
+            go _ _ _ _ _ = error "impossible"
