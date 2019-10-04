@@ -7,6 +7,19 @@ Version 1.0
 * Introduced the `OverlappingGCDMonoid` class
 * Added the instances of type `Sum Natural` and `Product Natural`
 * Using the language extensions 'FlexibleInstances' and 'OverlappingInstances'
+* Removed the linear complexity requirement
+* Added and documented less efficient instances
+* Moved various GCD classes into the new module `Data.Monoid.GCD`
+* Added module `Data.Semigroup.Cancellative` with `Semigroup` subclasses
+* Added module `Data.Semigroup.Factorial` with `Semigroup` subclasses
+* Deprecated several `Monoid` subclasses and made them constraint synonyms instead:
+  * `type CommutativeMonoid m = (Monoid m, Commutative m)`
+  * `type ReductiveMonoid m = (Monoid m, Reductive m)`
+  * `type LeftReductiveMonoid m = (Monoid m, LeftReductive m)`
+  * `type RightReductiveMonoid m = (Monoid m, RightReductive m)`
+  * `type CancellativeMonoid m = (Monoid m, Cancellative m)`
+  * `type LeftCancellativeMonoid m = (Monoid m, LeftCancellative m)`
+  * `type RightCancellativeMonoid m = (Monoid m, RightCancellative m)`
 
 Version 0.4.6.1
 ---------------
