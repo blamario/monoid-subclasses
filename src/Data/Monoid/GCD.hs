@@ -62,7 +62,7 @@ import Prelude hiding (gcd)
 --
 -- > gcd (a <> b) (a <> c) == a <> gcd b c
 -- > gcd (a <> c) (b <> c) == gcd a b <> c
-class (Monoid m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
+class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the left side of two monoidal
