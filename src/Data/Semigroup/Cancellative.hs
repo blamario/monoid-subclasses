@@ -8,16 +8,15 @@
 --
 -- @since 1.0
 --
--- The 'Reductive' class introduces operation '</>' which is the inverse of '<>'. For the 'Sum' monoid, this
+-- The 'Reductive' class introduces operation '</>' which is the inverse of '<>'. For the 'Sum' semigroup, this
 -- operation is subtraction; for 'Product' it is division and for 'Set' it's the set difference. A 'Reductive'
--- is not a full group because '</>' may return 'Nothing'.
+-- semigroup is not a full group because '</>' may return 'Nothing'.
 --
--- The 'Cancellative' subclass does not add any operation but it provides the additional guarantee that '<>'
--- can always be undone with '</>'. Thus 'Sum' is a 'Cancellative' but 'Product' is not because @(0*n)/0@ is
--- not defined.
+-- The 'Cancellative' subclass does not add any operation but it provides the additional guarantee that '<>' can
+-- always be undone with '</>'. Thus 'Sum' is 'Cancellative' but 'Product' is not because @(0*n)/0@ is not defined.
 --
--- All monoid subclasses listed above are for Abelian, /i.e./, commutative or symmetric monoids. Since most practical
--- monoids in Haskell are not Abelian, each of the these classes has two symmetric superclasses:
+-- All semigroup subclasses listed above are for Abelian, /i.e./, commutative or symmetric semigroups. Since most
+-- practical semigroups in Haskell are not Abelian, each of the these classes has two symmetric superclasses:
 -- 
 -- * 'LeftReductive'
 -- 
@@ -54,7 +53,7 @@ import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Numeric.Natural (Natural)
 
--- | Class of all Abelian ({i.e.}, commutative) semigroups that satisfy the commutativity property:
+-- | Class of all Abelian (/i.e./, commutative) semigroups that satisfy the commutativity property:
 -- 
 -- > a <> b == b <> a
 class Semigroup m => Commutative m

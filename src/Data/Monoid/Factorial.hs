@@ -10,10 +10,8 @@
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.Factorial (
-   -- * Classes
-   Factorial(..), FactorialMonoid(..), StableFactorial, StableFactorialMonoid,
-   -- * Monad function equivalents
-   mapM, mapM_
+   module Data.Semigroup.Factorial,
+   FactorialMonoid(..), StableFactorialMonoid,
    )
 where
 
@@ -33,10 +31,10 @@ import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Data.Int (Int64)
 
-import Data.Semigroup.Factorial (Factorial(..), StableFactorial, mapM, mapM_)
+import Data.Semigroup.Factorial
 import Data.Monoid.Null (MonoidNull(null), PositiveMonoid)
 
-import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, mapM, mapM_, max, min,
+import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, max, min,
                        null, reverse, span, splitAt, take, takeWhile)
 
 

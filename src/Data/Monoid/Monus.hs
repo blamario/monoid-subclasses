@@ -4,7 +4,7 @@
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
--- | This module defines the 'OverlappingGCDMonoid' => 'Monus' subclasses of the 'Monoid' class.
+-- | This module defines the 'OverlappingGCDMonoid' => 'Monus' subclass of the 'Monoid' class.
 --
 -- @since 1.0
 

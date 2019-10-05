@@ -4,30 +4,34 @@
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
--- | This module defines the 'GCDMonoid' and 'Monus' subclasses of the 'Monoid' class.
+-- | This module defines the 'Monoid' => 'CommutativeMonoid' => 'ReductiveMonoid' => 'CancellativeMonoid' constraint
+-- synonym hierarchy.
 --
--- The 'GCDMonoid' subclass adds the 'gcd' operation which takes two monoidal arguments and finds their greatest
--- common divisor, or (more generally) the greatest monoid that can be extracted with the '</>' operation from both.
+-- Since most practical monoids in Haskell are not commutative, the last two of these synonyms have two symmetric
+-- superclasses each:
+-- 
+-- * 'LeftReductiveMonoid'
+-- 
+-- * 'LeftCancellativeMonoid'
+-- 
+-- * 'RightReductiveMonoid'
+-- 
+-- * 'RightCancellativeMonoid'
 --
--- The two above classes are for Abelian, /i.e./, commutative monoids. Since most practical monoids in Haskell are not
--- Abelian, there are also three symmetric superclasses:
--- 
--- * 'LeftGCDMonoid'
--- 
--- * 'RightGCDMonoid'
--- 
--- * 'OverlappingGCDMonoid'
+-- This module and its constraint synonyms are provided for compatibility with the older versions of the
+-- @monoid-sublasses@ library. Starting with version 1.0, the classes from the "Data.Semigroup.Cancellative" module
+-- are recommended instead.
 
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances #-}
 
 module Data.Monoid.Cancellative {-# DEPRECATED "Use Data.Semigroup.Cancellative and Data.Monoid.GCD instead" #-} (
    module Data.Semigroup.Cancellative,
+   module Data.Monoid.GCD,
    -- * Symmetric, commutative monoid classes
-   CommutativeMonoid, ReductiveMonoid, CancellativeMonoid, GCDMonoid(..),
+   CommutativeMonoid, ReductiveMonoid, CancellativeMonoid,
    -- * Asymmetric monoid classes
    LeftReductiveMonoid, RightReductiveMonoid,
-   LeftCancellativeMonoid, RightCancellativeMonoid,
-   LeftGCDMonoid(..), RightGCDMonoid(..)
+   LeftCancellativeMonoid, RightCancellativeMonoid
    )
 where
 
