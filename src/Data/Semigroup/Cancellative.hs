@@ -130,9 +130,11 @@ instance Reductive () where
 
 instance Cancellative ()
 
+-- | /O(1)/
 instance LeftReductive () where
    stripPrefix () () = Just ()
 
+-- | /O(1)/
 instance RightReductive () where
    stripSuffix () () = Just ()
 
@@ -180,14 +182,17 @@ instance Integral a => LeftCancellative (Sum a)
 
 instance Integral a => RightCancellative (Sum a)
 
+-- | /O(1)/
 instance {-# OVERLAPS #-} Reductive (Sum Natural) where
    Sum a </> Sum b
       | a < b = Nothing
       | otherwise = Just $ Sum (a - b)
 
+-- | /O(1)/
 instance {-# OVERLAPS #-} LeftReductive (Sum Natural) where
    stripPrefix a b = b </> a
 
+-- | /O(1)/
 instance {-# OVERLAPS #-} RightReductive (Sum Natural) where
    stripSuffix a b = b </> a
 
@@ -307,14 +312,17 @@ instance RightReductive x => RightReductive (Maybe x) where
 
 instance Ord a => Commutative (Set.Set a)
 
+-- | /O(m*log(n/m + 1)), m <= n/
 instance Ord a => LeftReductive (Set.Set a) where
    isPrefixOf = Set.isSubsetOf
    stripPrefix a b = b </> a
 
+-- | /O(m*log(n/m + 1)), m <= n/
 instance Ord a => RightReductive (Set.Set a) where
    isSuffixOf = Set.isSubsetOf
    stripSuffix a b = b </> a
 
+-- | /O(m*log(n/m + 1)), m <= n/
 instance Ord a => Reductive (Set.Set a) where
    a </> b | Set.isSubsetOf b a = Just (a Set.\\ b)
            | otherwise = Nothing
@@ -323,25 +331,30 @@ instance Ord a => Reductive (Set.Set a) where
 
 instance Commutative IntSet.IntSet
 
+-- | /O(m+n)/
 instance LeftReductive IntSet.IntSet where
    isPrefixOf = IntSet.isSubsetOf
    stripPrefix a b = b </> a
 
+-- | /O(m+n)/
 instance RightReductive IntSet.IntSet where
    isSuffixOf = IntSet.isSubsetOf
    stripSuffix a b = b </> a
 
+-- | /O(m+n)/
 instance Reductive IntSet.IntSet where
    a </> b | IntSet.isSubsetOf b a = Just (a IntSet.\\ b)
            | otherwise = Nothing
 
 -- Map instances
 
+-- | /O(m+n)/
 instance (Ord k, Eq a) => LeftReductive (Map.Map k a) where
    isPrefixOf = Map.isSubmapOf
    stripPrefix a b | Map.isSubmapOf a b = Just (b Map.\\ a)
                    | otherwise = Nothing
 
+-- | /O(m+n)/
 instance (Ord k, Eq a) => RightReductive (Map.Map k a) where
    isSuffixOf = Map.isSubmapOfBy (const $ const True)
    stripSuffix a b | a `isSuffixOf` b = Just (Map.differenceWith (\x y-> if x == y then Nothing else Just x) b a)
@@ -349,11 +362,13 @@ instance (Ord k, Eq a) => RightReductive (Map.Map k a) where
 
 -- IntMap instances
 
+-- | /O(m+n)/
 instance Eq a => LeftReductive (IntMap.IntMap a) where
    isPrefixOf = IntMap.isSubmapOf
    stripPrefix a b | IntMap.isSubmapOf a b = Just (b IntMap.\\ a)
                    | otherwise = Nothing
 
+-- | /O(m+n)/
 instance Eq a => RightReductive (IntMap.IntMap a) where
    isSuffixOf = IntMap.isSubmapOfBy (const $ const True)
    stripSuffix a b | a `isSuffixOf` b = Just (IntMap.differenceWith (\x y-> if x == y then Nothing else Just x) b a)
@@ -361,6 +376,7 @@ instance Eq a => RightReductive (IntMap.IntMap a) where
 
 -- List instances
 
+-- | /O(prefixLength)/
 instance Eq x => LeftReductive [x] where
    stripPrefix = List.stripPrefix
    isPrefixOf = List.isPrefixOf
@@ -386,11 +402,13 @@ instance Eq x => RightCancellative [x]
 
 -- Seq instances
 
+-- | /O(log(min(m,n−m)) + prefixLength)/
 instance Eq a => LeftReductive (Sequence.Seq a) where
    stripPrefix p s | p == s1 = Just s2
                    | otherwise = Nothing
       where (s1, s2) = Sequence.splitAt (Sequence.length p) s
 
+-- | /O(log(min(m,n−m)) + suffixLength)/
 instance Eq a => RightReductive (Sequence.Seq a) where
    stripSuffix p s | p == s2 = Just s1
                    | otherwise = Nothing
@@ -402,9 +420,10 @@ instance Eq a => RightCancellative (Sequence.Seq a)
 
 -- Vector instances
 
+-- | /O(n)/
 instance Eq a => LeftReductive (Vector.Vector a) where
    stripPrefix p l | prefixLength > Vector.length l = Nothing
-                    | otherwise = strip 0
+                   | otherwise = strip 0
       where strip i | i == prefixLength = Just (Vector.drop prefixLength l)
                     | l Vector.! i == p Vector.! i = strip (succ i)
                     | otherwise = Nothing
@@ -416,6 +435,7 @@ instance Eq a => LeftReductive (Vector.Vector a) where
                    | otherwise = False
             prefixLength = Vector.length p
 
+-- | /O(n)/
 instance Eq a => RightReductive (Vector.Vector a) where
    stripSuffix s l | suffixLength > Vector.length l = Nothing
                    | otherwise = strip (pred suffixLength)
@@ -438,12 +458,14 @@ instance Eq a => RightCancellative (Vector.Vector a)
 
 -- ByteString instances
 
+-- | /O(n)/
 instance LeftReductive ByteString.ByteString where
    stripPrefix p l = if ByteString.isPrefixOf p l
                      then Just (ByteString.unsafeDrop (ByteString.length p) l)
                      else Nothing
    isPrefixOf = ByteString.isPrefixOf
 
+-- | /O(n)/
 instance RightReductive ByteString.ByteString where
    stripSuffix s l = if ByteString.isSuffixOf s l
                      then Just (ByteString.unsafeTake (ByteString.length l - ByteString.length s) l)
@@ -456,12 +478,14 @@ instance RightCancellative ByteString.ByteString
 
 -- Lazy ByteString instances
 
+-- | /O(n)/
 instance LeftReductive LazyByteString.ByteString where
    stripPrefix p l = if LazyByteString.isPrefixOf p l
                      then Just (LazyByteString.drop (LazyByteString.length p) l)
                      else Nothing
    isPrefixOf = LazyByteString.isPrefixOf
 
+-- | /O(n)/
 instance RightReductive LazyByteString.ByteString where
    stripSuffix s l = if LazyByteString.isSuffixOf s l
                      then Just (LazyByteString.take (LazyByteString.length l - LazyByteString.length s) l)
@@ -474,10 +498,12 @@ instance RightCancellative LazyByteString.ByteString
 
 -- Text instances
 
+-- | /O(n)/
 instance LeftReductive Text.Text where
    stripPrefix = Text.stripPrefix
    isPrefixOf = Text.isPrefixOf
 
+-- | /O(n)/
 instance RightReductive Text.Text where
    stripSuffix = Text.stripSuffix
    isSuffixOf = Text.isSuffixOf
@@ -488,10 +514,12 @@ instance RightCancellative Text.Text
 
 -- Lazy Text instances
 
+-- | /O(n)/
 instance LeftReductive LazyText.Text where
    stripPrefix = LazyText.stripPrefix
    isPrefixOf = LazyText.isPrefixOf
 
+-- | /O(n)/
 instance RightReductive LazyText.Text where
    stripSuffix = LazyText.stripSuffix
    isSuffixOf = LazyText.isSuffixOf

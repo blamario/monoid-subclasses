@@ -24,7 +24,7 @@
 
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances #-}
 
-module Data.Monoid.Cancellative {-# DEPRECATED "Use Data.Semigroup.Cancellative and Data.Monoid.GCD instead" #-} (
+module Data.Monoid.Cancellative {-# DEPRECATED "Use \"Data.Semigroup.Cancellative\" and \"Data.Monoid.GCD\" instead" #-} (
    module Data.Semigroup.Cancellative,
    module Data.Monoid.GCD,
    -- * Symmetric, commutative monoid classes

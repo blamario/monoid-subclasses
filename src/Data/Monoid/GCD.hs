@@ -127,12 +127,15 @@ class (Monoid m, RightReductive m) => RightGCDMonoid m where
 
 -- Unit instances
 
+-- | /O(1)/
 instance GCDMonoid () where
    gcd () () = ()
 
+-- | /O(1)/
 instance LeftGCDMonoid () where
    commonPrefix () () = ()
 
+-- | /O(1)/
 instance RightGCDMonoid () where
    commonSuffix () () = ()
 
@@ -149,23 +152,29 @@ instance RightGCDMonoid a => LeftGCDMonoid (Dual a) where
 
 -- Sum instances
 
+-- | /O(1)/
 instance GCDMonoid (Sum Natural) where
    gcd (Sum a) (Sum b) = Sum (min a b)
 
+-- | /O(1)/
 instance LeftGCDMonoid (Sum Natural) where
    commonPrefix a b = gcd a b
 
+-- | /O(1)/
 instance RightGCDMonoid (Sum Natural) where
    commonSuffix a b = gcd a b
 
 -- Product instances
 
+-- | /O(1)/
 instance GCDMonoid (Product Natural) where
    gcd (Product a) (Product b) = Product (Prelude.gcd a b)
 
+-- | /O(1)/
 instance LeftGCDMonoid (Product Natural) where
    commonPrefix a b = gcd a b
 
+-- | /O(1)/
 instance RightGCDMonoid (Product Natural) where
    commonSuffix a b = gcd a b
 
@@ -224,39 +233,48 @@ instance RightGCDMonoid x => RightGCDMonoid (Maybe x) where
 
 -- Set instances
 
+-- | /O(m*log(n\/m + 1)), m <= n/
 instance Ord a => LeftGCDMonoid (Set.Set a) where
    commonPrefix = Set.intersection
 
+-- | /O(m*log(n\/m + 1)), m <= n/
 instance Ord a => RightGCDMonoid (Set.Set a) where
    commonSuffix = Set.intersection
 
+-- | /O(m*log(n\/m + 1)), m <= n/
 instance Ord a => GCDMonoid (Set.Set a) where
    gcd = Set.intersection
 
 -- IntSet instances
 
+-- | /O(m+n)/
 instance LeftGCDMonoid IntSet.IntSet where
    commonPrefix = IntSet.intersection
 
+-- | /O(m+n)/
 instance RightGCDMonoid IntSet.IntSet where
    commonSuffix = IntSet.intersection
 
+-- | /O(m+n)/
 instance GCDMonoid IntSet.IntSet where
    gcd = IntSet.intersection
 
 -- Map instances
 
+-- | /O(m+n)/
 instance (Ord k, Eq a) => LeftGCDMonoid (Map.Map k a) where
    commonPrefix = Map.mergeWithKey (\_ a b -> if a == b then Just a else Nothing) (const Map.empty) (const Map.empty)
 
 -- IntMap instances
 
+-- | /O(m+n)/
 instance Eq a => LeftGCDMonoid (IntMap.IntMap a) where
    commonPrefix = IntMap.mergeWithKey (\_ a b -> if a == b then Just a else Nothing)
                                        (const IntMap.empty) (const IntMap.empty)
 
 -- List instances
 
+-- | /O(prefixLength)/
 instance Eq x => LeftGCDMonoid [x] where
    commonPrefix (x:xs) (y:ys) | x == y = x : commonPrefix xs ys
    commonPrefix _ _ = []
@@ -286,12 +304,14 @@ instance Eq x => RightGCDMonoid [x] where
 
 -- Seq instances
 
+-- | /O(prefixLength)/
 instance Eq a => LeftGCDMonoid (Sequence.Seq a) where
    stripCommonPrefix = findCommonPrefix Sequence.empty
       where findCommonPrefix prefix a b = case (Sequence.viewl a, Sequence.viewl b)
                                           of (a1:<a', b1:<b') | a1 == b1 -> findCommonPrefix (prefix |> a1) a' b'
                                              _ -> (prefix, a, b)
 
+-- | /O(suffixLength)/
 instance Eq a => RightGCDMonoid (Sequence.Seq a) where
    stripCommonSuffix = findCommonSuffix Sequence.empty
       where findCommonSuffix suffix a b = case (Sequence.viewr a, Sequence.viewr b)
@@ -300,6 +320,7 @@ instance Eq a => RightGCDMonoid (Sequence.Seq a) where
 
 -- Vector instances
 
+-- | /O(prefixLength)/
 instance Eq a => LeftGCDMonoid (Vector.Vector a) where
    stripCommonPrefix x y = (xp, xs, Vector.drop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (Vector.length x `min` Vector.length y)
@@ -307,6 +328,7 @@ instance Eq a => LeftGCDMonoid (Vector.Vector a) where
             prefixLength n _ = n
             (xp, xs) = Vector.splitAt maxPrefixLength x
 
+-- | /O(suffixLength)/
 instance Eq a => RightGCDMonoid (Vector.Vector a) where
    stripCommonSuffix x y = findSuffix (Vector.length x - 1) (Vector.length y - 1)
       where findSuffix m n | m >= 0 && n >= 0 && x Vector.! m == y Vector.! n =
@@ -316,6 +338,7 @@ instance Eq a => RightGCDMonoid (Vector.Vector a) where
 
 -- ByteString instances
 
+-- | /O(prefixLength)/
 instance LeftGCDMonoid ByteString.ByteString where
    stripCommonPrefix x y = (xp, xs, ByteString.unsafeDrop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (ByteString.length x `min` ByteString.length y)
@@ -325,6 +348,7 @@ instance LeftGCDMonoid ByteString.ByteString where
                                | otherwise = n
             (xp, xs) = ByteString.splitAt maxPrefixLength x
 
+-- | /O(suffixLength)/
 instance RightGCDMonoid ByteString.ByteString where
    stripCommonSuffix x y = findSuffix (ByteString.length x - 1) (ByteString.length y - 1)
       where findSuffix m n | m >= 0, n >= 0,
@@ -335,6 +359,7 @@ instance RightGCDMonoid ByteString.ByteString where
 
 -- Lazy ByteString instances
 
+-- | /O(prefixLength)/
 instance LeftGCDMonoid LazyByteString.ByteString where
    stripCommonPrefix x y = (xp, xs, LazyByteString.drop maxPrefixLength y)
       where maxPrefixLength = prefixLength 0 (LazyByteString.length x `min` LazyByteString.length y)
@@ -343,6 +368,7 @@ instance LeftGCDMonoid LazyByteString.ByteString where
             prefixLength n _ = n
             (xp, xs) = LazyByteString.splitAt maxPrefixLength x
 
+-- | /O(suffixLength)/
 instance RightGCDMonoid LazyByteString.ByteString where
    stripCommonSuffix x y = findSuffix (LazyByteString.length x - 1) (LazyByteString.length y - 1)
       where findSuffix m n | m >= 0 && n >= 0 && LazyByteString.index x m == LazyByteString.index y n =
@@ -352,6 +378,7 @@ instance RightGCDMonoid LazyByteString.ByteString where
 
 -- Text instances
 
+-- | /O(prefixLength)/
 instance LeftGCDMonoid Text.Text where
    stripCommonPrefix x y = maybe (Text.empty, x, y) id (Text.commonPrefixes x y)
 
@@ -368,6 +395,7 @@ instance RightGCDMonoid Text.Text where
 
 -- Lazy Text instances
 
+-- | /O(prefixLength)/
 instance LeftGCDMonoid LazyText.Text where
    stripCommonPrefix x y = maybe (LazyText.empty, x, y) id (LazyText.commonPrefixes x y)
 

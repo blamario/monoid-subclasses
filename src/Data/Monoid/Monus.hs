@@ -84,9 +84,11 @@ class (Monoid m, LeftReductive m, RightReductive m) => OverlappingGCDMonoid m wh
 
 -- Unit instances
 
+-- | /O(1)/
 instance Monus () where
    () <\> () = ()
 
+-- | /O(1)/
 instance OverlappingGCDMonoid () where
    overlap () () = ()
    stripOverlap () () = ((), (), ())
@@ -107,11 +109,13 @@ instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Dual a) where
 
 -- Sum instances
 
+-- | /O(1)/
 instance Monus (Sum Natural) where
    Sum a <\> Sum b
       | a > b = Sum (a - b)
       | otherwise = Sum 0
 
+-- | /O(1)/
 instance OverlappingGCDMonoid (Sum Natural) where
    overlap (Sum a) (Sum b) = Sum (min a b)
    stripOverlap (Sum a) (Sum b) = (Sum $ a - c, Sum c, Sum $ b - c)
@@ -121,10 +125,12 @@ instance OverlappingGCDMonoid (Sum Natural) where
 
 -- Product instances
 
+-- | /O(1)/
 instance Monus (Product Natural) where
    Product 0 <\> Product 0 = Product 1
    Product a <\> Product b = Product (a `div` Prelude.gcd a b)
 
+-- | /O(1)/
 instance OverlappingGCDMonoid (Product Natural) where
    overlap (Product a) (Product b) = Product (gcd a b)
    stripOverlap (Product 0) (Product 0) = (Product 1, Product 0, Product 1)
@@ -207,9 +213,11 @@ instance (OverlappingGCDMonoid a, MonoidNull a) => OverlappingGCDMonoid (Maybe a
 
 -- Set instances
 
+-- | /O(m*log(n/m + 1)), m <= n/
 instance Ord a => Monus (Set.Set a) where
    (<\>) = (Set.\\)
 
+-- | /O(m*log(n/m + 1)), m <= n/
 instance Ord a => OverlappingGCDMonoid (Set.Set a) where
    overlap = Set.intersection
    stripOverlap a b = (Set.difference a b, Set.intersection a b, Set.difference b a)
@@ -218,9 +226,11 @@ instance Ord a => OverlappingGCDMonoid (Set.Set a) where
 
 -- IntSet instances
 
+-- | /O(m+n)/
 instance Monus IntSet.IntSet where
    (<\>) = (IntSet.\\)
 
+-- | /O(m+n)/
 instance OverlappingGCDMonoid IntSet.IntSet where
    overlap = IntSet.intersection
    stripOverlap a b = (IntSet.difference a b, IntSet.intersection a b, IntSet.difference b a)
@@ -229,6 +239,7 @@ instance OverlappingGCDMonoid IntSet.IntSet where
 
 -- Map instances
 
+-- | /O(m+n)/
 instance (Ord k, Eq v) => OverlappingGCDMonoid (Map.Map k v) where
     overlap = Map.intersection
     stripOverlap a b = (stripPrefixOverlap b a, overlap a b, stripSuffixOverlap a b)
@@ -237,6 +248,7 @@ instance (Ord k, Eq v) => OverlappingGCDMonoid (Map.Map k v) where
 
 -- IntMap instances
 
+-- | /O(m+n)/
 instance Eq a => OverlappingGCDMonoid (IntMap.IntMap a) where
     overlap = IntMap.intersection
     stripOverlap a b = (stripPrefixOverlap b a, overlap a b, stripSuffixOverlap a b)
@@ -245,6 +257,7 @@ instance Eq a => OverlappingGCDMonoid (IntMap.IntMap a) where
 
 -- List instances
 
+-- | /O(m*n)/
 instance Eq a => OverlappingGCDMonoid [a] where
    overlap a b = go a
       where go x | x `isPrefixOf` b = x
@@ -259,6 +272,7 @@ instance Eq a => OverlappingGCDMonoid [a] where
 
 -- Seq instances
 
+-- | /O(min(m,n)^2)/
 instance Eq a => OverlappingGCDMonoid (Sequence.Seq a) where
    overlap a b = go (Sequence.drop (Sequence.length a - Sequence.length b) a)
       where go x | x `isPrefixOf` b = x
@@ -271,6 +285,7 @@ instance Eq a => OverlappingGCDMonoid (Sequence.Seq a) where
 
 -- Vector instances
 
+-- | /O(min(m,n)^2)/
 instance Eq a => OverlappingGCDMonoid (Vector.Vector a) where
    stripOverlap a b = go (max alen blen)
       where alen = Vector.length a
@@ -282,6 +297,7 @@ instance Eq a => OverlappingGCDMonoid (Vector.Vector a) where
 
 -- ByteString instances
 
+-- | /O(min(m,n)^2)/
 instance OverlappingGCDMonoid ByteString.ByteString where
    stripOverlap a b = go (max alen blen)
       where alen = ByteString.length a
@@ -293,6 +309,7 @@ instance OverlappingGCDMonoid ByteString.ByteString where
 
 -- Lazy ByteString instances
 
+-- | /O(m*n)/
 instance OverlappingGCDMonoid LazyByteString.ByteString where
    stripOverlap a b = go (max alen blen)
       where alen = LazyByteString.length a
@@ -304,6 +321,7 @@ instance OverlappingGCDMonoid LazyByteString.ByteString where
 
 -- Text instances
 
+-- | /O(min(m,n)^2)/
 instance OverlappingGCDMonoid Text.Text where
    stripOverlap a b
       | Text.null b = (a, b, b)
@@ -315,6 +333,7 @@ instance OverlappingGCDMonoid Text.Text where
 
 -- Lazy Text instances
 
+-- | /O(m*n)/
 instance OverlappingGCDMonoid LazyText.Text where
    stripOverlap a b
       | LazyText.null b = (a, b, b)

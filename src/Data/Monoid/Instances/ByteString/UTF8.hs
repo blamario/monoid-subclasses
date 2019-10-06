@@ -83,20 +83,24 @@ decode bs
    where (prefix, suffix) = ByteString.breakEnd byteStartsCharacter bs
          l = ByteString.last bs
 
+-- | O(n)
 instance Semigroup ByteStringUTF8 where
    ByteStringUTF8 a <> ByteStringUTF8 b = ByteStringUTF8 (a <> b)
    {-# INLINE (<>) #-}
 
+-- | O(n)
 instance Monoid ByteStringUTF8 where
    mempty = ByteStringUTF8 ByteString.empty
    {-# INLINE mempty #-}
    ByteStringUTF8 a `mappend` ByteStringUTF8 b = ByteStringUTF8 (a `mappend` b)
    {-# INLINE mappend #-}
 
+-- | O(1)
 instance MonoidNull ByteStringUTF8 where
    null (ByteStringUTF8 b) = ByteString.null b
    {-# INLINE null #-}
 
+-- | O(n)
 instance LeftReductive ByteStringUTF8 where
    stripPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = fmap ByteStringUTF8 (stripPrefix a b)
    {-# INLINE stripPrefix #-}
@@ -105,6 +109,7 @@ instance LeftReductive ByteStringUTF8 where
 
 instance LeftCancellative ByteStringUTF8
 
+-- | O(prefixLength)
 instance LeftGCDMonoid ByteStringUTF8 where
    commonPrefix (ByteStringUTF8 a) (ByteStringUTF8 b) = ByteStringUTF8 (commonPrefix a b)
    {-# INLINE commonPrefix #-}
