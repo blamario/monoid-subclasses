@@ -30,7 +30,7 @@
 
 module Data.Semigroup.Cancellative (
    -- * Symmetric, commutative semigroup classes
-   Commutative, Reductive(..), Cancellative,
+   Commutative, Reductive(..), Cancellative, SumCancellative(..),
    -- * Asymmetric semigroup classes
    LeftReductive(..), RightReductive(..),
    LeftCancellative, RightCancellative
@@ -164,37 +164,37 @@ instance LeftCancellative a => RightCancellative (Dual a)
 instance RightCancellative a => LeftCancellative (Dual a)
 
 -- Sum instances
-
 instance Num a => Commutative (Sum a)
 
-instance Integral a => Reductive (Sum a) where
-   Sum a </> Sum b = Just $ Sum (a - b)
+-- | Helper class to avoid @FlexibleInstances@
+class Num a => SumCancellative a where
+   cancelAddition :: a -> a -> Maybe a
+   cancelAddition a b = Just (a - b)
 
-instance Integral a => Cancellative (Sum a)
+instance SumCancellative Int
+instance SumCancellative Integer
+instance SumCancellative Rational
 
-instance Integral a => LeftReductive (Sum a) where
-   stripPrefix a b = b </> a
-
-instance Integral a => RightReductive (Sum a) where
-   stripSuffix a b = b </> a
-
-instance Integral a => LeftCancellative (Sum a)
-
-instance Integral a => RightCancellative (Sum a)
-
--- | /O(1)/
-instance {-# OVERLAPS #-} Reductive (Sum Natural) where
-   Sum a </> Sum b
+instance SumCancellative Natural where
+   cancelAddition a b
       | a < b = Nothing
-      | otherwise = Just $ Sum (a - b)
+      | otherwise = Just (a - b)
 
 -- | /O(1)/
-instance {-# OVERLAPS #-} LeftReductive (Sum Natural) where
+instance SumCancellative a => Reductive (Sum a) where
+   Sum a </> Sum b = Sum <$> cancelAddition a b
+
+-- | /O(1)/
+instance SumCancellative a => LeftReductive (Sum a) where
    stripPrefix a b = b </> a
 
 -- | /O(1)/
-instance {-# OVERLAPS #-} RightReductive (Sum Natural) where
+instance SumCancellative a => RightReductive (Sum a) where
    stripSuffix a b = b </> a
+
+instance SumCancellative a => Cancellative (Sum a)
+instance SumCancellative a => LeftCancellative (Sum a)
+instance SumCancellative a => RightCancellative (Sum a)
 
 -- Product instances
 
