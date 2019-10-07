@@ -8,6 +8,7 @@
 -- 
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Data.Monoid.Instances.CharVector where
 
