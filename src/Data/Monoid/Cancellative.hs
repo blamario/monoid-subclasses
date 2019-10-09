@@ -24,7 +24,7 @@
 
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances #-}
 
-module Data.Monoid.Cancellative {- from 1.1 # DEPRECATED "Use \"Data.Semigroup.Cancellative\" and \"Data.Monoid.GCD\" instead" #-} (
+module Data.Monoid.Cancellative {- from 1.1 DEPRECATED "Use \"Data.Semigroup.Cancellative\" and \"Data.Monoid.GCD\" instead" -} (
    module Data.Semigroup.Cancellative,
    module Data.Monoid.GCD,
    -- * Symmetric, commutative monoid classes
@@ -40,14 +40,14 @@ import Data.Monoid (Monoid)
 import Data.Semigroup.Cancellative
 import Data.Monoid.GCD
 
-{- from 1.1 #-}
-{- # DEPRECATED CommutativeMonoid "Use Data.Semigroup.Cancellative.Commutative instead." #-}
-{- # DEPRECATED ReductiveMonoid "Use Data.Semigroup.Cancellative.Reductive instead." #-}
-{- # DEPRECATED LeftReductiveMonoid "Use Data.Semigroup.Cancellative.LeftReductive instead." #-}
-{- # DEPRECATED RightReductiveMonoid "Use Data.Semigroup.Cancellative.RightReductive instead." #-}
-{- # DEPRECATED CancellativeMonoid "Use Data.Semigroup.Cancellative.Cancellative instead." #-}
-{- # DEPRECATED LeftCancellativeMonoid "Use Data.Semigroup.Cancellative.LeftCancellative instead." #-}
-{- # DEPRECATED RightCancellativeMonoid "Use Data.Semigroup.Cancellative.RightCancellative instead." #-}
+{- from 1.1-}
+{- DEPRECATED CommutativeMonoid "Use Data.Semigroup.Cancellative.Commutative instead." -}
+{- DEPRECATED ReductiveMonoid "Use Data.Semigroup.Cancellative.Reductive instead." -}
+{- DEPRECATED LeftReductiveMonoid "Use Data.Semigroup.Cancellative.LeftReductive instead." -}
+{- DEPRECATED RightReductiveMonoid "Use Data.Semigroup.Cancellative.RightReductive instead." -}
+{- DEPRECATED CancellativeMonoid "Use Data.Semigroup.Cancellative.Cancellative instead." -}
+{- DEPRECATED LeftCancellativeMonoid "Use Data.Semigroup.Cancellative.LeftCancellative instead." -}
+{- DEPRECATED RightCancellativeMonoid "Use Data.Semigroup.Cancellative.RightCancellative instead." -}
 type CommutativeMonoid m = (Monoid m, Commutative m)
 type ReductiveMonoid m = (Monoid m, Reductive m)
 type LeftReductiveMonoid m = (Monoid m, LeftReductive m)
