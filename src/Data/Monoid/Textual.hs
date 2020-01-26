@@ -90,7 +90,7 @@ class (IsString t, LeftReductive t, LeftGCDMonoid t, FactorialMonoid t) => Textu
    --
    -- > singleton c == fromString [c]
    singleton :: Char -> t
-   -- | Specialized version of 'Factorial.splitPrimePrefix'. Every prime factor of a 'Textual' monoid must consist of a
+   -- | Specialized version of 'Factorial.splitPrimePrefix'. Every prime factor of a textual monoid must consist of a
    -- single character or no character at all.
    splitCharacterPrefix :: t -> Maybe (Char, t)
    -- | Extracts a single character that prefixes the monoid, if the monoid begins with a character. Otherwise returns

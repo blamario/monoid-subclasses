@@ -1,4 +1,9 @@
 
+Version 1.0.1
+---------------
+* Incremented the lower bound of the base dependency
+* Fixed Haddock links
+
 Version 1.0
 ---------------
 * Fixed issue #24, unlawful LeftReductiveMonoid instance for Map

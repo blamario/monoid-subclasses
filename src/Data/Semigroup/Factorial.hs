@@ -68,16 +68,16 @@ class Semigroup m => Factorial m where
    primePrefix :: m -> m
    -- | The prime suffix; @primeSuffix mempty == mempty@ for monoids.
    primeSuffix :: m -> m
-   -- | Like 'List.foldl' from "Data.List" on the list of 'primes'.
+   -- | Like 'List.foldl' from "Data.List" on the list of prime 'factors'.
    foldl :: (a -> m -> a) -> a -> m -> a
-   -- | Like 'List.foldl'' from "Data.List" on the list of 'primes'.
+   -- | Like 'List.foldl'' from "Data.List" on the list of prime 'factors'.
    foldl' :: (a -> m -> a) -> a -> m -> a
-   -- | Like 'List.foldr' from "Data.List" on the list of 'primes'.
+   -- | Like 'List.foldr' from "Data.List" on the list of prime 'factors'.
    foldr :: (m -> a -> a) -> a -> m -> a
-   -- | The 'length' of the list of 'primes'.
+   -- | The 'length' of the list of prime 'factors'.
    length :: m -> Int
-   -- | Generalizes 'foldMap' from "Data.Foldable", except the function arguments are prime factors rather than the
-   -- structure elements.
+   -- | Generalizes 'Foldable.foldMap' from "Data.Foldable", except the function arguments are prime 'factors' rather
+   -- than the structure elements.
    foldMap :: Monoid n => (m -> n) -> m -> n
    -- | Equivalent to 'List.reverse' from "Data.List".
    reverse :: m -> m

@@ -81,7 +81,7 @@ class (Factorial m, MonoidNull m) => FactorialMonoid m where
    inits :: m -> [m]
    -- | Returns the list of all suffixes of the argument, 'mempty' last.
    tails :: m -> [m]
-   -- | Like 'List.span' from "Data.List" on the list of 'primes'.
+   -- | Like 'List.span' from "Data.List" on the list of prime 'factors'.
    span :: (m -> Bool) -> m -> (m, m)
    -- | Equivalent to 'List.break' from "Data.List".
    break :: (m -> Bool) -> m -> (m, m)
@@ -96,7 +96,7 @@ class (Factorial m, MonoidNull m) => FactorialMonoid m where
    spanMaybe :: s -> (s -> m -> Maybe s) -> m -> (m, m, s)
    -- | Strict version of 'spanMaybe'.
    spanMaybe' :: s -> (s -> m -> Maybe s) -> m -> (m, m, s)
-   -- | Like 'List.splitAt' from "Data.List" on the list of 'primes'.
+   -- | Like 'List.splitAt' from "Data.List" on the list of prime 'factors'.
    splitAt :: Int -> m -> (m, m)
    -- | Equivalent to 'List.drop' from "Data.List".
    drop :: Int -> m -> m
