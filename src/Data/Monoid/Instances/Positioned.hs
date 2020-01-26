@@ -293,7 +293,7 @@ instance (StableFactorial m, TextualMonoid m) => Factorial (LinePositioned m) wh
    foldMap f (LinePositioned p0 l0 lp0 c) = appEndo (Factorial.foldMap f' c) (const mempty) p0 l0 lp0
       where -- f' :: m -> Endo (Int -> Int -> Int -> m)
             f' prime = Endo (\cont p l lp-> f (LinePositioned p l lp prime)
-                                            <>
+                                            `mappend`
                                             if characterPrefix prime == Just '\n'
                                             then cont (succ p) (succ l) p
                                             else cont (succ p) l lp)

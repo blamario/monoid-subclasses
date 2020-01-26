@@ -29,7 +29,7 @@ Library
                      Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.CharVector,
                      Data.Monoid.Instances.Concat, Data.Monoid.Instances.Measured, Data.Monoid.Instances.Positioned,
                      Data.Monoid.Instances.Stateful
-  Build-Depends:     base >= 4.11 && < 5,
+  Build-Depends:     base >= 4.10 && < 5,
                      bytestring >= 0.9 && < 1.0, containers >= 0.5.7.0 && < 0.7, text >= 0.11 && < 1.3,
                      primes == 0.2.*, vector >= 0.12 && < 0.13
   GHC-options:       -Wall
