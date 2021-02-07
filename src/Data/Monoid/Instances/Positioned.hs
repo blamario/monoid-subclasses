@@ -10,11 +10,11 @@
 -- base monoid of 'LinePositioned' must be a 'TextualMonoid', but for the price it will keep track of the current line
 -- and column numbers as well.
 --
--- All positions are zero-based:
+-- Line number is zero-based, column one-based:
 --
 -- >> let p = pure "abcd\nefgh\nijkl\nmnop\n" :: LinePositioned String
 -- >> p
--- >Line 0, column 1: "abcd\nefgh\nijkl\nmnop\n"
+-- >"abcd\nefgh\nijkl\nmnop\n"
 -- >> Data.Monoid.Factorial.drop 13 p
 -- >Line 2, column 4: "l\nmnop\n"
 
@@ -97,9 +97,11 @@ instance Ord m => Ord (LinePositioned m) where
    compare LinePositioned{extractLines= a} LinePositioned{extractLines= b} = compare a b
 
 instance Show m => Show (OffsetPositioned m) where
+   showsPrec prec (OffsetPositioned 0 c) = showsPrec prec c
    showsPrec prec (OffsetPositioned pos c) = shows pos . (": " ++) . showsPrec prec c
 
 instance Show m => Show (LinePositioned m) where
+   showsPrec prec (LinePositioned 0 0 (-1) c) = showsPrec prec c
    showsPrec prec (LinePositioned pos l lpos c) =
       ("Line " ++) . shows l . (", column " ++) . shows (pos - lpos) . (": " ++) . showsPrec prec c
 
@@ -392,7 +394,7 @@ instance IsString m => IsString (LinePositioned m) where
    fromString = pure . fromString
 
 instance (StableFactorial m, TextualMonoid m) => TextualMonoid (OffsetPositioned m) where
-   splitCharacterPrefix (OffsetPositioned p c) = fmap rewrap (splitCharacterPrefix c)
+   splitCharacterPrefix (OffsetPositioned p t) = fmap rewrap (splitCharacterPrefix t)
       where rewrap (c, cs) = if null cs then (c, mempty) else (c, OffsetPositioned (succ p) cs)
 
    fromText = pure . fromText
@@ -494,8 +496,8 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (OffsetPositioned
    {-# INLINE find #-}
 
 instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m) where
-   splitCharacterPrefix (LinePositioned p l lp c) =
-      case splitCharacterPrefix c
+   splitCharacterPrefix (LinePositioned p l lp t) =
+      case splitCharacterPrefix t
       of Nothing -> Nothing
          Just (c, rest) | null rest -> Just (c, mempty)
          Just ('\n', rest) -> Just ('\n', LinePositioned p' (succ l) p' rest)
