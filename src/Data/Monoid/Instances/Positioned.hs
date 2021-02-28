@@ -1,5 +1,5 @@
 {-
-    Copyright 2014-2019 Mario Blazevic
+    Copyright 2014-2021 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -124,6 +124,7 @@ instance (StableFactorial m, TextualMonoid m) => Semigroup (LinePositioned m) wh
            l2' = if l2 == 0 then 0 else max 0 $ l2 - Textual.foldl_' countLines 0 c1
            countLines :: Int -> Char -> Int
            countLines n '\n' = succ n
+           countLines n '\f' = succ n
            countLines n _ = n
    {-# INLINE (<>) #-}
 
@@ -275,28 +276,40 @@ instance (StableFactorial m, FactorialMonoid m) => FactorialMonoid (OffsetPositi
 
 instance (StableFactorial m, TextualMonoid m) => Factorial (LinePositioned m) where
    factors (LinePositioned p0 l0 lp0 c) = snd $ List.mapAccumL next (p0, l0, lp0) (factors c)
-      where next (p, l, lp) c1 | characterPrefix c1 == Just '\n' = ((succ p, succ l, p), LinePositioned p l lp c1)
-                               | otherwise = ((succ p, l, lp), LinePositioned p l lp c1)
+      where next (p, l, lp) c1 = case characterPrefix c1
+                                 of Just '\n' -> ((succ p, succ l, p), LinePositioned p l lp c1)
+                                    Just '\f' -> ((succ p, succ l, p), LinePositioned p l lp c1)
+                                    Just '\r' -> ((succ p, l, p), LinePositioned p l lp c1)
+                                    _ -> ((succ p, l, lp), LinePositioned p l lp c1)
    primePrefix (LinePositioned p l lp c) = LinePositioned p l lp (primePrefix c)
    foldl f a0 (LinePositioned p0 l0 lp0 c0) = fstOf4 $! Factorial.foldl f' (a0, p0, l0, lp0) c0
-      where f' (a, p, l, lp) c | characterPrefix c == Just '\n' = (f a (LinePositioned p l lp c), succ p, succ l, p)
-                               | otherwise = (f a (LinePositioned p l lp c), succ p, l, lp)
+      where f' (a, p, l, lp) c = case characterPrefix c
+                                 of Just '\n' -> (f a (LinePositioned p l lp c), succ p, succ l, p)
+                                    Just '\f' -> (f a (LinePositioned p l lp c), succ p, succ l, p)
+                                    Just '\r' -> (f a (LinePositioned p l lp c), succ p, l, p)
+                                    _ -> (f a (LinePositioned p l lp c), succ p, l, lp)
    foldl' f a0 (LinePositioned p0 l0 lp0 c0) = fstOf4 $! Factorial.foldl' f' (a0, p0, l0, lp0) c0
       where f' (a, p, l, lp) c = let a' = f a (LinePositioned p l lp c)
-                                 in seq a' (if characterPrefix c == Just '\n'
-                                            then (a', succ p, succ l, p)
-                                            else (a', succ p, l, lp))
+                                 in seq a' (case characterPrefix c
+                                            of Just '\n' -> (a', succ p, succ l, p)
+                                               Just '\f' -> (a', succ p, succ l, p)
+                                               Just '\r' -> (a', succ p, l, p)
+                                               _ -> (a', succ p, l, lp))
    foldr f a0 (LinePositioned p0 l0 lp0 c0) = Factorial.foldr f' (const3 a0) c0 p0 l0 lp0
-      where f' c cont p l lp
-               | characterPrefix c == Just '\n' = f (LinePositioned p l lp c) $ ((cont $! succ p) $! succ l) p
-               | otherwise = f (LinePositioned p l lp c) $ (cont $! succ p) l lp
+      where f' c cont p l lp = case characterPrefix c
+                               of Just '\n' -> f (LinePositioned p l lp c) $ ((cont $! succ p) $! succ l) p
+                                  Just '\f' -> f (LinePositioned p l lp c) $ ((cont $! succ p) $! succ l) p
+                                  Just '\r' -> f (LinePositioned p l lp c) $ (cont $! succ p) l p
+                                  _ -> f (LinePositioned p l lp c) $ (cont $! succ p) l lp
    foldMap f (LinePositioned p0 l0 lp0 c) = appEndo (Factorial.foldMap f' c) (const mempty) p0 l0 lp0
       where -- f' :: m -> Endo (Int -> Int -> Int -> m)
             f' prime = Endo (\cont p l lp-> f (LinePositioned p l lp prime)
                                             `mappend`
-                                            if characterPrefix prime == Just '\n'
-                                            then cont (succ p) (succ l) p
-                                            else cont (succ p) l lp)
+                                            case characterPrefix prime
+                                            of Just '\n' -> cont (succ p) (succ l) p
+                                               Just '\f' -> cont (succ p) (succ l) p
+                                               Just '\r' -> cont (succ p) l p
+                                               _ -> cont (succ p) l lp)
    length = length . extractLines
    reverse (LinePositioned p l lp c) = LinePositioned p l lp (Factorial.reverse c)
    {-# INLINE primePrefix #-}
@@ -311,8 +324,12 @@ instance (StableFactorial m, TextualMonoid m) => FactorialMonoid (LinePositioned
    splitPrimePrefix (LinePositioned p l lp c) = fmap rewrap (splitPrimePrefix c)
       where rewrap (cp, cs) = (LinePositioned p l lp cp,
                                if null cs then mempty
-                               else if characterPrefix cp == Just '\n' then LinePositioned (succ p) (succ l) p cs
-                               else LinePositioned (succ p) l lp cs)
+                               else case characterPrefix cp
+                                    of Just '\n' -> LinePositioned p' (succ l) p cs
+                                       Just '\f' -> LinePositioned p' (succ l) p cs
+                                       Just '\r' -> LinePositioned p' l p cs
+                                       _ -> LinePositioned p' l lp cs)
+            p' = succ p
    splitPrimeSuffix (LinePositioned p l lp c) = fmap rewrap (splitPrimeSuffix c)
       where rewrap (cp, cs) = (LinePositioned p l lp cp, LinePositioned p' (l + lines) (p' - columns) cs)
                where len = length cp
@@ -322,26 +339,32 @@ instance (StableFactorial m, TextualMonoid m) => FactorialMonoid (LinePositioned
       where f' (s, p, l, lp) prime = do s' <- f s (LinePositioned p l lp prime)
                                         let p' = succ p
                                             l' = succ l
-                                        Just $! p' `seq` if characterPrefix prime == Just '\n'
-                                                         then l' `seq` (s', p', l', p)
-                                                         else (s', p', l, lp)
+                                        Just $! p' `seq` case characterPrefix prime
+                                                         of Just '\n' -> l' `seq` (s', p', l', p)
+                                                            Just '\f' -> l' `seq` (s', p', l', p)
+                                                            Just '\r' -> (s', p', l, p)
+                                                            _ -> (s', p', l, lp)
             rewrap (prefix, suffix, (s, p, l, lp)) = (LinePositioned p0 l0 lp0 prefix, LinePositioned p l lp suffix, s)
    spanMaybe' s0 f (LinePositioned p0 l0 lp0 c) = rewrap $! Factorial.spanMaybe' (s0, p0, l0, lp0) f' c
       where f' (s, p, l, lp) prime = do s' <- f s (LinePositioned p l lp prime)
                                         let p' = succ p
                                             l' = succ l
-                                        Just $! s' `seq` p' `seq` if characterPrefix prime == Just '\n'
-                                                                  then l' `seq` (s', p', l', p)
-                                                                  else (s', p', l, lp)
+                                        Just $! s' `seq` p' `seq` case characterPrefix prime
+                                                                  of Just '\n' -> l' `seq` (s', p', l', p)
+                                                                     Just '\f' -> l' `seq` (s', p', l', p)
+                                                                     Just '\r' -> (s', p', l, p)
+                                                                     _ -> (s', p', l, lp)
             rewrap (prefix, suffix, (s, p, l, lp)) = (LinePositioned p0 l0 lp0 prefix, LinePositioned p l lp suffix, s)
 
    span f (LinePositioned p0 l0 lp0 t) = rewrap $ Factorial.spanMaybe' (p0, l0, lp0) f' t
       where f' (p, l, lp) prime = if f (LinePositioned p l lp prime)
                                   then let p' = succ p
                                            l' = succ l
-                                       in Just $! p' `seq` if characterPrefix prime == Just '\n'
-                                                           then l' `seq` (p', l', p)
-                                                           else (p', l, lp)
+                                       in Just $! p' `seq` case characterPrefix prime
+                                                           of Just '\n' -> l' `seq` (p', l', p)
+                                                              Just '\f' -> l' `seq` (p', l', p)
+                                                              Just '\r' -> (p', l, p)
+                                                              _ -> (p', l, lp)
                                   else Nothing
             rewrap (prefix, suffix, (p, l, lp)) = (LinePositioned p0 l0 lp0 prefix, LinePositioned p l lp suffix)
    splitAt n m@(LinePositioned p l lp c) | n <= 0 = (mempty, m)
@@ -475,8 +498,11 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
       case splitCharacterPrefix c
       of Nothing -> Nothing
          Just (c, rest) | null rest -> Just (c, mempty)
-         Just ('\n', rest) -> Just ('\n', LinePositioned (succ p) (succ l) p rest)
-         Just (ch, rest) -> Just (ch, LinePositioned (succ p) l lp rest)
+         Just ('\n', rest) -> Just ('\n', LinePositioned p' (succ l) p' rest)
+         Just ('\f', rest) -> Just ('\f', LinePositioned p' (succ l) p' rest)
+         Just ('\r', rest) -> Just ('\r', LinePositioned p' l p' rest)
+         Just (ch, rest) -> Just (ch, LinePositioned p' l lp rest)
+      where p' = succ p
 
    fromText = pure . fromText
    singleton = pure . singleton
@@ -491,6 +517,8 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
    foldl ft fc a0 (LinePositioned p0 l0 lp0 c0) = fstOf4 $ Textual.foldl ft' fc' (a0, p0, l0, lp0) c0
       where ft' (a, p, l, lp) c = (ft a (LinePositioned p l lp c), succ p, l, lp)
             fc' (a, p, l, _lp) '\n' = (fc a '\n', succ p, succ l, p)
+            fc' (a, p, l, _lp) '\f' = (fc a '\f', succ p, succ l, p)
+            fc' (a, p, l, _lp) '\r' = (fc a '\r', succ p, l, p)
             fc' (a, p, l, lp) c = (fc a c, succ p, l, lp)
    foldl' ft fc a0 (LinePositioned p0 l0 lp0 c0) = fstOf4 $ Textual.foldl' ft' fc' (a0, p0, l0, lp0) c0
       where ft' (a, p, l, lp) c = let a' = ft a (LinePositioned p l lp c)
@@ -499,13 +527,17 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
             fc' (a, p, l, lp) c = let a' = fc a c
                                       p' = succ p
                                       l' = succ l
-                                  in a' `seq` p' `seq` if c == '\n'
-                                                       then l' `seq` (a', p', l', p)
-                                                       else (a', p', l, lp)
+                                  in a' `seq` p' `seq` case c
+                                                       of '\n' -> l' `seq` (a', p', l', p)
+                                                          '\f' -> l' `seq` (a', p', l', p)
+                                                          '\r' -> (a', p', l, p)
+                                                          _ -> (a', p', l, lp)
    foldr ft fc a0 (LinePositioned p0 l0 lp0 c0) = Textual.foldr ft' fc' (const3 a0) c0 p0 l0 lp0
       where ft' c cont p l lp = ft (LinePositioned p l lp c) $ (cont $! succ p) l lp
             fc' c cont p l lp
                | c == '\n' = fc c $ ((cont $! succ p) $! succ l) p
+               | c == '\f' = fc c $ ((cont $! succ p) $! succ l) p
+               | c == '\r' = fc c $ (cont $! succ p) l p
                | otherwise = fc c $ (cont $! succ p) l lp
 
    spanMaybe s0 ft fc (LinePositioned p0 l0 lp0 t) = rewrap $ Textual.spanMaybe (s0, p0, l0, lp0) ft' fc' t
@@ -513,7 +545,9 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
                                          let p' = succ p
                                          Just $! seq p' (s', p', l, lp)
             fc' (s, p, l, lp) c = fc s c
-                                  >>= \s'-> Just $! seq p' (if c == '\n' then seq l' (s', p', l', p) else (s', p', l, lp))
+                                  >>= \s'-> Just $! seq p' (if c == '\n' || c == '\f' then seq l' (s', p', l', p)
+                                                            else if c == '\r' then (s', p', l, p)
+                                                            else (s', p', l, lp))
                where p' = succ p
                      l' = succ l
             rewrap (prefix, suffix, (s, p, l, lp)) = (LinePositioned p0 l0 lp0 prefix, LinePositioned p l lp suffix, s)
@@ -524,14 +558,19 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
             fc' (s, p, l, lp) c = do s' <- fc s c
                                      let p' = succ p
                                          l' = succ l
-                                     Just $! s' `seq` p' `seq` (if c == '\n' then seq l' (s', p', l', p) else (s', p', l, lp))
+                                     Just $! s' `seq` p' `seq` (if c == '\n' || c == '\f' then seq l' (s', p', l', p)
+                                                                else if c == '\r' then (s', p', l, p)
+                                                                else (s', p', l, lp))
             rewrap (prefix, suffix, (s, p, l, lp)) = (LinePositioned p0 l0 lp0 prefix, LinePositioned p l lp suffix, s)
    span ft fc (LinePositioned p0 l0 lp0 t) = rewrap $ Textual.spanMaybe' (p0, l0, lp0) ft' fc' t
       where ft' (p, l, lp) prime = if ft (LinePositioned p l lp prime)
                                    then let p' = succ p
                                         in p' `seq` Just (p', l, lp)
                                    else Nothing
-            fc' (p, l, lp) c | fc c = Just $! seq p' (if c == '\n' then seq l' (p', l', p) else (p', l, lp))
+            fc' (p, l, lp) c | fc c = Just $! seq p'
+                                      $ if c == '\n' || c == '\f' then seq l' (p', l', p)
+                                        else if c == '\r' then (p', l, p)
+                                        else (p', l, lp)
                              | otherwise = Nothing
                where p' = succ p
                      l' = succ l
@@ -599,12 +638,16 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
    {-# INLINE takeWhile_ #-}
 
 linesColumns :: TextualMonoid m => m -> (Int, Int)
-linesColumns t = Textual.foldl (const . fmap succ) fc (0, 1) t
+linesColumns t = Textual.foldl (const . fmap succ) fc (0, 0) t
    where fc (l, _) '\n' = (succ l, 1)
+         fc (l, _) '\f' = (succ l, 1)
+         fc (l, _) '\r' = (l, 1)
          fc (l, c) _ = (l, succ c)
 linesColumns' :: TextualMonoid m => m -> (Int, Int)
 linesColumns' t = Textual.foldl' (const . fmap succ) fc (0, 1) t
    where fc (l, _) '\n' = let l' = succ l in seq l' (l', 1)
+         fc (l, _) '\f' = let l' = succ l in seq l' (l', 1)
+         fc (l, _) '\r' = (l, 1)
          fc (l, c) _ = let c' = succ c in seq c' (l, c')
 {-# INLINE linesColumns #-}
 {-# INLINE linesColumns' #-}
