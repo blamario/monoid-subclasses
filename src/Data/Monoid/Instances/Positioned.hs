@@ -14,9 +14,9 @@
 --
 -- >> let p = pure "abcd\nefgh\nijkl\nmnop\n" :: LinePositioned String
 -- >> p
--- >Line 0, column 0: "abcd\nefgh\nijkl\nmnop\n"
+-- >Line 0, column 1: "abcd\nefgh\nijkl\nmnop\n"
 -- >> Data.Monoid.Factorial.drop 13 p
--- >Line 2, column 3: "l\nmnop\n"
+-- >Line 2, column 4: "l\nmnop\n"
 
 {-# LANGUAGE Haskell2010 #-}
 
@@ -73,7 +73,7 @@ instance Applicative OffsetPositioned where
    OffsetPositioned _ f <*> OffsetPositioned p c = OffsetPositioned p (f c)
 
 instance Applicative LinePositioned where
-   pure = LinePositioned 0 0 0
+   pure = LinePositioned 0 0 (-1)
    LinePositioned _ _ _ f <*> LinePositioned p l lp c = LinePositioned p l lp (f c)
 
 instance Positioned OffsetPositioned where
@@ -120,7 +120,7 @@ instance (StableFactorial m, TextualMonoid m) => Semigroup (LinePositioned m) wh
      | otherwise = LinePositioned p2' l2' lp2' c
      where c = mappend c1 c2
            p2' = max 0 $ p2 - length c1
-           lp2' = min p2' lp2
+           lp2' = min (pred p2') lp2
            l2' = if l2 == 0 then 0 else max 0 $ l2 - Textual.foldl_' countLines 0 c1
            countLines :: Int -> Char -> Int
            countLines n '\n' = succ n
@@ -242,7 +242,7 @@ instance StableFactorial m => Factorial (OffsetPositioned m) where
 
 instance (StableFactorial m, FactorialMonoid m) => FactorialMonoid (OffsetPositioned m) where
    splitPrimePrefix (OffsetPositioned p c) = fmap rewrap (splitPrimePrefix c)
-      where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (succ p) cs)
+      where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (if null cs then 0 else succ p) cs)
    splitPrimeSuffix (OffsetPositioned p c) = fmap rewrap (splitPrimeSuffix c)
       where rewrap (cp, cs) = (OffsetPositioned p cp, OffsetPositioned (p + length cp) cs)
    spanMaybe s0 f (OffsetPositioned p0 t) = rewrap $ Factorial.spanMaybe (s0, p0) f' t
@@ -310,8 +310,8 @@ instance (StableFactorial m, TextualMonoid m) => Factorial (LinePositioned m) wh
 instance (StableFactorial m, TextualMonoid m) => FactorialMonoid (LinePositioned m) where
    splitPrimePrefix (LinePositioned p l lp c) = fmap rewrap (splitPrimePrefix c)
       where rewrap (cp, cs) = (LinePositioned p l lp cp,
-                               if characterPrefix cp == Just '\n'
-                               then LinePositioned (succ p) (succ l) p cs
+                               if null cs then mempty
+                               else if characterPrefix cp == Just '\n' then LinePositioned (succ p) (succ l) p cs
                                else LinePositioned (succ p) l lp cs)
    splitPrimeSuffix (LinePositioned p l lp c) = fmap rewrap (splitPrimeSuffix c)
       where rewrap (cp, cs) = (LinePositioned p l lp cp, LinePositioned p' (l + lines) (p' - columns) cs)
@@ -369,7 +369,8 @@ instance IsString m => IsString (LinePositioned m) where
    fromString = pure . fromString
 
 instance (StableFactorial m, TextualMonoid m) => TextualMonoid (OffsetPositioned m) where
-   splitCharacterPrefix (OffsetPositioned p c) = fmap (fmap $ OffsetPositioned $ succ p) (splitCharacterPrefix c)
+   splitCharacterPrefix (OffsetPositioned p c) = fmap rewrap (splitCharacterPrefix c)
+      where rewrap (c, cs) = if null cs then (c, mempty) else (c, OffsetPositioned (succ p) cs)
 
    fromText = pure . fromText
    singleton = pure . singleton
@@ -473,6 +474,7 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
    splitCharacterPrefix (LinePositioned p l lp c) =
       case splitCharacterPrefix c
       of Nothing -> Nothing
+         Just (c, rest) | null rest -> Just (c, mempty)
          Just ('\n', rest) -> Just ('\n', LinePositioned (succ p) (succ l) p rest)
          Just (ch, rest) -> Just (ch, LinePositioned (succ p) l lp rest)
 
@@ -597,12 +599,12 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
    {-# INLINE takeWhile_ #-}
 
 linesColumns :: TextualMonoid m => m -> (Int, Int)
-linesColumns t = Textual.foldl (const . fmap succ) fc (0, 0) t
-   where fc (l, _) '\n' = (succ l, 0)
+linesColumns t = Textual.foldl (const . fmap succ) fc (0, 1) t
+   where fc (l, _) '\n' = (succ l, 1)
          fc (l, c) _ = (l, succ c)
 linesColumns' :: TextualMonoid m => m -> (Int, Int)
-linesColumns' t = Textual.foldl' (const . fmap succ) fc (0, 0) t
-   where fc (l, _) '\n' = let l' = succ l in seq l' (l', 0)
+linesColumns' t = Textual.foldl' (const . fmap succ) fc (0, 1) t
+   where fc (l, _) '\n' = let l' = succ l in seq l' (l', 1)
          fc (l, c) _ = let c' = succ c in seq c' (l, c')
 {-# INLINE linesColumns #-}
 {-# INLINE linesColumns' #-}

@@ -214,7 +214,9 @@ textualInstances = map upcast stableTextualInstances
                        TextualMonoidInstance (mempty :: Lazy.Text),
                        TextualMonoidInstance (mempty :: Seq Char),
                        TextualMonoidInstance (mempty :: Vector Char),
-                       TextualMonoidInstance (mempty :: Stateful (IntMap Int) Text)]
+                       TextualMonoidInstance (mempty :: Stateful (IntMap Int) Text),
+                       TextualMonoidInstance (mempty :: TestOffsetPositionedString),
+                       TextualMonoidInstance (mempty :: TestLinePositionedString)]
    where upcast (StableTextualMonoidInstance i) = TextualMonoidInstance i
 
 stableTextualInstances :: [StableTextualMonoidInstance]
@@ -680,8 +682,8 @@ checkTextualDropWhile (TextualMonoidInstance (_ :: a)) =
    where check1 a = textualFactors (Textual.dropWhile (const True) isLetter a)
                     == List.dropWhile (either (const True) isLetter) (textualFactors a)
                     && Textual.dropWhile (const False) (const False) a == a
-         check2 s = Textual.dropWhile undefined isLetter (fromString s :: a)
-                    == fromString (List.dropWhile isLetter s)
+         check2 s = Textual.toString undefined (Textual.dropWhile undefined isLetter (fromString s :: a))
+                    == List.dropWhile isLetter s
 
 checkTextualSpan (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
    where check a = Textual.span pt pc a == (Textual.takeWhile pt pc a, Textual.dropWhile pt pc a)
@@ -740,8 +742,8 @@ checkTextualDropWhile_ (TextualMonoidInstance (_ :: a)) =
    where check1 a = textualFactors (Textual.dropWhile_ True isLetter a)
                     == List.dropWhile (either (const True) isLetter) (textualFactors a)
                     && Textual.dropWhile_ False (const False) a == a
-         check2 s = Textual.dropWhile_ undefined isLetter (fromString s :: a)
-                    == fromString (List.dropWhile isLetter s)
+         check2 s = Textual.toString undefined (Textual.dropWhile_ undefined isLetter (fromString s :: a))
+                    == List.dropWhile isLetter s
 
 checkTextualSplit (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
    where check a = List.all (List.all isLetter . rights . textualFactors) (Textual.split (not . isLetter) a)
@@ -870,6 +872,18 @@ newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrar
                                                  Monoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, IsString)
 
+newtype TestOffsetPositionedString = TestOffsetPositionedString (OffsetPositioned String)
+                                     deriving (Show, Arbitrary, CoArbitrary,
+                                               Semigroup, LeftReductive, LeftCancellative,
+                                               Monoid, LeftGCDMonoid,
+                                               MonoidNull, PositiveMonoid, IsString)
+
+newtype TestLinePositionedString = TestLinePositionedString (LinePositioned String)
+                               deriving (Show, Arbitrary, CoArbitrary,
+                                         Semigroup, LeftReductive, LeftCancellative,
+                                         Monoid, LeftGCDMonoid,
+                                         MonoidNull, PositiveMonoid, IsString)
+
 instance Factorial TestString where
    factors (TestString s) = TestString <$> factors s
 
@@ -880,6 +894,35 @@ instance FactorialMonoid TestString where
 instance TextualMonoid TestString where
    splitCharacterPrefix (TestString []) = Nothing
    splitCharacterPrefix (TestString (x:xs)) = Just (x, TestString xs)
+
+instance Eq TestOffsetPositionedString where
+   TestOffsetPositionedString a == TestOffsetPositionedString b =
+      a == b && Positioned.position a == Positioned.position b
+
+instance Factorial TestOffsetPositionedString where
+   factors (TestOffsetPositionedString s) = TestOffsetPositionedString <$> factors s
+
+instance FactorialMonoid TestOffsetPositionedString where
+   splitPrimePrefix (TestOffsetPositionedString s) = rewrap <$> splitPrimePrefix s
+      where rewrap (x, xs) = (TestOffsetPositionedString x, TestOffsetPositionedString xs)
+
+instance TextualMonoid TestOffsetPositionedString where
+   splitCharacterPrefix (TestOffsetPositionedString x) = (TestOffsetPositionedString <$>) <$> Textual.splitCharacterPrefix x
+
+instance Eq TestLinePositionedString where
+   TestLinePositionedString a == TestLinePositionedString b =
+      a == b && Positioned.line a == Positioned.line b && Positioned.column a == Positioned.column b
+      && Positioned.position a == Positioned.position b
+
+instance Factorial TestLinePositionedString where
+   factors (TestLinePositionedString s) = TestLinePositionedString <$> factors s
+
+instance FactorialMonoid TestLinePositionedString where
+   splitPrimePrefix (TestLinePositionedString s) = rewrap <$> splitPrimePrefix s
+      where rewrap (x, xs) = (TestLinePositionedString x, TestLinePositionedString xs)
+
+instance TextualMonoid TestLinePositionedString where
+   splitCharacterPrefix (TestLinePositionedString x) = (TestLinePositionedString <$>) <$> Textual.splitCharacterPrefix x
 
 instance Arbitrary ByteStringUTF8 where
    arbitrary = fmap ByteStringUTF8 arbitrary
