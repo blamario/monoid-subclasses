@@ -1,3 +1,10 @@
+Version 1.1
+---------------
+* Added a new TextualMonoid method `toText` for performance
+* Fixed the calculations of `column` of `LinePositioned`
+* Changed the `column` of `LinePositioned` to be one-based
+* `LinePositioned` now treats FF, CR, and TAB characters as
+  special, in accordance with Haskell language specification.
 
 Version 1.0.1
 ---------------
@@ -11,7 +18,7 @@ Version 1.0
 * Introduced the `Monus` class
 * Introduced the `OverlappingGCDMonoid` class
 * Added the instances of type `Sum Natural` and `Product Natural`
-* Using the language extensions 'FlexibleInstances' and 'OverlappingInstances'
+* Using the language extensions `FlexibleInstances` and `OverlappingInstances`
 * Removed the linear complexity requirement
 * Added and documented less efficient instances
 * Moved various GCD classes into the new module `Data.Monoid.GCD`
