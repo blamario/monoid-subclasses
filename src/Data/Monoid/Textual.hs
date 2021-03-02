@@ -80,6 +80,7 @@ import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, fol
 -- > takeWhile (const True) (const True)
 -- > dropWhile (const False) (const False)
 -- > toString undefined . fromString
+-- > toText undefined . fromText
 
 class (IsString t, LeftReductive t, LeftGCDMonoid t, FactorialMonoid t) => TextualMonoid t where
    -- | Contructs a new data type instance Like 'fromString', but from a 'Text' input instead of 'String'.
@@ -108,6 +109,8 @@ class (IsString t, LeftReductive t, LeftGCDMonoid t, FactorialMonoid t) => Textu
    -- | Returns the list of characters the monoid contains, once the argument function converts all its non-character
    -- factors into characters.
    toString :: (t -> String) -> t -> String
+   -- | Converts the monoid into 'Text', given a function to convert the non-character factors into chunks of 'Text'.
+   toText :: (t -> Text) -> t -> Text
    -- | Equivalent to 'List.any' from "Data.List". Ignores all non-character data.
    any :: (Char -> Bool) -> t -> Bool
    -- | Equivalent to 'List.all' from "Data.List". Ignores all non-character data.
@@ -190,6 +193,7 @@ class (IsString t, LeftReductive t, LeftGCDMonoid t, FactorialMonoid t) => Textu
    map f = concatMap (singleton . f)
    concatMap f = foldr mappend (mappend . f) mempty
    toString f = foldr (mappend . f) (:) []
+   toText f = Text.pack . toString (Text.unpack . f)
    all p = foldr (const id) ((&&) . p) True
    any p = foldr (const id) ((||) . p) False
 
@@ -362,6 +366,7 @@ instance TextualMonoid Text where
    map = Text.map
    concatMap = Text.concatMap
    toString = const Text.unpack
+   toText = const id
    any = Text.any
    all = Text.all
 
@@ -425,6 +430,7 @@ instance TextualMonoid LazyText.Text where
    map = LazyText.map
    concatMap = LazyText.concatMap
    toString = const LazyText.unpack
+   toText = const LazyText.toStrict
    any = LazyText.any
    all = LazyText.all
 

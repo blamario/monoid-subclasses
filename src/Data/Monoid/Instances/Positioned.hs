@@ -481,6 +481,8 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (OffsetPositioned
       where rewrap (prefix, suffix) = (OffsetPositioned p0 prefix, OffsetPositioned (p0 + length prefix) suffix)
    dropWhile_ bt fc t = snd (span_ bt fc t)
    takeWhile_ bt fc (OffsetPositioned p t) = OffsetPositioned p (takeWhile_ bt fc t)
+   toString ft (OffsetPositioned _ t) = toString (ft . pure) t
+   toText ft (OffsetPositioned _ t) = toText (ft . pure) t
 
    {-# INLINE characterPrefix #-}
    {-# INLINE splitCharacterPrefix #-}
@@ -632,6 +634,8 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
    break_ bt fc t = span_ (not bt) (not . fc) t
    dropWhile_ bt fc t = snd (span_ bt fc t)
    takeWhile_ bt fc (LinePositioned p l lp t) = LinePositioned p l lp (takeWhile_ bt fc t)
+   toString ft lpt = toString (ft . pure) (extractLines lpt)
+   toText ft lpt = toText (ft . pure) (extractLines lpt)
 
    {-# INLINE characterPrefix #-}
    {-# INLINE splitCharacterPrefix #-}

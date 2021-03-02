@@ -52,6 +52,8 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as ByteString.Char8
 import Data.ByteString.Internal (w2c)
 import Data.ByteString.Unsafe (unsafeDrop, unsafeHead, unsafeTail, unsafeTake, unsafeIndex)
+import Data.Text (pack, unpack)
+import Data.Text.Encoding (decodeUtf8', encodeUtf8)
 
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..))
@@ -384,6 +386,8 @@ instance TextualMonoid ByteStringUTF8 where
      | c < '\x80' = ByteString.Char8.elem c bs
      | otherwise = any (== c) utf8
    {-# INLINE elem #-}
+   fromText = ByteStringUTF8 . encodeUtf8
+   toText f t@(ByteStringUTF8 bs) = either (const $ pack $ toString (unpack . f) t) id (decodeUtf8' bs)
 
 reverseBytesToChar :: (ByteString -> a) -> (Char -> a) -> [Word8] -> a
 reverseBytesToChar ft fc [w] = if w < 0x80 then fc (w2c w) else ft (ByteString.singleton w)

@@ -31,6 +31,7 @@ import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
 
 import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, map, concatMap,
                        length, null, reverse, scanl, scanr, scanl1, scanr1, span, splitAt, pi)
@@ -223,6 +224,7 @@ instance (Eq a, TextualMonoid a, StableFactorial a, PositiveMonoid a) => Textual
    characterPrefix (x :<> _) = characterPrefix x
    map f x = map f <$> x
    toString ft x = List.concatMap (toString $ ft . Leaf) (Foldable.toList x)
+   toText ft x = Text.concat (toText (ft . Leaf) <$> Foldable.toList x)
 
    foldl ft fc = Foldable.foldl g
       where g = Textual.foldl (\a-> ft a . Leaf) fc
