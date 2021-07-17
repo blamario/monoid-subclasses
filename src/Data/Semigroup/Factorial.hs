@@ -419,7 +419,7 @@ instance StableFactorial (Vector.Vector a)
 instance StableFactorial (Sum Natural)
 
 -- | A 'Monad.mapM' equivalent.
-mapM :: (Factorial a, Monoid b, Monad m) => (a -> m b) -> a -> m b
+mapM :: (Factorial a, Semigroup b, Monoid b, Monad m) => (a -> m b) -> a -> m b
 mapM f = ($ return mempty) . appEndo . Data.Semigroup.Factorial.foldMap (Endo . Monad.liftM2 mappend . f)
 
 -- | A 'Monad.mapM_' equivalent.
