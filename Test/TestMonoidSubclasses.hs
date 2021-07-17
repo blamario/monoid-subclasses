@@ -880,13 +880,13 @@ newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrar
 
 newtype TestOffsetPositionedString = TestOffsetPositionedString (OffsetPositioned String)
                                      deriving (Show, Arbitrary, CoArbitrary,
-                                               Semigroup, LeftReductive, LeftCancellative,
+                                               Semigroup, LeftReductive,
                                                Monoid, LeftGCDMonoid,
                                                MonoidNull, PositiveMonoid, IsString)
 
 newtype TestLinePositionedString = TestLinePositionedString (LinePositioned String)
                                deriving (Show, Arbitrary, CoArbitrary,
-                                         Semigroup, LeftReductive, LeftCancellative,
+                                         Semigroup, LeftReductive,
                                          Monoid, LeftGCDMonoid,
                                          MonoidNull, PositiveMonoid, IsString)
 
