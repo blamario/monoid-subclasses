@@ -1,3 +1,8 @@
+Version 1.1.1
+---------------
+* Fixed compilation with GHC 8.0.2
+* `Positioned` doesn't use a column for zero-width characters any more
+
 Version 1.1
 ---------------
 * Added a new TextualMonoid method `toText` for performance
