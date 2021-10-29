@@ -18,7 +18,7 @@
 -- 
 -- * 'OverlappingGCDMonoid'
 
-{-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE CPP, Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.GCD (
    GCDMonoid(..),
@@ -383,15 +383,22 @@ instance LeftGCDMonoid Text.Text where
    stripCommonPrefix x y = maybe (Text.empty, x, y) id (Text.commonPrefixes x y)
 
 -- | @since 1.0
--- /O(suffixLength)/
+-- /O(suffixLength)/, except on GHCjs where it is /O(m+n)/
 instance RightGCDMonoid Text.Text where
-   stripCommonSuffix x@(Internal.Text xarr xoff xlen) y@(Internal.Text yarr yoff ylen) = go (pred xlen) (pred ylen)
+#if !ghcjs_HOST_OS
+  stripCommonSuffix x@(Internal.Text xarr xoff xlen) y@(Internal.Text yarr yoff ylen) = go (pred xlen) (pred ylen)
       where go i j | i >= 0 && j >= 0 && xc == yc = go (i+xd) (j+yd)
                    | otherwise = (Internal.text xarr xoff (succ i),
                                   Internal.text yarr yoff (succ j),
                                   Internal.text xarr (xoff+i+1) (xlen-i-1))
                where (xc, xd) = reverseIter x i
                      (yc, yd) = reverseIter y j
+#else
+  stripCommonSuffix x y =
+    let (xlist, ylist, slist) =
+          stripCommonSuffix (Text.unpack x) (Text.unpack y)
+    in (Text.pack xlist, Text.pack ylist, Text.pack slist)
+#endif
 
 -- Lazy Text instances
 
@@ -402,6 +409,7 @@ instance LeftGCDMonoid LazyText.Text where
 -- | @since 1.0
 -- /O(m+n)/
 instance RightGCDMonoid LazyText.Text where
+#if !ghcjs_HOST_OS
    stripCommonSuffix x0 y0
       | x0len < y0len = go id y0p id x0 y0s
       | x0len > y0len = go x0p id id x0s y0
@@ -431,3 +439,9 @@ instance RightGCDMonoid LazyText.Text where
                | (x1p, y1p, c1s) <- stripCommonSuffix x y =
                     go (xp . cs . LazyInternal.chunk x1p) (yp . cs . LazyInternal.chunk y1p) (LazyInternal.chunk c1s) xs ys
             go _ _ _ _ _ = error "impossible"
+#else
+  stripCommonSuffix x y =
+    let (xlist, ylist, slist) =
+          stripCommonSuffix (LazyText.unpack x) (LazyText.unpack y)
+    in (LazyText.pack xlist, LazyText.pack ylist, LazyText.pack slist)
+#endif
