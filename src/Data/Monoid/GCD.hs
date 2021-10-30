@@ -33,10 +33,12 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Unsafe as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as TextEncoding
 import qualified Data.Text.Internal as Internal
 import qualified Data.Text.Internal.Lazy as LazyInternal
 import           Data.Text.Unsafe (lengthWord16, reverseIter)
 import qualified Data.Text.Lazy as LazyText
+import qualified Data.Text.Lazy.Encoding as LazyEncoding
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.Map as Map
@@ -396,8 +398,8 @@ instance RightGCDMonoid Text.Text where
 #else
   stripCommonSuffix x y =
     let (xlist, ylist, slist) =
-          stripCommonSuffix (Text.unpack x) (Text.unpack y)
-    in (Text.pack xlist, Text.pack ylist, Text.pack slist)
+          stripCommonSuffix (TextEncoding.encodeUtf8 x) (TextEncoding.encodeUtf8 y)
+    in (TextEncoding.decodeUtf8 xlist, TextEncoding.decodeUtf8 ylist, TextEncoding.decodeUtf8 slist)
 #endif
 
 -- Lazy Text instances
@@ -442,6 +444,6 @@ instance RightGCDMonoid LazyText.Text where
 #else
   stripCommonSuffix x y =
     let (xlist, ylist, slist) =
-          stripCommonSuffix (LazyText.unpack x) (LazyText.unpack y)
-    in (LazyText.pack xlist, LazyText.pack ylist, LazyText.pack slist)
+          stripCommonSuffix (LazyEncoding.encodeUtf8 x) (LazyEncoding.encodeUtf8 y)
+    in (LazyEncoding.decodeUtf8 xlist, LazyEncoding.decodeUtf8 ylist, LazyEncoding.decodeUtf8 slist)
 #endif
