@@ -1,3 +1,9 @@
+Version 1.1.2
+---------------
+* CI tests
+* Fallback implementation of `stripCommonSuffix @Text` for GHCjs by Jack Kelly
+* Fixed documentation bug #31, Factorial laws too strong
+
 Version 1.1.1
 ---------------
 * Fixed compilation with GHC 8.0.2
