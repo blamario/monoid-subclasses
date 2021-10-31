@@ -38,8 +38,8 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
                        null, reverse, span, splitAt, take, takeWhile)
 
 
--- | Class of monoids that can be split into irreducible (/i.e./, atomic or prime) 'factors' in a unique way. Factors of
--- a 'Product' are literally its prime factors:
+-- | Class of monoids that can be split into irreducible (/i.e./, atomic or prime) 'factors' in a unique way. Note that
+-- 'mempty' is not considered a factor. Factors of a 'Product' are literally its prime factors:
 --
 -- prop> factors (Product 12) == [Product 2, Product 2, Product 3]
 --

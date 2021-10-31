@@ -52,9 +52,7 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 -- 
 -- > maybe id sconcat  . nonEmpty . factors == id
 -- > List.all (\prime-> factors prime == [prime]) . factors
--- > factors . reverse == List.reverse . factors
 -- > primePrefix s == foldr const s s
--- > primeSuffix s == primePrefix (reverse s)
 -- > foldl f a == List.foldl f a . factors
 -- > foldl' f a == List.foldl' f a . factors
 -- > foldr f a == List.foldr f a . factors
@@ -93,9 +91,11 @@ class Semigroup m => Factorial m where
    reverse s = maybe s sconcat (nonEmpty $ List.reverse $ factors s)
    {-# MINIMAL factors | foldr #-}
 
--- | A subclass of 'Factorial' whose instances satisfy this additional law:
+-- | A subclass of 'Factorial' whose instances satisfy the following additional laws:
 --
 -- > factors (a <> b) == factors a <> factors b
+-- > factors . reverse == List.reverse . factors
+-- > primeSuffix s == primePrefix (reverse s)
 class Factorial m => StableFactorial m
 
 instance Factorial () where
