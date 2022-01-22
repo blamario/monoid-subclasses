@@ -36,7 +36,10 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as TextEncoding
 import qualified Data.Text.Internal as Internal
 import qualified Data.Text.Internal.Lazy as LazyInternal
-import           Data.Text.Unsafe (lengthWord16, reverseIter)
+import           Data.Text.Unsafe (reverseIter)
+#if MIN_VERSION_text(2,0,0)
+import           Data.Text.Unsafe (Iter(..))
+#endif
 import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Encoding as LazyEncoding
 import qualified Data.IntMap as IntMap
@@ -393,8 +396,13 @@ instance RightGCDMonoid Text.Text where
                    | otherwise = (Internal.text xarr xoff (succ i),
                                   Internal.text yarr yoff (succ j),
                                   Internal.text xarr (xoff+i+1) (xlen-i-1))
+#if MIN_VERSION_text(2,0,0)
+               where Iter xc xd = reverseIter x i
+                     Iter yc yd = reverseIter y j
+#else
                where (xc, xd) = reverseIter x i
                      (yc, yd) = reverseIter y j
+#endif
 #else
   stripCommonSuffix x y =
     let (xlist, ylist, slist) =
@@ -421,7 +429,7 @@ instance RightGCDMonoid LazyText.Text where
             x0len = lazyLengthWord16 x0
             y0len = lazyLengthWord16 y0
             lazyLengthWord16 = LazyText.foldlChunks addLength 0
-            addLength n x = n + lengthWord16 x
+            addLength n x = n + (\(Internal.Text _ _ l) -> l) x
             splitWord16 xp 0 x = (xp, x)
             splitWord16 xp n (LazyInternal.Chunk x@(Internal.Text arr off len) xs)
                | n < len = (xp . LazyInternal.chunk (Internal.Text arr off n),
