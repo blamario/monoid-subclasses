@@ -1,3 +1,7 @@
+Version 1.1.3
+---------------
+* Support for text-2.0 by Bodigrim
+
 Version 1.1.2
 ---------------
 * CI tests
