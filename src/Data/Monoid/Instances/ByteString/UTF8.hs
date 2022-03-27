@@ -95,7 +95,7 @@ instance Semigroup ByteStringUTF8 where
 instance Monoid ByteStringUTF8 where
    mempty = ByteStringUTF8 ByteString.empty
    {-# INLINE mempty #-}
-   ByteStringUTF8 a `mappend` ByteStringUTF8 b = ByteStringUTF8 (a `mappend` b)
+   mappend = (<>)
    {-# INLINE mappend #-}
 
 -- | O(1)

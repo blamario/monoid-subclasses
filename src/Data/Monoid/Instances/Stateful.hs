@@ -64,9 +64,9 @@ instance (Semigroup a, Semigroup b) => Semigroup (Stateful a b) where
    Stateful x <> Stateful y = Stateful (x <> y)
    {-# INLINE (<>) #-}
 
-instance (Monoid a, Monoid b) => Monoid (Stateful a b) where
+instance (Semigroup a, Semigroup b, Monoid a, Monoid b) => Monoid (Stateful a b) where
    mempty = Stateful mempty
-   Stateful x `mappend` Stateful y = Stateful (mappend x y)
+   mappend = (<>)
    {-# INLINE mempty #-}
    {-# INLINE mappend #-}
 

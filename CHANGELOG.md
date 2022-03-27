@@ -1,3 +1,8 @@
+Version 1.1.4
+---------------
+* Canonicalized all `mappend` definitions
+* Added `deriving (Data, Typeable)` to all data types
+
 Version 1.1.3
 ---------------
 * Support for text-2.0 by Bodigrim
