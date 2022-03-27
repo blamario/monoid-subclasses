@@ -1,5 +1,5 @@
 {-
-    Copyright 2013-2019 Mario Blazevic
+    Copyright 2013-2022 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -12,7 +12,7 @@
 -- >> factors s
 -- >[Stateful ("d",[]),Stateful ("a",[]),Stateful ("t",[]),Stateful ("a",[]),Stateful ("",[4])]
 
-{-# LANGUAGE Haskell2010 #-}
+{-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
 
 module Data.Monoid.Instances.Stateful (
    Stateful(Stateful), extract, state, setState
@@ -20,6 +20,7 @@ module Data.Monoid.Instances.Stateful (
 where
 
 import Control.Applicative -- (Applicative(..))
+import Data.Data (Data, Typeable)
 import Data.Functor -- ((<$>))
 import qualified Data.List as List
 import Data.String (IsString(..))
@@ -41,7 +42,7 @@ import Prelude hiding (all, any, break, elem, drop, filter, foldl, foldl1, foldr
 -- | @'Stateful' a b@ is a wrapper around the 'Monoid' @b@ that carries the state @a@ along. The state type @a@ must be
 -- a monoid as well if 'Stateful' is to be of any use. In the 'FactorialMonoid' and 'TextualMonoid' class instances, the
 -- monoid @b@ has the priority and the state @a@ is left for the end.
-newtype Stateful a b = Stateful (b, a) deriving (Eq, Ord, Show)
+newtype Stateful a b = Stateful (b, a) deriving (Data, Eq, Ord, Show, Typeable)
 
 extract :: Stateful a b -> b
 extract (Stateful (t, _)) = t

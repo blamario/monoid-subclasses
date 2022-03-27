@@ -1,5 +1,5 @@
 {-
-    Copyright 2014-2021 Mario Blazevic
+    Copyright 2014-2022 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -18,7 +18,7 @@
 -- >> Data.Monoid.Factorial.drop 13 p
 -- >Line 2, column 4: "l\nmnop\n"
 
-{-# LANGUAGE Haskell2010 #-}
+{-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
 
 module Data.Monoid.Instances.Positioned (
    OffsetPositioned, LinePositioned, extract, position, line, column
@@ -29,6 +29,7 @@ import Control.Applicative -- (Applicative(..))
 import qualified Data.List as List
 import Data.String (IsString(..))
 
+import Data.Data (Data, Typeable)
 import Data.Semigroup (Semigroup(..))
 import Data.Monoid (Monoid(..), Endo(..))
 import Data.Semigroup.Cancellative (LeftReductive(..), RightReductive(..))
@@ -50,13 +51,13 @@ class Positioned p where
 
 data OffsetPositioned m = OffsetPositioned{offset :: !Int,
                                            -- ^ the current offset
-                                           extractOffset :: m}
+                                           extractOffset :: m} deriving (Data, Typeable)
 
 data LinePositioned m = LinePositioned{fullOffset :: !Int,
                                        -- | the current line
                                        line :: !Int,
                                        lineStart :: !Int,
-                                       extractLines :: m}
+                                       extractLines :: m} deriving (Data, Typeable)
 
 -- | the current column
 column :: LinePositioned m -> Int

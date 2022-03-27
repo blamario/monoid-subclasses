@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2019 Mario Blazevic
+    Copyright 2013-2022 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -32,7 +32,7 @@
 -- >> factors utf8'
 -- >["D","<","l","b","\[193,177]"]
 
-{-# LANGUAGE Haskell2010 #-}
+{-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
 
 module Data.Monoid.Instances.ByteString.UTF8 (
    ByteStringUTF8(..), decode
@@ -42,6 +42,7 @@ where
 import Control.Exception (assert)
 import Data.Bits ((.&.), (.|.), shiftL, shiftR)
 import Data.Char (chr, ord, isDigit, isPrint)
+import Data.Data (Data, Typeable)
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.Maybe (fromMaybe, isJust, isNothing)
@@ -69,7 +70,7 @@ import qualified Data.Monoid.Textual as Textual (TextualMonoid(..))
 import Prelude hiding (any, drop, dropWhile, foldl, foldl1, foldr, foldr1, scanl, scanr, scanl1, scanr1,
                        map, concatMap, break, span)
 
-newtype ByteStringUTF8 = ByteStringUTF8 ByteString deriving (Eq, Ord)
+newtype ByteStringUTF8 = ByteStringUTF8 ByteString deriving (Data, Eq, Ord, Typeable)
 
 -- | Takes a raw 'ByteString' chunk and returns a pair of 'ByteStringUTF8' decoding the prefix of the chunk and the
 -- remaining suffix that is either null or contains the incomplete last character of the chunk.

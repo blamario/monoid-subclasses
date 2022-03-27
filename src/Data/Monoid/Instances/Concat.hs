@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2019 Mario Blazevic
+    Copyright 2013-2022 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -7,7 +7,7 @@
 -- | This module defines the monoid transformer data type 'Concat'.
 -- 
 
-{-# LANGUAGE Haskell2010 #-}
+{-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
 
 module Data.Monoid.Instances.Concat (
    Concat, concatenate, extract, force
@@ -16,6 +16,7 @@ where
 
 import Control.Applicative -- (Applicative(..))
 import Control.Arrow (first)
+import Data.Data (Data, Typeable)
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.String (IsString(..))
@@ -46,7 +47,7 @@ import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, ma
 --
 data Concat a = Leaf a
               | Concat a :<> Concat a
-              deriving Show
+              deriving (Data, Show, Typeable)
 
 {-# DEPRECATED concatenate, extract "Concat is not wrapping Seq any more, don't use concatenate nor extract." #-}
 concatenate :: PositiveMonoid a => Seq a -> Concat a

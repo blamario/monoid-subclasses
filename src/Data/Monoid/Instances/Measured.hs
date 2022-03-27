@@ -1,5 +1,5 @@
 {- 
-    Copyright 2013-2019 Mario Blazevic
+    Copyright 2013-2022 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
@@ -7,7 +7,7 @@
 -- | This module defines the monoid transformer data type 'Measured'.
 -- 
 
-{-# LANGUAGE Haskell2010 #-}
+{-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
 
 module Data.Monoid.Instances.Measured (
    Measured, measure, extract
@@ -15,6 +15,7 @@ module Data.Monoid.Instances.Measured (
 where
 
 import Data.Functor -- ((<$>))
+import Data.Data (Data, Typeable)
 import qualified Data.List as List
 import Data.String (IsString(..))
 import Data.Semigroup (Semigroup(..))
@@ -35,7 +36,7 @@ import Prelude hiding (all, any, break, filter, foldl, foldl1, foldr, foldr1, ma
 -- constant-time operation. The parameter is restricted to the 'StableFactorial' class, which guarantees that
 -- @'length' (a <> b) == 'length' a + 'length' b@.
 
-data Measured a = Measured{_measuredLength :: Int, extract :: a} deriving (Eq, Show)
+data Measured a = Measured{_measuredLength :: Int, extract :: a} deriving (Data, Eq, Show, Typeable)
 
 -- | Create a new 'Measured' value.
 measure :: Factorial a => a -> Measured a
