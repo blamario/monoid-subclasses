@@ -38,6 +38,7 @@ module Data.Semigroup.Cancellative (
 where
 
 import Data.Semigroup -- (Semigroup, Dual(..), Sum(..), Product(..))
+import Data.Semigroup.Commutative
 import qualified Data.List as List
 import Data.Maybe (isJust)
 import qualified Data.ByteString as ByteString
@@ -52,11 +53,7 @@ import qualified Data.Sequence as Sequence
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Numeric.Natural (Natural)
-
--- | Class of all Abelian (/i.e./, commutative) semigroups that satisfy the commutativity property:
--- 
--- > a <> b == b <> a
-class Semigroup m => Commutative m
+import Numeric.Product.Commutative (CommutativeProduct)
 
 -- | Class of Abelian semigroups with a partial inverse for the Semigroup '<>' operation. The inverse operation '</>' must
 -- satisfy the following laws:
@@ -123,8 +120,6 @@ class RightReductive m => RightCancellative m
 
 -- Unit instances
 
-instance Commutative ()
-
 instance Reductive () where
    () </> () = Just ()
 
@@ -144,8 +139,6 @@ instance RightCancellative ()
 
 -- Dual instances
 
-instance Commutative a => Commutative (Dual a)
-
 instance Reductive a => Reductive (Dual a) where
    Dual a </> Dual b = fmap Dual (a </> b)
 
@@ -164,7 +157,6 @@ instance LeftCancellative a => RightCancellative (Dual a)
 instance RightCancellative a => LeftCancellative (Dual a)
 
 -- Sum instances
-instance Num a => Commutative (Sum a)
 
 -- | Helper class to avoid @FlexibleInstances@
 class Num a => SumCancellative a where
@@ -198,23 +190,19 @@ instance SumCancellative a => RightCancellative (Sum a)
 
 -- Product instances
 
-instance Num a => Commutative (Product a)
-
-instance Integral a => Reductive (Product a) where
+instance (CommutativeProduct a, Integral a) => Reductive (Product a) where
    Product 0 </> Product 0 = Just (Product 0)
    Product _ </> Product 0 = Nothing
    Product a </> Product b = if remainder == 0 then Just (Product quotient) else Nothing
       where (quotient, remainder) = quotRem a b
 
-instance Integral a => LeftReductive (Product a) where
+instance (CommutativeProduct a, Integral a) => LeftReductive (Product a) where
    stripPrefix a b = b </> a
 
-instance Integral a => RightReductive (Product a) where
+instance (CommutativeProduct a, Integral a) => RightReductive (Product a) where
    stripSuffix a b = b </> a
 
 -- Pair instances
-
-instance (Commutative a, Commutative b) => Commutative (a, b)
 
 instance (Reductive a, Reductive b) => Reductive (a, b) where
    (a, b) </> (c, d) = case (a </> c, b </> d)
@@ -241,8 +229,6 @@ instance (RightCancellative a, RightCancellative b) => RightCancellative (a, b)
 
 -- Triple instances
 
-instance (Commutative a, Commutative b, Commutative c) => Commutative (a, b, c)
-
 instance (Reductive a, Reductive b, Reductive c) => Reductive (a, b, c) where
    (a1, b1, c1) </> (a2, b2, c2) = (,,) <$> (a1 </> a2) <*> (b1 </> b2) <*> (c1 </> c2)
 
@@ -261,8 +247,6 @@ instance (LeftCancellative a, LeftCancellative b, LeftCancellative c) => LeftCan
 instance (RightCancellative a, RightCancellative b, RightCancellative c) => RightCancellative (a, b, c)
 
 -- Quadruple instances
-
-instance (Commutative a, Commutative b, Commutative c, Commutative d) => Commutative (a, b, c, d)
 
 instance (Reductive a, Reductive b, Reductive c, Reductive d) => Reductive (a, b, c, d) where
    (a1, b1, c1, d1) </> (a2, b2, c2, d2) = (,,,) <$> (a1 </> a2) <*> (b1 </> b2) <*> (c1 </> c2) <*> (d1 </> d2)
@@ -290,9 +274,6 @@ instance (RightCancellative a, RightCancellative b,
 -- Maybe instances
 
 -- | @since 1.0
-instance Commutative x => Commutative (Maybe x)
-
--- | @since 1.0
 instance Reductive x => Reductive (Maybe x) where
    Just x </> Just y = Just <$> x </> y
    x </> Nothing = Just x
@@ -310,8 +291,6 @@ instance RightReductive x => RightReductive (Maybe x) where
 
 -- Set instances
 
-instance Ord a => Commutative (Set.Set a)
-
 -- | /O(m*log(n/m + 1)), m <= n/
 instance Ord a => LeftReductive (Set.Set a) where
    isPrefixOf = Set.isSubsetOf
@@ -328,8 +307,6 @@ instance Ord a => Reductive (Set.Set a) where
            | otherwise = Nothing
 
 -- IntSet instances
-
-instance Commutative IntSet.IntSet
 
 -- | /O(m+n)/
 instance LeftReductive IntSet.IntSet where
