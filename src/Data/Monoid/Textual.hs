@@ -274,12 +274,15 @@ class (IsString t, LeftReductive t, LeftGCDMonoid t, FactorialMonoid t) => Textu
    {-# INLINE foldl_ #-}
    {-# INLINE foldl_' #-}
    {-# INLINE foldr_ #-}
-   {-# INLINE spanMaybe_ #-}
-   {-# INLINE spanMaybe_' #-}
+   {-# INLINABLE spanMaybe_ #-}
+   {-# INLINABLE spanMaybe_' #-}
    {-# INLINE span_ #-}
    {-# INLINE break_ #-}
    {-# INLINE takeWhile_ #-}
    {-# INLINE dropWhile_ #-}
+   {-# INLINE elem #-}
+   {-# INLINABLE all #-}
+   {-# INLINABLE any #-}
    {-# MINIMAL splitCharacterPrefix #-}
 
 foldlChars :: TextualMonoid t => (Char -> Char -> Char) -> (t, Char) -> Char -> (t, Char)

@@ -502,13 +502,15 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (OffsetPositioned
    {-# INLINE concatMap #-}
    {-# INLINE foldl' #-}
    {-# INLINE foldr #-}
-   {-# INLINE spanMaybe' #-}
-   {-# INLINE span #-}
+   {-# INLINABLE spanMaybe #-}
+   {-# INLINABLE spanMaybe' #-}
+   {-# INLINABLE span #-}
    {-# INLINE foldl_' #-}
    {-# INLINE foldr_ #-}
    {-# INLINE any #-}
    {-# INLINE all #-}
-   {-# INLINE spanMaybe_' #-}
+   {-# INLINABLE spanMaybe_ #-}
+   {-# INLINABLE spanMaybe_' #-}
    {-# INLINE span_ #-}
    {-# INLINE break_ #-}
    {-# INLINE dropWhile_ #-}
@@ -674,8 +676,9 @@ instance (StableFactorial m, TextualMonoid m) => TextualMonoid (LinePositioned m
    {-# INLINE foldr_ #-}
    {-# INLINE any #-}
    {-# INLINE all #-}
-   {-# INLINE spanMaybe_' #-}
-   {-# INLINE span_ #-}
+   {-# INLINABLE spanMaybe_ #-}
+   {-# INLINABLE spanMaybe_' #-}
+   {-# INLINABLE span_ #-}
    {-# INLINE break_ #-}
    {-# INLINE dropWhile_ #-}
    {-# INLINE takeWhile_ #-}

@@ -90,6 +90,15 @@ class Semigroup m => Factorial m where
    foldMap f = foldr (mappend . f) mempty
    reverse s = maybe s sconcat (nonEmpty $ List.reverse $ factors s)
    {-# MINIMAL factors | foldr #-}
+   {-# INLINABLE factors #-}
+   {-# INLINE primePrefix #-}
+   {-# INLINE primeSuffix #-}
+   {-# INLINABLE foldl #-}
+   {-# INLINABLE foldl' #-}
+   {-# INLINABLE foldr #-}
+   {-# INLINE length #-}
+   {-# INLINE foldMap #-}
+   {-# INLINE reverse #-}
 
 -- | A subclass of 'Factorial' whose instances satisfy the following additional laws:
 --

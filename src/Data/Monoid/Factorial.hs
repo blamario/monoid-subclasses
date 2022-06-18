@@ -143,6 +143,18 @@ class (Factorial m, MonoidNull m) => FactorialMonoid m where
    drop n p = snd (splitAt n p)
    take n p = fst (splitAt n p)
    {-# MINIMAL #-}
+   {-# INLINABLE splitPrimePrefix #-}
+   {-# INLINABLE splitPrimeSuffix #-}
+   {-# INLINABLE inits #-}
+   {-# INLINABLE tails #-}
+   {-# INLINABLE span #-}
+   {-# INLINE break #-}
+   {-# INLINABLE spanMaybe #-}
+   {-# INLINABLE spanMaybe' #-}
+   {-# INLINABLE split #-}
+   {-# INLINE takeWhile #-}
+   {-# INLINE dropWhile #-}
+   {-# INLINABLE splitAt #-}
 
 {-# DEPRECATED StableFactorialMonoid "Use Data.Semigroup.Factorial.StableFactorial instead." #-}
 type StableFactorialMonoid m = (StableFactorial m, FactorialMonoid m, PositiveMonoid m)
