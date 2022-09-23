@@ -19,7 +19,7 @@ on:
 jobs:
   linux:
     name: Haskell-CI - Linux - ${{ matrix.compiler }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     container:
       image: buildpack-deps:xenial
     continue-on-error: ${{ matrix.allow-failure }}
@@ -35,10 +35,6 @@ jobs:
           - compiler: ghc-8.6.5
             allow-failure: false
           - compiler: ghc-8.4.4
-            allow-failure: false
-          - compiler: ghc-8.2.2
-            allow-failure: false
-          - compiler: ghc-8.0.2
             allow-failure: false
       fail-fast: false
     steps:
