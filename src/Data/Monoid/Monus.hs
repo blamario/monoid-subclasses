@@ -57,15 +57,14 @@ infix 5 <\>
 -- > stripSuffixOverlap b a <> overlap a b == a
 -- > overlap a b <> stripPrefixOverlap a b == b
 --
--- The result of @overlap a b@ must be the largest prefix of @b@ and suffix of @a@, in the sense that it is contained
--- in any other value @x@ that satifies the property @(x `isPrefixOf` b) && (x `isSuffixOf` a)@:
+-- The result of @overlap a b@ must be the largest prefix of @b@ and suffix of @a@, in the sense that it contains any
+-- other value @x@ that satifies the property @(x `isPrefixOf` b) && (x `isSuffixOf` a)@:
 --
--- > (x `isPrefixOf` overlap a b) && (x `isSuffixOf` overlap a b)
+-- > ∀x. (x `isPrefixOf` b && x `isSuffixOf` a) => (x `isPrefixOf` overlap a b && x `isSuffixOf` overlap a b)
 --
--- and it must be unique so it's not contained in any other value @y@ that satisfies the same property @(y
--- `isPrefixOf` b) && (y `isSuffixOf` a)@:
+-- and it must be unique so there's no other value @y@ that satisfies the same properties for every such @x@:
 --
--- > not ((y `isPrefixOf` overlap a b) && (y `isSuffixOf` overlap a b) && y /= overlap a b)
+-- > ∀y. ((∀x. (x `isPrefixOf` b && x `isSuffixOf` a) => x `isPrefixOf` y && x `isSuffixOf` y) => y == overlap a b)
 --
 -- @since 1.0
 class (Monoid m, LeftReductive m, RightReductive m) => OverlappingGCDMonoid m where
@@ -195,7 +194,7 @@ instance (Monus a, MonoidNull a) => Monus (Maybe a) where
 instance (OverlappingGCDMonoid a, MonoidNull a) => OverlappingGCDMonoid (Maybe a) where
    overlap (Just a) (Just b) = Just (overlap a b)
    overlap _ _ = Nothing
-   stripOverlap (Just a) (Just b) = (Just a', Just o, Just b')
+   stripOverlap (Just a) (Just b) = (if null a' then Nothing else Just a', Just o, if null b' then Nothing else Just b')
       where (a', o, b') = stripOverlap a b
    stripOverlap a b = (a, Nothing, b)
    stripPrefixOverlap (Just a) (Just b)
@@ -241,8 +240,8 @@ instance OverlappingGCDMonoid IntSet.IntSet where
 
 -- | /O(m+n)/
 instance (Ord k, Eq v) => OverlappingGCDMonoid (Map.Map k v) where
-    overlap = Map.intersection
-    stripOverlap a b = (stripPrefixOverlap b a, overlap a b, stripSuffixOverlap a b)
+    overlap = flip Map.intersection
+    stripOverlap a b = (stripSuffixOverlap b a, overlap a b, stripPrefixOverlap a b)
     stripPrefixOverlap = flip Map.difference
     stripSuffixOverlap a b = Map.differenceWith (\x y-> if x == y then Nothing else Just x) b a
 
@@ -250,8 +249,8 @@ instance (Ord k, Eq v) => OverlappingGCDMonoid (Map.Map k v) where
 
 -- | /O(m+n)/
 instance Eq a => OverlappingGCDMonoid (IntMap.IntMap a) where
-    overlap = IntMap.intersection
-    stripOverlap a b = (stripPrefixOverlap b a, overlap a b, stripSuffixOverlap a b)
+    overlap = flip IntMap.intersection
+    stripOverlap a b = (stripSuffixOverlap b a, overlap a b, stripPrefixOverlap a b)
     stripPrefixOverlap = flip IntMap.difference
     stripSuffixOverlap a b = IntMap.differenceWith (\x y-> if x == y then Nothing else Just x) b a
 

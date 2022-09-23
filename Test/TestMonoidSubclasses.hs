@@ -73,7 +73,8 @@ import Data.Monoid.Factorial (FactorialMonoid,
 import Data.Monoid.GCD (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, gcd,
                         commonPrefix, stripCommonPrefix,
                         commonSuffix, stripCommonSuffix)
-import Data.Monoid.Monus (OverlappingGCDMonoid, Monus, (<\>), stripPrefixOverlap, stripSuffixOverlap)
+import Data.Monoid.Monus (OverlappingGCDMonoid, Monus,
+                          (<\>), overlap, stripOverlap, stripPrefixOverlap, stripSuffixOverlap)
 import Data.Monoid.Textual (TextualMonoid)
 import qualified Data.Monoid.Textual as Textual
 
@@ -456,6 +457,9 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("stripSuffixOverlap 1", OverlappingGCDTest checkStripSuffixOverlap1),
          ("stripSuffixOverlap 2", OverlappingGCDTest checkStripSuffixOverlap2),
          ("stripSuffixOverlap 3", OverlappingGCDTest checkStripSuffixOverlap3),
+         ("overlap law 1", OverlappingGCDTest checkOverlapLaw1),
+         ("overlap law 2", OverlappingGCDTest checkOverlapLaw2),
+         ("overlap law 3", OverlappingGCDTest checkOverlapLaw3),
          ("isPrefixOf", LeftReductiveTest checkIsPrefixOf),
          ("stripSuffix", RightReductiveTest checkStripSuffix),
          ("isSuffixOf", RightReductiveTest checkIsSuffixOf),
@@ -777,6 +781,15 @@ checkIsSuffixOf (RightReductiveMonoidInstance (_ :: a)) = forAll (arbitrary :: G
 checkUnAppend (ReductiveMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = maybe a (b <>) (a </> b) == a
                         && maybe a (<> b) (a </> b) == a
+
+checkOverlapLaw1 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = stripOverlap a b == (stripSuffixOverlap b a, overlap a b, stripPrefixOverlap a b)
+
+checkOverlapLaw2 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = stripSuffixOverlap b a <> overlap a b == a
+
+checkOverlapLaw3 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
+   where check (a, b) = overlap a b <> stripPrefixOverlap a b == b
 
 checkStripPrefixOverlap1 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = o `isSuffixOf` b && b `isSuffixOf` (a <> o)
