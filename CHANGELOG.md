@@ -1,3 +1,9 @@
+Version 1.2
+---------------
+* Depending on new `commutative-semigroups` package
+* Modified the `instance OverlappingMonoid/Monus Map/IntMap` instances to conform with the class laws
+* Bumped the `vector` dependency upper bounds
+
 Version 1.1.4
 ---------------
 * Canonicalized all `mappend` definitions

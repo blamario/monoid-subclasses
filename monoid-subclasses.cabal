@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             1.1.4
+Version:             1.2
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
