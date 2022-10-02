@@ -1,5 +1,6 @@
 Version 1.2
 ---------------
+* Dropped support for GHC < 8.4
 * Depending on new `commutative-semigroups` package
 * Modified the `instance OverlappingMonoid/Monus Map/IntMap` instances to conform with the class laws
 * Bumped the `vector` dependency upper bounds
