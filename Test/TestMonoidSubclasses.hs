@@ -290,7 +290,9 @@ overlappingGCDMonoidInstances = map upcast monusInstances
 monusInstances = [MonusInstance (mempty :: Product Natural),
                   MonusInstance (mempty :: Sum Natural),
                   MonusInstance (mempty :: Dual (Product Natural)),
+                  MonusInstance (mempty :: Maybe ()),
                   MonusInstance (mempty :: Maybe (Product Natural)),
+                  MonusInstance (mempty :: Maybe (Sum Natural)),
                   MonusInstance (mempty :: IntSet),
                   MonusInstance (mempty :: Set String)]
 

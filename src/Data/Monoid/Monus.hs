@@ -187,7 +187,11 @@ instance (OverlappingGCDMonoid a, OverlappingGCDMonoid b, OverlappingGCDMonoid c
 -- Maybe instances
 
 instance (Monus a, MonoidNull a) => Monus (Maybe a) where
-   Just a <\> Just b = Just (a <\> b)
+   Just a <\> Just b
+      | null remainder = Nothing
+      | otherwise = Just remainder
+    where
+      remainder = a <\> b
    Nothing <\> _ = Nothing
    x <\> Nothing = x
 
