@@ -1,3 +1,7 @@
+Version 1.2.1
+---------------
+* Fix for the `Monus` instance for `Maybe` by Jonathan Knowles
+
 Version 1.2
 ---------------
 * Dropped support for GHC < 8.4
