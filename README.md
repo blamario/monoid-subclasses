@@ -20,6 +20,7 @@ is a subclass of `Reductive` that provides additional guarantees about the `</>`
     Every group (*i.e.*, every `Monoid a` with the operation `inverse :: a -> a`) is a cancellative monoid where `a </> b = Just (a <> inverse b)` but not every `Cancellative` monoid is a group.
     
 * [GCDMonoid](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-GCD.html#t:GCDMonoid) is a subclass of `Reductive` and `Monoid` that provides the `gcd` operation for getting the greatest common denominator for two given monoid values.
+* [LCMMonoid](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-LCM.html#t:LCMMonoid) is a subclass of `Reductive` and `Monoid` that provides the `lcm` operation for getting the least common multiple for two given monoid values.
 * [Monus](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monus.html#t:Monus) provides the `<\>` monus operation. The set difference is one familiar instance of this operation.
 * [MonoidNull](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-Null.html) class provides the Boolean `null` operation that checks if the argument monoid is `mempty`.
 * [Factorial](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Semigroup-Factorial.html) and [FactorialMonoid](http://hackage.haskell.org/package/monoid-subclasses/docs/Data-Monoid-Factorial.html) classes represent semigroups and monoids that can be split up into irreducible factors.
