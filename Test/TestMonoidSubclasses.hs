@@ -6,14 +6,15 @@
 
 {-# LANGUAGE CPP, Rank2Types, ScopedTypeVariables, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{- HLINT ignore "Use camelCase" -}
 
 module Main where
 
-import Prelude hiding (foldl, foldr, gcd, length, null, reverse, span, splitAt, takeWhile)
+import Prelude hiding (foldl, foldr, gcd, lcm, length, null, reverse, span, splitAt, takeWhile)
 
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
-                              arbitrary, coarbitrary, property, label, forAll, mapSize, testProperty, variant, whenFail, (.&&.))
+                              arbitrary, coarbitrary, property, label, forAll, mapSize, testProperty, variant, whenFail, (.&&.), (===))
 import Test.QuickCheck.Instances ()
 
 import Control.Applicative (Applicative(..), liftA2)
@@ -73,6 +74,7 @@ import Data.Monoid.Factorial (FactorialMonoid,
 import Data.Monoid.GCD (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, gcd,
                         commonPrefix, stripCommonPrefix,
                         commonSuffix, stripCommonSuffix)
+import Data.Monoid.LCM (LCMMonoid, lcm)
 import Data.Monoid.Monus (OverlappingGCDMonoid, Monus,
                           (<\>), overlap, stripOverlap, stripPrefixOverlap, stripSuffixOverlap)
 import Data.Monoid.Textual (TextualMonoid)
@@ -96,6 +98,7 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | RightGCDTest (RightGCDMonoidInstance -> Property)
           | GCDTest (GCDMonoidInstance -> Property)
           | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
+          | LCMTest (LCMMonoidInstance -> Property)
 
 data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Commutative a, Monoid a) =>
                                  CommutativeMonoidInstance a
@@ -138,6 +141,8 @@ data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) =>
                          GCDMonoidInstance a
 data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, Cancellative a, GCDMonoid a) =>
                                      CancellativeGCDMonoidInstance a
+data LCMMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LCMMonoid a) =>
+                         LCMMonoidInstance a
 
 commutativeInstances :: [CommutativeMonoidInstance]
 commutativeInstances = map upcast reductiveInstances
@@ -369,6 +374,22 @@ gcdInstances = map upcast cancellativeGCDInstances
 
 cancellativeGCDInstances = [CancellativeGCDMonoidInstance ()]
 
+lcmInstances =
+    [LCMMonoidInstance (mempty :: Product Natural),
+     LCMMonoidInstance (mempty :: Sum Natural),
+     LCMMonoidInstance (mempty :: Dual (Product Natural)),
+     LCMMonoidInstance (mempty :: Dual (Sum Natural)),
+     LCMMonoidInstance (mempty :: IntSet),
+     LCMMonoidInstance (mempty :: (IntSet, IntSet)),
+     LCMMonoidInstance (mempty :: (IntSet, IntSet, IntSet)),
+     LCMMonoidInstance (mempty :: (IntSet, IntSet, IntSet, IntSet)),
+     -- For sets, test with a variety of different universe sizes, from small
+     -- to large:
+     LCMMonoidInstance (mempty :: Set ()),
+     LCMMonoidInstance (mempty :: Set Bool),
+     LCMMonoidInstance (mempty :: Set Ordering),
+     LCMMonoidInstance (mempty :: Set Word8)]
+
 main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
   where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
 
@@ -391,6 +412,7 @@ checkInstances (LeftGCDTest checkType) = (map checkType leftGCDInstances)
 checkInstances (RightGCDTest checkType) = (map checkType rightGCDInstances) 
 checkInstances (GCDTest checkType) = (map checkType gcdInstances)  
 checkInstances (CancellativeGCDTest checkType) = (map checkType cancellativeGCDInstances) 
+checkInstances (LCMTest checkType) = (map checkType lcmInstances)
 
 tests :: [(String, Test)]
 tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
@@ -478,7 +500,21 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("stripCommonSuffix 3", RightGCDTest checkStripCommonSuffix3),
          ("stripCommonSuffix 4", RightGCDTest checkStripCommonSuffix4),
          ("gcd", GCDTest checkGCD),
-         ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD)
+         ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD),
+         ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
+         ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
+         ("lcm uniqueness", LCMTest checkLCM_uniqueness),
+         ("lcm idempotence", LCMTest checkLCM_idempotence),
+         ("lcm identity (left)", LCMTest checkLCM_identity_left),
+         ("lcm identity (right)", LCMTest checkLCM_identity_right),
+         ("lcm commutativity", LCMTest checkLCM_commutativity),
+         ("lcm associativity", LCMTest checkLCM_associativity),
+         ("lcm absorption (gcd-lcm)", LCMTest checkLCM_absorption_gcd_lcm),
+         ("lcm absorption (lcm-gcd)", LCMTest checkLCM_absorption_lcm_gcd),
+         ("lcm distributivity (left)", LCMTest checkLCM_distributivity_left),
+         ("lcm distributivity (right)", LCMTest checkLCM_distributivity_right),
+         ("lcm distributivity (gcd-lcm)", LCMTest checkLCM_distributivity_gcd_lcm),
+         ("lcm distributivity (lcm-gcd)", LCMTest checkLCM_distributivity_lcm_gcd)
         ]
 
 checkCommutative (CommutativeMonoidInstance (e :: a)) = forAll (arbitrary :: Gen (a, a)) (\(a, b)-> a <> b == b <> a)
@@ -883,6 +919,77 @@ checkCancellativeGCD (CancellativeGCDMonoidInstance (_ :: a)) = forAll (arbitrar
                            && commonSuffix (a <> c) (b <> c) == (commonSuffix a b) <> c
                            && gcd (a <> b) (a <> c) == a <> gcd b c
                            && gcd (a <> c) (b <> c) == gcd a b <> c
+
+checkLCM_reductivity_left (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check a b = isJust (lcm a b </> a)
+
+checkLCM_reductivity_right (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check a b = isJust (lcm a b </> b)
+
+checkLCM_uniqueness (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check a b c =
+        all isJust [c </> a, c </> b, lcm a b </> c] === (lcm a b == c)
+
+checkLCM_idempotence (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) check
+  where
+    check a = lcm a a === a
+
+checkLCM_identity_left (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) check
+  where
+    check a = lcm mempty a === a
+
+checkLCM_identity_right (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) check
+  where
+    check a = lcm a mempty === a
+
+checkLCM_commutativity (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check a b = lcm a b === lcm b a
+
+checkLCM_associativity (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check a b c = lcm (lcm a b) c === lcm a (lcm b c)
+
+checkLCM_absorption_gcd_lcm (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check a b = lcm a (gcd a b) === a
+
+checkLCM_absorption_lcm_gcd (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check a b = gcd a (lcm a b) === a
+
+checkLCM_distributivity_left (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check a b c = lcm (a <> b) (a <> c) === a <> lcm b c
+
+checkLCM_distributivity_right (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check a b c = lcm (a <> c) (b <> c) === lcm a b <> c
+
+checkLCM_distributivity_gcd_lcm (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check a b c = lcm a (gcd b c) === gcd (lcm a b) (lcm a c)
+
+checkLCM_distributivity_lcm_gcd (LCMMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check a b c = gcd a (lcm b c) === lcm (gcd a b) (gcd a c)
 
 textualFactors :: TextualMonoid t => t -> [Either t Char]
 textualFactors = map characterize . factors
