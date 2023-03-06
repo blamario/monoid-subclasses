@@ -14,12 +14,12 @@ module Data.Monoid.LCM (
     )
 where
 
-import Prelude hiding (lcm, max)
+import Prelude hiding (gcd, lcm, max)
 import qualified Prelude
 
 import Data.IntSet (IntSet)
 import Data.Monoid (Dual (..), Product (..), Sum (..))
-import Data.Monoid.GCD (GCDMonoid)
+import Data.Monoid.GCD (GCDMonoid (..))
 import Data.Set (Set)
 import Numeric.Natural (Natural)
 import qualified Data.IntSet as IntSet
