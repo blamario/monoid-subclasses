@@ -1,3 +1,8 @@
+Version 1.2.2
+---------------
+* Add `Data.Monoid.LCM` module with `LCMMonoid` type class by Jonathan Knowles
+* Repair links to Hackage within `README.md` by Jonathan Knowles
+
 Version 1.2.1
 ---------------
 * Fix for the `Monus` instance for `Maybe` by Jonathan Knowles
