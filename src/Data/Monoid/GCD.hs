@@ -68,10 +68,6 @@ import Prelude hiding (gcd)
 -- > Just a' = a </> p && Just b' = b </> p
 -- >    where p = gcd a b
 --
--- If a 'GCDMonoid' happens to also be 'Cancellative', it should additionally satisfy the following laws:
---
--- > gcd (a <> b) (a <> c) == a <> gcd b c
--- > gcd (a <> c) (b <> c) == gcd a b <> c
 class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
