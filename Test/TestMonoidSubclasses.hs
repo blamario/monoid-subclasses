@@ -71,9 +71,16 @@ import Data.Semigroup.Cancellative (Commutative, Reductive,
 import Data.Monoid.Null (MonoidNull, PositiveMonoid, null)
 import Data.Monoid.Factorial (FactorialMonoid,
                               splitPrimePrefix, splitPrimeSuffix, inits, tails, span, spanMaybe, split, splitAt)
-import Data.Monoid.GCD (GCDMonoid, LeftGCDMonoid, RightGCDMonoid, gcd,
-                        commonPrefix, stripCommonPrefix,
-                        commonSuffix, stripCommonSuffix)
+import Data.Monoid.GCD
+    ( GCDMonoid
+    , LeftGCDMonoid
+    , RightGCDMonoid
+    , commonPrefix
+    , commonSuffix
+    , gcd
+    , stripCommonPrefix
+    , stripCommonSuffix
+    )
 import Data.Monoid.LCM (LCMMonoid, lcm)
 import Data.Monoid.Monus (OverlappingGCDMonoid, Monus,
                           (<\>), overlap, stripOverlap, stripPrefixOverlap, stripSuffixOverlap)
