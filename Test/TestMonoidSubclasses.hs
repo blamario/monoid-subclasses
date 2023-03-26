@@ -84,7 +84,11 @@ import Data.Monoid.GCD
     , stripCommonPrefix
     , stripCommonSuffix
     )
-import Data.Monoid.LCM (LCMMonoid, lcm)
+import Data.Monoid.LCM
+    ( LCMMonoid
+    , DistributiveLCMMonoid
+    , lcm
+    )
 import Data.Monoid.Monus (OverlappingGCDMonoid, Monus,
                           (<\>), overlap, stripOverlap, stripPrefixOverlap, stripSuffixOverlap)
 import Data.Monoid.Textual (TextualMonoid)
@@ -112,6 +116,7 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | RightDistributiveGCDTest (RightDistributiveGCDMonoidInstance -> Property)
           | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
           | LCMTest (LCMMonoidInstance -> Property)
+          | DistributiveLCMTest (DistributiveLCMMonoidInstance -> Property)
 
 data CommutativeMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Commutative a, Monoid a) =>
                                  CommutativeMonoidInstance a
@@ -167,8 +172,13 @@ data RightDistributiveGCDMonoidInstance =
     forall a. (Arbitrary a, Show a, Eq a, RightDistributiveGCDMonoid a)
         => RightDistributiveGCDMonoidInstance a
 
-data LCMMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LCMMonoid a) =>
-                         LCMMonoidInstance a
+data LCMMonoidInstance =
+    forall a. (Arbitrary a, Show a, Eq a, LCMMonoid a)
+        => LCMMonoidInstance a
+
+data DistributiveLCMMonoidInstance =
+    forall a. (Arbitrary a, Show a, Eq a, DistributiveLCMMonoid a)
+        => DistributiveLCMMonoidInstance a
 
 commutativeInstances :: [CommutativeMonoidInstance]
 commutativeInstances = map upcast reductiveInstances
@@ -490,6 +500,18 @@ lcmInstances =
      LCMMonoidInstance (mempty :: Set Ordering),
      LCMMonoidInstance (mempty :: Set Word8)]
 
+distributiveLCMInstances =
+    [ DistributiveLCMMonoidInstance (mempty :: ())
+    , DistributiveLCMMonoidInstance (mempty :: Product Natural)
+    , DistributiveLCMMonoidInstance (mempty :: Sum Natural)
+    , DistributiveLCMMonoidInstance (mempty :: IntSet)
+    , DistributiveLCMMonoidInstance (mempty :: Set ())
+    , DistributiveLCMMonoidInstance (mempty :: Set Bool)
+    , DistributiveLCMMonoidInstance (mempty :: Set Word)
+    , DistributiveLCMMonoidInstance (mempty :: Dual (Product Natural))
+    , DistributiveLCMMonoidInstance (mempty :: Dual (Sum Natural))
+    ]
+
 main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
   where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
 
@@ -516,6 +538,7 @@ checkInstances (LeftDistributiveGCDTest checkType) = (map checkType leftDistribu
 checkInstances (RightDistributiveGCDTest checkType) = (map checkType rightDistributiveGCDMonoidInstances)
 checkInstances (CancellativeGCDTest checkType) = (map checkType cancellativeGCDInstances) 
 checkInstances (LCMTest checkType) = (map checkType lcmInstances)
+checkInstances (DistributiveLCMTest checkType) = (map checkType distributiveLCMInstances)
 
 tests :: [(String, Test)]
 tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
@@ -618,10 +641,10 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("lcm associativity", LCMTest checkLCM_associativity),
          ("lcm absorption (gcd-lcm)", LCMTest checkLCM_absorption_gcd_lcm),
          ("lcm absorption (lcm-gcd)", LCMTest checkLCM_absorption_lcm_gcd),
-         ("lcm distributivity (left)", LCMTest checkLCM_distributivity_left),
-         ("lcm distributivity (right)", LCMTest checkLCM_distributivity_right),
-         ("lcm distributivity (gcd-lcm)", LCMTest checkLCM_distributivity_gcd_lcm),
-         ("lcm distributivity (lcm-gcd)", LCMTest checkLCM_distributivity_lcm_gcd)
+         ("lcm distributivity (left)", DistributiveLCMTest checkLCM_distributivity_left),
+         ("lcm distributivity (right)", DistributiveLCMTest checkLCM_distributivity_right),
+         ("lcm distributivity (gcd-lcm)", DistributiveLCMTest checkLCM_distributivity_gcd_lcm),
+         ("lcm distributivity (lcm-gcd)", DistributiveLCMTest checkLCM_distributivity_lcm_gcd)
         ]
 
 checkCommutative (CommutativeMonoidInstance (e :: a)) = forAll (arbitrary :: Gen (a, a)) (\(a, b)-> a <> b == b <> a)
@@ -1098,22 +1121,22 @@ checkLCM_absorption_lcm_gcd (LCMMonoidInstance (_ :: a)) =
   where
     check a b = gcd a (lcm a b) === a
 
-checkLCM_distributivity_left (LCMMonoidInstance (_ :: a)) =
+checkLCM_distributivity_left (DistributiveLCMMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen (a, a, a)) check
   where
     check a b c = lcm (a <> b) (a <> c) === a <> lcm b c
 
-checkLCM_distributivity_right (LCMMonoidInstance (_ :: a)) =
+checkLCM_distributivity_right (DistributiveLCMMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen (a, a, a)) check
   where
     check a b c = lcm (a <> c) (b <> c) === lcm a b <> c
 
-checkLCM_distributivity_gcd_lcm (LCMMonoidInstance (_ :: a)) =
+checkLCM_distributivity_gcd_lcm (DistributiveLCMMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen (a, a, a)) check
   where
     check a b c = lcm a (gcd b c) === gcd (lcm a b) (lcm a c)
 
-checkLCM_distributivity_lcm_gcd (LCMMonoidInstance (_ :: a)) =
+checkLCM_distributivity_lcm_gcd (DistributiveLCMMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen (a, a, a)) check
   where
     check a b c = gcd a (lcm b c) === lcm (gcd a b) (gcd a c)
