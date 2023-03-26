@@ -401,12 +401,13 @@ rightGCDInstances = map upcast gcdInstances
                        RightGCDMonoidInstance (mempty :: Concat (Dual Text))]
    where upcast (GCDMonoidInstance i) = RightGCDMonoidInstance i
 
-gcdInstances = map upcast [CancellativeGCDMonoidInstance ()]
-               ++ [GCDMonoidInstance (mempty :: Product Natural),
-                   GCDMonoidInstance (mempty :: Dual (Product Natural)),
-                   GCDMonoidInstance (mempty :: IntSet),
-                   GCDMonoidInstance (mempty :: Set String)]
-   where upcast (CancellativeGCDMonoidInstance i) = GCDMonoidInstance i
+gcdInstances =
+    [ GCDMonoidInstance (mempty :: ())
+    , GCDMonoidInstance (mempty :: Product Natural)
+    , GCDMonoidInstance (mempty :: Dual (Product Natural))
+    , GCDMonoidInstance (mempty :: IntSet)
+    , GCDMonoidInstance (mempty :: Set String)
+    ]
 
 distributiveGCDMonoidInstances :: [DistributiveGCDMonoidInstance]
 distributiveGCDMonoidInstances =
