@@ -97,21 +97,6 @@ import Data.Semigroup.Commutative (Commutative)
 -- 'gcd' a ('lcm' a b) '==' a
 -- @
 --
--- __/Distributivity/__
---
--- @
--- 'lcm' (a '<>' b) (a '<>' c) '==' a '<>' 'lcm' b c
--- @
--- @
--- 'lcm' (a '<>' c) (b '<>' c) '==' 'lcm' a b '<>' c
--- @
--- @
--- 'lcm' a ('gcd' b c) '==' 'gcd' ('lcm' a b) ('lcm' a c)
--- @
--- @
--- 'gcd' a ('lcm' b c) '==' 'lcm' ('gcd' a b) ('gcd' a c)
--- @
---
 class GCDMonoid m => LCMMonoid m where
     lcm :: m -> m -> m
 
