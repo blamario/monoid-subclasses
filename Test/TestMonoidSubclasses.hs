@@ -360,9 +360,7 @@ rightCancellativeInstances = map upcast cancellativeInstances
                                 RightCancellativeMonoidInstance (mempty :: Vector Int)]
    where upcast (CancellativeMonoidInstance i) = RightCancellativeMonoidInstance i
 
-cancellativeInstances = map upcast [CancellativeGCDMonoidInstance ()]
-                        ++ []
-   where upcast (CancellativeGCDMonoidInstance i) = CancellativeMonoidInstance i
+cancellativeInstances = [CancellativeMonoidInstance ()]
 
 leftGCDInstances = map upcast gcdInstances
                    ++ [LeftGCDMonoidInstance (mempty :: String),
