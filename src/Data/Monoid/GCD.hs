@@ -20,11 +20,13 @@
 
 {-# LANGUAGE CPP, Haskell2010, FlexibleInstances, Trustworthy #-}
 
-module Data.Monoid.GCD (
-   GCDMonoid(..),
-   LeftGCDMonoid(..), RightGCDMonoid(..), OverlappingGCDMonoid(..)
-   )
-where
+module Data.Monoid.GCD
+    ( GCDMonoid (..)
+    , LeftGCDMonoid (..)
+    , RightGCDMonoid (..)
+    , OverlappingGCDMonoid (..)
+    )
+    where
 
 import qualified Prelude
 
