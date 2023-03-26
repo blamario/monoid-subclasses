@@ -25,6 +25,8 @@ module Data.Monoid.GCD
     , LeftGCDMonoid (..)
     , RightGCDMonoid (..)
     , OverlappingGCDMonoid (..)
+    , LeftDistributiveGCDMonoid
+    , RightDistributiveGCDMonoid
     )
     where
 
@@ -457,3 +459,71 @@ instance RightGCDMonoid LazyText.Text where
           stripCommonSuffix (LazyEncoding.encodeUtf8 x) (LazyEncoding.encodeUtf8 y)
     in (LazyEncoding.decodeUtf8 xlist, LazyEncoding.decodeUtf8 ylist, LazyEncoding.decodeUtf8 slist)
 #endif
+
+-------------------------------------------------------------------------------
+-- LeftDistributiveGCDMonoid
+--------------------------------------------------------------------------------
+
+-- | Class of /left/ GCD monoids with /left/-distributivity.
+--
+-- In addition to the general 'LeftGCDMonoid' laws, instances of this class
+-- must also satisfy the following law:
+--
+-- @
+-- 'commonPrefix' (a '<>' b) (a '<>' c) '==' a '<>' 'commonPrefix' b c
+-- @
+--
+class LeftGCDMonoid m => LeftDistributiveGCDMonoid m
+
+-- Instances for non-commutative monoids:
+instance Eq a => LeftDistributiveGCDMonoid [a]
+instance Eq a => LeftDistributiveGCDMonoid (Sequence.Seq a)
+instance Eq a => LeftDistributiveGCDMonoid (Vector.Vector a)
+instance LeftDistributiveGCDMonoid ByteString.ByteString
+instance LeftDistributiveGCDMonoid LazyByteString.ByteString
+instance LeftDistributiveGCDMonoid Text.Text
+instance LeftDistributiveGCDMonoid LazyText.Text
+
+-- Instances for commutative monoids:
+instance LeftDistributiveGCDMonoid ()
+instance LeftDistributiveGCDMonoid (Product Natural)
+instance LeftDistributiveGCDMonoid (Sum Natural)
+instance LeftDistributiveGCDMonoid IntSet.IntSet
+instance Ord a => LeftDistributiveGCDMonoid (Set.Set a)
+
+-- Instances for monoid transformers:
+instance RightDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Dual a)
+
+--------------------------------------------------------------------------------
+-- RightDistributiveGCDMonoid
+--------------------------------------------------------------------------------
+
+-- | Class of /right/ GCD monoids with /right/-distributivity.
+--
+-- In addition to the general 'RightGCDMonoid' laws, instances of this class
+-- must also satisfy the following law:
+--
+-- @
+-- 'commonSuffix' (a '<>' c) (b '<>' c) '==' 'commonSuffix' a b '<>' c
+-- @
+--
+class RightGCDMonoid m => RightDistributiveGCDMonoid m
+
+-- Instances for non-commutative monoids:
+instance Eq a => RightDistributiveGCDMonoid [a]
+instance Eq a => RightDistributiveGCDMonoid (Sequence.Seq a)
+instance Eq a => RightDistributiveGCDMonoid (Vector.Vector a)
+instance RightDistributiveGCDMonoid ByteString.ByteString
+instance RightDistributiveGCDMonoid LazyByteString.ByteString
+instance RightDistributiveGCDMonoid Text.Text
+instance RightDistributiveGCDMonoid LazyText.Text
+
+-- Instances for commutative monoids:
+instance RightDistributiveGCDMonoid ()
+instance RightDistributiveGCDMonoid (Product Natural)
+instance RightDistributiveGCDMonoid (Sum Natural)
+instance RightDistributiveGCDMonoid IntSet.IntSet
+instance Ord a => RightDistributiveGCDMonoid (Set.Set a)
+
+-- Instances for monoid transformers:
+instance LeftDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Dual a)
