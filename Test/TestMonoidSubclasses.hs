@@ -75,6 +75,8 @@ import Data.Monoid.GCD
     ( GCDMonoid
     , LeftGCDMonoid
     , RightGCDMonoid
+    , LeftDistributiveGCDMonoid
+    , RightDistributiveGCDMonoid
     , commonPrefix
     , commonSuffix
     , gcd
@@ -104,6 +106,8 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | LeftGCDTest (LeftGCDMonoidInstance -> Property)
           | RightGCDTest (RightGCDMonoidInstance -> Property)
           | GCDTest (GCDMonoidInstance -> Property)
+          | LeftDistributiveGCDTest (LeftDistributiveGCDMonoidInstance -> Property)
+          | RightDistributiveGCDTest (RightDistributiveGCDMonoidInstance -> Property)
           | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
           | LCMTest (LCMMonoidInstance -> Property)
 
@@ -148,6 +152,15 @@ data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) =>
                          GCDMonoidInstance a
 data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, Cancellative a, GCDMonoid a) =>
                                      CancellativeGCDMonoidInstance a
+
+data LeftDistributiveGCDMonoidInstance =
+    forall a. (Arbitrary a, Show a, Eq a, LeftDistributiveGCDMonoid a)
+        => LeftDistributiveGCDMonoidInstance a
+
+data RightDistributiveGCDMonoidInstance =
+    forall a. (Arbitrary a, Show a, Eq a, RightDistributiveGCDMonoid a)
+        => RightDistributiveGCDMonoidInstance a
+
 data LCMMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, LCMMonoid a) =>
                          LCMMonoidInstance a
 
@@ -381,6 +394,66 @@ gcdInstances = map upcast cancellativeGCDInstances
 
 cancellativeGCDInstances = [CancellativeGCDMonoidInstance ()]
 
+leftDistributiveGCDMonoidInstances :: [LeftDistributiveGCDMonoidInstance]
+leftDistributiveGCDMonoidInstances =
+    [ -- Instances for non-commutative monoids:
+      LeftDistributiveGCDMonoidInstance (mempty :: [()])
+    , LeftDistributiveGCDMonoidInstance (mempty :: [Bool])
+    , LeftDistributiveGCDMonoidInstance (mempty :: [Word])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Seq ())
+    , LeftDistributiveGCDMonoidInstance (mempty :: Seq Bool)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Seq Word)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Vector ())
+    , LeftDistributiveGCDMonoidInstance (mempty :: Vector Bool)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Vector Word)
+    , LeftDistributiveGCDMonoidInstance (mempty :: ByteString)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Lazy.ByteString)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Text)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Lazy.Text)
+      -- Instances for commutative monoids:
+    , LeftDistributiveGCDMonoidInstance (mempty :: ())
+    , LeftDistributiveGCDMonoidInstance (mempty :: Product Natural)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Sum Natural)
+    , LeftDistributiveGCDMonoidInstance (mempty :: IntSet)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Set ())
+    , LeftDistributiveGCDMonoidInstance (mempty :: Set Bool)
+    , LeftDistributiveGCDMonoidInstance (mempty :: Set Word)
+      -- Instances for monoid transformers:
+    , LeftDistributiveGCDMonoidInstance (mempty :: Dual [()])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Dual [Bool])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Dual [Word])
+    ]
+
+rightDistributiveGCDMonoidInstances :: [RightDistributiveGCDMonoidInstance]
+rightDistributiveGCDMonoidInstances =
+    [ -- Instances for non-commutative monoids:
+      RightDistributiveGCDMonoidInstance (mempty :: [()])
+    , RightDistributiveGCDMonoidInstance (mempty :: [Bool])
+    , RightDistributiveGCDMonoidInstance (mempty :: [Word])
+    , RightDistributiveGCDMonoidInstance (mempty :: Seq ())
+    , RightDistributiveGCDMonoidInstance (mempty :: Seq Bool)
+    , RightDistributiveGCDMonoidInstance (mempty :: Seq Word)
+    , RightDistributiveGCDMonoidInstance (mempty :: Vector ())
+    , RightDistributiveGCDMonoidInstance (mempty :: Vector Bool)
+    , RightDistributiveGCDMonoidInstance (mempty :: Vector Word)
+    , RightDistributiveGCDMonoidInstance (mempty :: ByteString)
+    , RightDistributiveGCDMonoidInstance (mempty :: Lazy.ByteString)
+    , RightDistributiveGCDMonoidInstance (mempty :: Text)
+    , RightDistributiveGCDMonoidInstance (mempty :: Lazy.Text)
+      -- Instances for commutative monoids:
+    , RightDistributiveGCDMonoidInstance (mempty :: ())
+    , RightDistributiveGCDMonoidInstance (mempty :: Product Natural)
+    , RightDistributiveGCDMonoidInstance (mempty :: Sum Natural)
+    , RightDistributiveGCDMonoidInstance (mempty :: IntSet)
+    , RightDistributiveGCDMonoidInstance (mempty :: Set ())
+    , RightDistributiveGCDMonoidInstance (mempty :: Set Bool)
+    , RightDistributiveGCDMonoidInstance (mempty :: Set Word)
+      -- Instances for monoid transformers:
+    , RightDistributiveGCDMonoidInstance (mempty :: Dual [()])
+    , RightDistributiveGCDMonoidInstance (mempty :: Dual [Bool])
+    , RightDistributiveGCDMonoidInstance (mempty :: Dual [Word])
+    ]
+
 lcmInstances =
     [LCMMonoidInstance (mempty :: Product Natural),
      LCMMonoidInstance (mempty :: Sum Natural),
@@ -418,6 +491,8 @@ checkInstances (MonusTest checkType) = (map checkType monusInstances)
 checkInstances (LeftGCDTest checkType) = (map checkType leftGCDInstances) 
 checkInstances (RightGCDTest checkType) = (map checkType rightGCDInstances) 
 checkInstances (GCDTest checkType) = (map checkType gcdInstances)  
+checkInstances (LeftDistributiveGCDTest checkType) = (map checkType leftDistributiveGCDMonoidInstances)
+checkInstances (RightDistributiveGCDTest checkType) = (map checkType rightDistributiveGCDMonoidInstances)
 checkInstances (CancellativeGCDTest checkType) = (map checkType cancellativeGCDInstances) 
 checkInstances (LCMTest checkType) = (map checkType lcmInstances)
 
@@ -507,6 +582,8 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("stripCommonSuffix 3", RightGCDTest checkStripCommonSuffix3),
          ("stripCommonSuffix 4", RightGCDTest checkStripCommonSuffix4),
          ("gcd", GCDTest checkGCD),
+         ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
+         ("commonSuffix distributivity", RightDistributiveGCDTest checkCommonSuffix_distributivity),
          ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD),
          ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
          ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
@@ -926,6 +1003,16 @@ checkCancellativeGCD (CancellativeGCDMonoidInstance (_ :: a)) = forAll (arbitrar
                            && commonSuffix (a <> c) (b <> c) == (commonSuffix a b) <> c
                            && gcd (a <> b) (a <> c) == a <> gcd b c
                            && gcd (a <> c) (b <> c) == gcd a b <> c
+
+checkCommonPrefix_distributivity
+    (LeftDistributiveGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a, a)) $
+        \(a, b, c) -> commonPrefix (a <> b) (a <> c) == a <> commonPrefix b c
+
+checkCommonSuffix_distributivity
+    (RightDistributiveGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a, a)) $
+        \(a, b, c) -> commonSuffix (a <> c) (b <> c) == commonSuffix a b <> c
 
 checkLCM_reductivity_left (LCMMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen (a, a)) check
