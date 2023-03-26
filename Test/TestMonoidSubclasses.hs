@@ -114,7 +114,6 @@ data Test = CommutativeTest (CommutativeMonoidInstance -> Property)
           | DistributiveGCDTest (DistributiveGCDMonoidInstance -> Property)
           | LeftDistributiveGCDTest (LeftDistributiveGCDMonoidInstance -> Property)
           | RightDistributiveGCDTest (RightDistributiveGCDMonoidInstance -> Property)
-          | CancellativeGCDTest (CancellativeGCDMonoidInstance -> Property)
           | LCMTest (LCMMonoidInstance -> Property)
           | DistributiveLCMTest (DistributiveLCMMonoidInstance -> Property)
 
@@ -157,8 +156,6 @@ data RightGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, RightGCDMono
                               RightGCDMonoidInstance a
 data GCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, GCDMonoid a) =>
                          GCDMonoidInstance a
-data CancellativeGCDMonoidInstance = forall a. (Arbitrary a, Show a, Eq a, Monoid a, Cancellative a, GCDMonoid a) =>
-                                     CancellativeGCDMonoidInstance a
 
 data DistributiveGCDMonoidInstance =
     forall a. (Arbitrary a, Show a, Eq a, DistributiveGCDMonoid a)
@@ -533,7 +530,6 @@ checkInstances (GCDTest checkType) = (map checkType gcdInstances)
 checkInstances (DistributiveGCDTest checkType) = (map checkType distributiveGCDMonoidInstances)
 checkInstances (LeftDistributiveGCDTest checkType) = (map checkType leftDistributiveGCDMonoidInstances)
 checkInstances (RightDistributiveGCDTest checkType) = (map checkType rightDistributiveGCDMonoidInstances)
-checkInstances (CancellativeGCDTest checkType) = (map checkType [CancellativeGCDMonoidInstance ()])
 checkInstances (LCMTest checkType) = (map checkType lcmInstances)
 checkInstances (DistributiveLCMTest checkType) = (map checkType distributiveLCMInstances)
 
@@ -627,7 +623,6 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("gcd distributivity (right)", DistributiveGCDTest checkGCD_distributivity_right),
          ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
          ("commonSuffix distributivity", RightDistributiveGCDTest checkCommonSuffix_distributivity),
-         ("cancellative gcd", CancellativeGCDTest checkCancellativeGCD),
          ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
          ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
          ("lcm uniqueness", LCMTest checkLCM_uniqueness),
@@ -1040,12 +1035,6 @@ checkGCD (GCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
                         && isJust (a </> d)
                         && isJust (b </> d)
             where d = gcd a b
-
-checkCancellativeGCD (CancellativeGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a, a)) check
-   where check (a, b, c) = commonPrefix (a <> b) (a <> c) == a <> (commonPrefix b c)
-                           && commonSuffix (a <> c) (b <> c) == (commonSuffix a b) <> c
-                           && gcd (a <> b) (a <> c) == a <> gcd b c
-                           && gcd (a <> c) (b <> c) == gcd a b <> c
 
 checkGCD_distributivity_left
     (DistributiveGCDMonoidInstance (_ :: a)) =
