@@ -25,6 +25,7 @@ module Data.Monoid.GCD
     , LeftGCDMonoid (..)
     , RightGCDMonoid (..)
     , OverlappingGCDMonoid (..)
+    , DistributiveGCDMonoid
     , LeftDistributiveGCDMonoid
     , RightDistributiveGCDMonoid
     )
@@ -459,6 +460,32 @@ instance RightGCDMonoid LazyText.Text where
           stripCommonSuffix (LazyEncoding.encodeUtf8 x) (LazyEncoding.encodeUtf8 y)
     in (LazyEncoding.decodeUtf8 xlist, LazyEncoding.decodeUtf8 ylist, LazyEncoding.decodeUtf8 slist)
 #endif
+
+--------------------------------------------------------------------------------
+-- DistributiveGCDMonoid
+--------------------------------------------------------------------------------
+
+-- | Class of /commutative/ GCD monoids with /symmetric/ distributivity.
+--
+-- In addition to the general 'GCDMonoid' laws, instances of this class
+-- must also satisfy the following laws:
+--
+-- @
+-- 'gcd' (a '<>' b) (a '<>' c) '==' a '<>' 'gcd' b c
+-- @
+-- @
+-- 'gcd' (a '<>' c) (b '<>' c) '==' 'gcd' a b '<>' c
+-- @
+--
+class (LeftDistributiveGCDMonoid m, RightDistributiveGCDMonoid m, GCDMonoid m)
+    => DistributiveGCDMonoid m
+
+instance DistributiveGCDMonoid ()
+instance DistributiveGCDMonoid (Product Natural)
+instance DistributiveGCDMonoid (Sum Natural)
+instance DistributiveGCDMonoid IntSet.IntSet
+instance DistributiveGCDMonoid a => DistributiveGCDMonoid (Dual a)
+instance Ord a => DistributiveGCDMonoid (Set.Set a)
 
 -------------------------------------------------------------------------------
 -- LeftDistributiveGCDMonoid
