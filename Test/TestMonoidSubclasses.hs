@@ -360,7 +360,7 @@ rightCancellativeInstances = map upcast cancellativeInstances
                                 RightCancellativeMonoidInstance (mempty :: Vector Int)]
    where upcast (CancellativeMonoidInstance i) = RightCancellativeMonoidInstance i
 
-cancellativeInstances = map upcast cancellativeGCDInstances
+cancellativeInstances = map upcast [CancellativeGCDMonoidInstance ()]
                         ++ []
    where upcast (CancellativeGCDMonoidInstance i) = CancellativeMonoidInstance i
 
@@ -401,14 +401,12 @@ rightGCDInstances = map upcast gcdInstances
                        RightGCDMonoidInstance (mempty :: Concat (Dual Text))]
    where upcast (GCDMonoidInstance i) = RightGCDMonoidInstance i
 
-gcdInstances = map upcast cancellativeGCDInstances
+gcdInstances = map upcast [CancellativeGCDMonoidInstance ()]
                ++ [GCDMonoidInstance (mempty :: Product Natural),
                    GCDMonoidInstance (mempty :: Dual (Product Natural)),
                    GCDMonoidInstance (mempty :: IntSet),
                    GCDMonoidInstance (mempty :: Set String)]
    where upcast (CancellativeGCDMonoidInstance i) = GCDMonoidInstance i
-
-cancellativeGCDInstances = [CancellativeGCDMonoidInstance ()]
 
 distributiveGCDMonoidInstances :: [DistributiveGCDMonoidInstance]
 distributiveGCDMonoidInstances =
@@ -536,7 +534,7 @@ checkInstances (GCDTest checkType) = (map checkType gcdInstances)
 checkInstances (DistributiveGCDTest checkType) = (map checkType distributiveGCDMonoidInstances)
 checkInstances (LeftDistributiveGCDTest checkType) = (map checkType leftDistributiveGCDMonoidInstances)
 checkInstances (RightDistributiveGCDTest checkType) = (map checkType rightDistributiveGCDMonoidInstances)
-checkInstances (CancellativeGCDTest checkType) = (map checkType cancellativeGCDInstances) 
+checkInstances (CancellativeGCDTest checkType) = (map checkType [CancellativeGCDMonoidInstance ()])
 checkInstances (LCMTest checkType) = (map checkType lcmInstances)
 checkInstances (DistributiveLCMTest checkType) = (map checkType distributiveLCMInstances)
 
