@@ -619,6 +619,7 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("stripCommonSuffix 3", RightGCDTest checkStripCommonSuffix3),
          ("stripCommonSuffix 4", RightGCDTest checkStripCommonSuffix4),
          ("gcd", GCDTest checkGCD),
+         ("gcd uniqueness", GCDTest checkGCD_uniqueness),
          ("gcd distributivity (left)", DistributiveGCDTest checkGCD_distributivity_left),
          ("gcd distributivity (right)", DistributiveGCDTest checkGCD_distributivity_right),
          ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
@@ -1035,6 +1036,12 @@ checkGCD (GCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
                         && isJust (a </> d)
                         && isJust (b </> d)
             where d = gcd a b
+
+checkGCD_uniqueness
+    (GCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a, a)) $
+        \(a, b, c) ->
+            all isJust [a </> c, b </> c, c </> gcd a b] === (gcd a b == c)
 
 checkGCD_distributivity_left
     (DistributiveGCDMonoidInstance (_ :: a)) =

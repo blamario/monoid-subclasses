@@ -59,6 +59,9 @@ import Numeric.Natural (Natural)
 import Data.Semigroup.Cancellative
 import Data.Monoid.Monus
 
+-- These imports are marked as redundant, but are actually required by haddock:
+import Data.Maybe (isJust)
+
 import Prelude hiding (gcd)
 
 -- | Class of Abelian monoids that allow the greatest common divisor to be found for any two given values. The
@@ -67,6 +70,20 @@ import Prelude hiding (gcd)
 -- > gcd a b == commonPrefix a b == commonSuffix a b
 -- > Just a' = a </> p && Just b' = b </> p
 -- >    where p = gcd a b
+--
+-- In addition, the 'gcd' operation must satisfy the following properties:
+--
+-- __/Uniqueness/__
+--
+-- @
+-- 'all' 'isJust'
+--     [ a '</>' c
+--     , b '</>' c
+--     , c '</>' 'gcd' a b
+--     ]
+-- ==>
+--     (c '==' 'gcd' a b)
+-- @
 --
 class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
