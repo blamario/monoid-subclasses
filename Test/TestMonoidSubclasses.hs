@@ -627,17 +627,20 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("gcd identity (left)", GCDTest checkGCD_identity_left),
          ("gcd identity (right)", GCDTest checkGCD_identity_right),
          ("gcd commutativity", GCDTest checkGCD_commutativity),
+         ("gcd associativity", GCDTest checkGCD_associativity),
          ("gcd distributivity (left)", DistributiveGCDTest checkGCD_distributivity_left),
          ("gcd distributivity (right)", DistributiveGCDTest checkGCD_distributivity_right),
          ("commonPrefix idempotence", LeftGCDTest checkCommonPrefix_idempotence),
          ("commonPrefix identity (left)", LeftGCDTest checkCommonPrefix_identity_left),
          ("commonPrefix identity (right)", LeftGCDTest checkCommonPrefix_identity_right),
          ("commonPrefix commutativity", LeftGCDTest checkCommonPrefix_commutativity),
+         ("commonPrefix associativity", LeftGCDTest checkCommonPrefix_associativity),
          ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
          ("commonSuffix idempotence", RightGCDTest checkCommonSuffix_idempotence),
          ("commonSuffix identity (left)", RightGCDTest checkCommonSuffix_identity_left),
          ("commonSuffix identity (right)", RightGCDTest checkCommonSuffix_identity_right),
          ("commonSuffix commutativity", RightGCDTest checkCommonSuffix_commutativity),
+         ("commonSuffix associativity", RightGCDTest checkCommonSuffix_associativity),
          ("commonSuffix distributivity", RightDistributiveGCDTest checkCommonSuffix_distributivity),
          ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
          ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
@@ -1087,6 +1090,11 @@ checkGCD_commutativity
         forAll (arbitrary :: Gen (a, a)) $
         \a b -> gcd a b === gcd b a
 
+checkGCD_associativity
+    (GCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a, a)) $
+        \a b c -> gcd a (gcd b c) === gcd (gcd a b) c
+
 checkGCD_distributivity_left
     (DistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1117,6 +1125,13 @@ checkCommonPrefix_commutativity
         forAll (arbitrary :: Gen (a, a)) $
         \a b -> commonPrefix a b === commonPrefix b a
 
+checkCommonPrefix_associativity
+    (LeftGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a, a)) $
+        \a b c ->
+            (commonPrefix a (commonPrefix b c)) ===
+            (commonPrefix (commonPrefix a b) c)
+
 checkCommonPrefix_distributivity
     (LeftDistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1141,6 +1156,13 @@ checkCommonSuffix_commutativity
     (RightGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a)) $
         \a b -> commonSuffix a b === commonSuffix b a
+
+checkCommonSuffix_associativity
+    (RightGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a, a)) $
+        \a b c ->
+            (commonSuffix a (commonSuffix b c)) ===
+            (commonSuffix (commonSuffix a b) c)
 
 checkCommonSuffix_distributivity
     (RightDistributiveGCDMonoidInstance (_ :: a)) =

@@ -106,6 +106,12 @@ import Prelude hiding (gcd)
 -- 'gcd' a b '==' 'gcd' b a
 -- @
 --
+-- __/Associativity/__
+--
+-- @
+-- 'gcd' ('gcd' a b) c '==' 'gcd' a ('gcd' b c)
+-- @
+--
 class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
@@ -150,6 +156,14 @@ class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, 
 --
 -- @
 -- 'commonPrefix' a b '==' 'commonPrefix' b a
+-- @
+--
+-- __/Associativity/__
+--
+-- @
+-- 'commonPrefix' ('commonPrefix' a b) c
+-- '=='
+-- 'commonPrefix' a ('commonPrefix' b c)
 -- @
 --
 class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
@@ -205,6 +219,14 @@ class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
 --
 -- @
 -- 'commonSuffix' a b '==' 'commonSuffix' b a
+-- @
+--
+-- __/Associativity/__
+--
+-- @
+-- 'commonSuffix' ('commonSuffix' a b) c
+-- '=='
+-- 'commonSuffix' a ('commonSuffix' b c)
 -- @
 --
 class (Monoid m, RightReductive m) => RightGCDMonoid m where
