@@ -9,15 +9,45 @@
 -- The 'GCDMonoid' subclass adds the 'gcd' operation which takes two monoidal arguments and finds their greatest
 -- common divisor, or (more generally) the greatest monoid that can be extracted with the '</>' operation from both.
 --
--- The 'GCDMonoid' class is for Abelian, /i.e./, 'Commutative' monoids. Since most practical monoids in Haskell are not
--- Abelian, there are also its three symmetric superclasses:
--- 
+-- The 'GCDMonoid' class is for Abelian, /i.e./, 'Commutative' monoids.
+--
+-- == Non-commutative GCD monoids
+--
+--  Since most practical monoids in Haskell are not Abelian, the 'GCDMonoid'
+--  class has three symmetric superclasses:
+--
 -- * 'LeftGCDMonoid'
--- 
+--
+--      Class of monoids for which it is possible to find the greatest common
+--      /prefix/ of two monoidal values.
+--
 -- * 'RightGCDMonoid'
--- 
+--
+--      Class of monoids for which it is possible to find the greatest common
+--      /suffix/ of two monoidal values.
+--
 -- * 'OverlappingGCDMonoid'
-
+--
+--      Class of monoids for which it is possible to find the greatest common
+--      /overlap/ of two monoidal values.
+--
+-- == Distributive GCD monoids
+--
+-- Since some (but not all) GCD monoids are also distributive, there are three
+-- subclasses that add distributivity:
+--
+-- * 'DistributiveGCDMonoid'
+--
+--     Subclass of 'GCDMonoid' with /symmetric/ distributivity.
+--
+-- * 'LeftDistributiveGCDMonoid'
+--
+--     Subclass of 'LeftGCDMonoid' with /left/-distributivity.
+--
+-- * 'RightDistributiveGCDMonoid'
+--
+--     Subclass of 'RightGCDMonoid' with /right/-distributivity.
+--
 {-# LANGUAGE CPP, Haskell2010, FlexibleInstances, Trustworthy #-}
 
 module Data.Monoid.GCD
