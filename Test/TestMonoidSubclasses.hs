@@ -626,15 +626,18 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("gcd idempotence", GCDTest checkGCD_idempotence),
          ("gcd identity (left)", GCDTest checkGCD_identity_left),
          ("gcd identity (right)", GCDTest checkGCD_identity_right),
+         ("gcd commutativity", GCDTest checkGCD_commutativity),
          ("gcd distributivity (left)", DistributiveGCDTest checkGCD_distributivity_left),
          ("gcd distributivity (right)", DistributiveGCDTest checkGCD_distributivity_right),
          ("commonPrefix idempotence", LeftGCDTest checkCommonPrefix_idempotence),
          ("commonPrefix identity (left)", LeftGCDTest checkCommonPrefix_identity_left),
          ("commonPrefix identity (right)", LeftGCDTest checkCommonPrefix_identity_right),
+         ("commonPrefix commutativity", LeftGCDTest checkCommonPrefix_commutativity),
          ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
          ("commonSuffix idempotence", RightGCDTest checkCommonSuffix_idempotence),
          ("commonSuffix identity (left)", RightGCDTest checkCommonSuffix_identity_left),
          ("commonSuffix identity (right)", RightGCDTest checkCommonSuffix_identity_right),
+         ("commonSuffix commutativity", RightGCDTest checkCommonSuffix_commutativity),
          ("commonSuffix distributivity", RightDistributiveGCDTest checkCommonSuffix_distributivity),
          ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
          ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
@@ -1079,6 +1082,11 @@ checkGCD_identity_right
         forAll (arbitrary :: Gen a) $
         \a -> gcd a mempty === mempty
 
+checkGCD_commutativity
+    (GCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a)) $
+        \a b -> gcd a b === gcd b a
+
 checkGCD_distributivity_left
     (DistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1104,6 +1112,11 @@ checkCommonPrefix_identity_right
         forAll (arbitrary :: Gen a) $
         \a -> commonPrefix a mempty === mempty
 
+checkCommonPrefix_commutativity
+    (LeftGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a)) $
+        \a b -> commonPrefix a b === commonPrefix b a
+
 checkCommonPrefix_distributivity
     (LeftDistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1123,6 +1136,11 @@ checkCommonSuffix_identity_right
     (RightGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen a) $
         \a -> commonSuffix a mempty === mempty
+
+checkCommonSuffix_commutativity
+    (RightGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen (a, a)) $
+        \a b -> commonSuffix a b === commonSuffix b a
 
 checkCommonSuffix_distributivity
     (RightDistributiveGCDMonoidInstance (_ :: a)) =
