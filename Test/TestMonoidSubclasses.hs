@@ -604,6 +604,8 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("overlap law 2", OverlappingGCDTest checkOverlapLaw2),
          ("overlap law 3", OverlappingGCDTest checkOverlapLaw3),
          ("overlap idempotence", OverlappingGCDTest checkOverlap_idempotence),
+         ("overlap identity (left)", OverlappingGCDTest checkOverlap_identity_left),
+         ("overlap identity (right)", OverlappingGCDTest checkOverlap_identity_right),
          ("isPrefixOf", LeftReductiveTest checkIsPrefixOf),
          ("stripSuffix", RightReductiveTest checkStripSuffix),
          ("isSuffixOf", RightReductiveTest checkIsSuffixOf),
@@ -622,11 +624,17 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("gcd", GCDTest checkGCD),
          ("gcd uniqueness", GCDTest checkGCD_uniqueness),
          ("gcd idempotence", GCDTest checkGCD_idempotence),
+         ("gcd identity (left)", GCDTest checkGCD_identity_left),
+         ("gcd identity (right)", GCDTest checkGCD_identity_right),
          ("gcd distributivity (left)", DistributiveGCDTest checkGCD_distributivity_left),
          ("gcd distributivity (right)", DistributiveGCDTest checkGCD_distributivity_right),
          ("commonPrefix idempotence", LeftGCDTest checkCommonPrefix_idempotence),
+         ("commonPrefix identity (left)", LeftGCDTest checkCommonPrefix_identity_left),
+         ("commonPrefix identity (right)", LeftGCDTest checkCommonPrefix_identity_right),
          ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
          ("commonSuffix idempotence", RightGCDTest checkCommonSuffix_idempotence),
+         ("commonSuffix identity (left)", RightGCDTest checkCommonSuffix_identity_left),
+         ("commonSuffix identity (right)", RightGCDTest checkCommonSuffix_identity_right),
          ("commonSuffix distributivity", RightDistributiveGCDTest checkCommonSuffix_distributivity),
          ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
          ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
@@ -959,6 +967,12 @@ checkOverlapLaw3 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: 
 checkOverlap_idempotence (OverlappingGCDMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen a) $ \a -> overlap a a === a
 
+checkOverlap_identity_left (OverlappingGCDMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) $ \a -> overlap mempty a === mempty
+
+checkOverlap_identity_right (OverlappingGCDMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) $ \a -> overlap a mempty === mempty
+
 checkStripPrefixOverlap1 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = o `isSuffixOf` b && b `isSuffixOf` (a <> o)
             where o = stripPrefixOverlap a b
@@ -1055,6 +1069,16 @@ checkGCD_idempotence
         forAll (arbitrary :: Gen a) $
         \a -> gcd a a === a
 
+checkGCD_identity_left
+    (GCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> gcd mempty a === mempty
+
+checkGCD_identity_right
+    (GCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> gcd a mempty === mempty
+
 checkGCD_distributivity_left
     (DistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1070,6 +1094,16 @@ checkCommonPrefix_idempotence
         forAll (arbitrary :: Gen a) $
         \a -> commonPrefix a a === a
 
+checkCommonPrefix_identity_left
+    (LeftGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> commonPrefix mempty a === mempty
+
+checkCommonPrefix_identity_right
+    (LeftGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> commonPrefix a mempty === mempty
+
 checkCommonPrefix_distributivity
     (LeftDistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1079,6 +1113,16 @@ checkCommonSuffix_idempotence
     (RightGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen a) $
         \a -> commonSuffix a a === a
+
+checkCommonSuffix_identity_left
+    (RightGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> commonSuffix mempty a === mempty
+
+checkCommonSuffix_identity_right
+    (RightGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> commonSuffix a mempty === mempty
 
 checkCommonSuffix_distributivity
     (RightDistributiveGCDMonoidInstance (_ :: a)) =

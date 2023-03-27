@@ -76,6 +76,15 @@ infix 5 <\>
 -- 'overlap' a a '==' a
 -- @
 --
+-- __/Identity/__
+--
+-- @
+-- 'overlap' 'mempty' a '==' 'mempty'
+-- @
+-- @
+-- 'overlap' a 'mempty' '==' 'mempty'
+-- @
+--
 class (Monoid m, LeftReductive m, RightReductive m) => OverlappingGCDMonoid m where
    stripPrefixOverlap :: m -> m -> m
    stripSuffixOverlap :: m -> m -> m
