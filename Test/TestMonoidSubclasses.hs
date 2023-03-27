@@ -603,6 +603,7 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("overlap law 1", OverlappingGCDTest checkOverlapLaw1),
          ("overlap law 2", OverlappingGCDTest checkOverlapLaw2),
          ("overlap law 3", OverlappingGCDTest checkOverlapLaw3),
+         ("overlap idempotence", OverlappingGCDTest checkOverlap_idempotence),
          ("isPrefixOf", LeftReductiveTest checkIsPrefixOf),
          ("stripSuffix", RightReductiveTest checkStripSuffix),
          ("isSuffixOf", RightReductiveTest checkIsSuffixOf),
@@ -620,9 +621,12 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("stripCommonSuffix 4", RightGCDTest checkStripCommonSuffix4),
          ("gcd", GCDTest checkGCD),
          ("gcd uniqueness", GCDTest checkGCD_uniqueness),
+         ("gcd idempotence", GCDTest checkGCD_idempotence),
          ("gcd distributivity (left)", DistributiveGCDTest checkGCD_distributivity_left),
          ("gcd distributivity (right)", DistributiveGCDTest checkGCD_distributivity_right),
+         ("commonPrefix idempotence", LeftGCDTest checkCommonPrefix_idempotence),
          ("commonPrefix distributivity", LeftDistributiveGCDTest checkCommonPrefix_distributivity),
+         ("commonSuffix idempotence", RightGCDTest checkCommonSuffix_idempotence),
          ("commonSuffix distributivity", RightDistributiveGCDTest checkCommonSuffix_distributivity),
          ("lcm reductivity (left)", LCMTest checkLCM_reductivity_left),
          ("lcm reductivity (right)", LCMTest checkLCM_reductivity_right),
@@ -952,6 +956,9 @@ checkOverlapLaw2 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: 
 checkOverlapLaw3 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = overlap a b <> stripPrefixOverlap a b == b
 
+checkOverlap_idempotence (OverlappingGCDMonoidInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) $ \a -> overlap a a === a
+
 checkStripPrefixOverlap1 (OverlappingGCDMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen (a, a)) check
    where check (a, b) = o `isSuffixOf` b && b `isSuffixOf` (a <> o)
             where o = stripPrefixOverlap a b
@@ -1043,6 +1050,11 @@ checkGCD_uniqueness
         \(a, b, c) ->
             all isJust [a </> c, b </> c, c </> gcd a b] === (gcd a b == c)
 
+checkGCD_idempotence
+    (GCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> gcd a a === a
+
 checkGCD_distributivity_left
     (DistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
@@ -1053,10 +1065,20 @@ checkGCD_distributivity_right
         forAll (arbitrary :: Gen (a, a, a)) $
         \(a, b, c) -> gcd (a <> c) (b <> c) == gcd a b <> c
 
+checkCommonPrefix_idempotence
+    (LeftGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> commonPrefix a a === a
+
 checkCommonPrefix_distributivity
     (LeftDistributiveGCDMonoidInstance (_ :: a)) =
         forAll (arbitrary :: Gen (a, a, a)) $
         \(a, b, c) -> commonPrefix (a <> b) (a <> c) == a <> commonPrefix b c
+
+checkCommonSuffix_idempotence
+    (RightGCDMonoidInstance (_ :: a)) =
+        forAll (arbitrary :: Gen a) $
+        \a -> commonSuffix a a === a
 
 checkCommonSuffix_distributivity
     (RightDistributiveGCDMonoidInstance (_ :: a)) =

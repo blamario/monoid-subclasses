@@ -85,6 +85,12 @@ import Prelude hiding (gcd)
 --     (c '==' 'gcd' a b)
 -- @
 --
+-- __/Idempotence/__
+--
+-- @
+-- 'gcd' a a '==' a
+-- @
+--
 class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
@@ -106,6 +112,16 @@ class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, 
 -- and it cannot itself be a suffix of any other common prefix @y@ of both values:
 --
 -- > not (y `isPrefixOf` a && y `isPrefixOf` b && commonPrefix a b `isSuffixOf` y)
+--
+-- In addition, the 'commonPrefix' operation must satisfy the following
+-- properties:
+--
+-- __/Idempotence/__
+--
+-- @
+-- 'commonPrefix' a a '==' a
+-- @
+--
 class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
    commonPrefix :: m -> m -> m
    stripCommonPrefix :: m -> m -> (m, m, m)
@@ -136,6 +152,16 @@ class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
 -- and it cannot itself be a prefix of any other common suffix @y@ of both values:
 --
 -- > not (y `isSuffixOf` a && y `isSuffixOf` b && commonSuffix a b `isPrefixOf` y)
+--
+-- In addition, the 'commonSuffix' operation must satisfy the following
+-- properties:
+--
+-- __/Idempotence/__
+--
+-- @
+-- 'commonSuffix' a a '==' a
+-- @
+--
 class (Monoid m, RightReductive m) => RightGCDMonoid m where
    commonSuffix :: m -> m -> m
    stripCommonSuffix :: m -> m -> (m, m, m)
