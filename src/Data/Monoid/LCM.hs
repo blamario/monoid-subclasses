@@ -7,7 +7,10 @@
 -- least monoid from which either argument can be subtracted with the '</>'
 -- operation.
 --
--- The 'LCMMonoid' class is for Abelian, /i.e./, 'Commutative' monoids.
+-- For LCM monoids that are distributive, this module also provides the
+-- 'DistributiveLCMMonoid' subclass of 'LCMMonoid'.
+--
+-- All classes in this module are for Abelian, /i.e./, 'Commutative' monoids.
 --
 module Data.Monoid.LCM
     ( LCMMonoid (..)
