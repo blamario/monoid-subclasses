@@ -23,12 +23,22 @@ Source-repository head
 
 Library
   hs-source-dirs:    src
-  Exposed-Modules:   Data.Semigroup.Cancellative, Data.Semigroup.Factorial,
-                     Data.Monoid.Cancellative, Data.Monoid.GCD, Data.Monoid.LCM, Data.Monoid.Monus,
-                     Data.Monoid.Factorial, Data.Monoid.Null, Data.Monoid.Textual,
-                     Data.Monoid.Instances.ByteString.UTF8, Data.Monoid.Instances.CharVector,
-                     Data.Monoid.Instances.Concat, Data.Monoid.Instances.Measured, Data.Monoid.Instances.Positioned,
-                     Data.Monoid.Instances.Stateful
+  Exposed-Modules:
+                     Data.Monoid.Cancellative
+                   , Data.Monoid.Factorial
+                   , Data.Monoid.GCD
+                   , Data.Monoid.Instances.ByteString.UTF8
+                   , Data.Monoid.Instances.CharVector
+                   , Data.Monoid.Instances.Concat
+                   , Data.Monoid.Instances.Measured
+                   , Data.Monoid.Instances.Positioned
+                   , Data.Monoid.Instances.Stateful
+                   , Data.Monoid.LCM
+                   , Data.Monoid.Monus
+                   , Data.Monoid.Null
+                   , Data.Monoid.Textual
+                   , Data.Semigroup.Cancellative
+                   , Data.Semigroup.Factorial
   Build-Depends:     base >= 4.9 && < 5,
                      bytestring >= 0.9 && < 1.0,
                      containers >= 0.5.7.0 && < 0.7,

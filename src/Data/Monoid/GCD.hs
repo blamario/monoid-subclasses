@@ -9,22 +9,57 @@
 -- The 'GCDMonoid' subclass adds the 'gcd' operation which takes two monoidal arguments and finds their greatest
 -- common divisor, or (more generally) the greatest monoid that can be extracted with the '</>' operation from both.
 --
--- The 'GCDMonoid' class is for Abelian, /i.e./, 'Commutative' monoids. Since most practical monoids in Haskell are not
--- Abelian, there are also its three symmetric superclasses:
--- 
+-- The 'GCDMonoid' class is for Abelian, /i.e./, 'Commutative' monoids.
+--
+-- == Non-commutative GCD monoids
+--
+--  Since most practical monoids in Haskell are not Abelian, the 'GCDMonoid'
+--  class has three symmetric superclasses:
+--
 -- * 'LeftGCDMonoid'
--- 
+--
+--      Class of monoids for which it is possible to find the greatest common
+--      /prefix/ of two monoidal values.
+--
 -- * 'RightGCDMonoid'
--- 
+--
+--      Class of monoids for which it is possible to find the greatest common
+--      /suffix/ of two monoidal values.
+--
 -- * 'OverlappingGCDMonoid'
-
+--
+--      Class of monoids for which it is possible to find the greatest common
+--      /overlap/ of two monoidal values.
+--
+-- == Distributive GCD monoids
+--
+-- Since some (but not all) GCD monoids are also distributive, there are three
+-- subclasses that add distributivity:
+--
+-- * 'DistributiveGCDMonoid'
+--
+--     Subclass of 'GCDMonoid' with /symmetric/ distributivity.
+--
+-- * 'LeftDistributiveGCDMonoid'
+--
+--     Subclass of 'LeftGCDMonoid' with /left/-distributivity.
+--
+-- * 'RightDistributiveGCDMonoid'
+--
+--     Subclass of 'RightGCDMonoid' with /right/-distributivity.
+--
 {-# LANGUAGE CPP, Haskell2010, FlexibleInstances, Trustworthy #-}
 
-module Data.Monoid.GCD (
-   GCDMonoid(..),
-   LeftGCDMonoid(..), RightGCDMonoid(..), OverlappingGCDMonoid(..)
-   )
-where
+module Data.Monoid.GCD
+    ( GCDMonoid (..)
+    , LeftGCDMonoid (..)
+    , RightGCDMonoid (..)
+    , OverlappingGCDMonoid (..)
+    , DistributiveGCDMonoid
+    , LeftDistributiveGCDMonoid
+    , RightDistributiveGCDMonoid
+    )
+    where
 
 import qualified Prelude
 
@@ -54,6 +89,9 @@ import Numeric.Natural (Natural)
 import Data.Semigroup.Cancellative
 import Data.Monoid.Monus
 
+-- These imports are marked as redundant, but are actually required by haddock:
+import Data.Maybe (isJust)
+
 import Prelude hiding (gcd)
 
 -- | Class of Abelian monoids that allow the greatest common divisor to be found for any two given values. The
@@ -63,10 +101,47 @@ import Prelude hiding (gcd)
 -- > Just a' = a </> p && Just b' = b </> p
 -- >    where p = gcd a b
 --
--- If a 'GCDMonoid' happens to also be 'Cancellative', it should additionally satisfy the following laws:
+-- In addition, the 'gcd' operation must satisfy the following properties:
 --
--- > gcd (a <> b) (a <> c) == a <> gcd b c
--- > gcd (a <> c) (b <> c) == gcd a b <> c
+-- __/Uniqueness/__
+--
+-- @
+-- 'all' 'isJust'
+--     [ a '</>' c
+--     , b '</>' c
+--     , c '</>' 'gcd' a b
+--     ]
+-- ==>
+--     (c '==' 'gcd' a b)
+-- @
+--
+-- __/Idempotence/__
+--
+-- @
+-- 'gcd' a a '==' a
+-- @
+--
+-- __/Identity/__
+--
+-- @
+-- 'gcd' 'mempty' a '==' 'mempty'
+-- @
+-- @
+-- 'gcd' a 'mempty' '==' 'mempty'
+-- @
+--
+-- __/Commutativity/__
+--
+-- @
+-- 'gcd' a b '==' 'gcd' b a
+-- @
+--
+-- __/Associativity/__
+--
+-- @
+-- 'gcd' ('gcd' a b) c '==' 'gcd' a ('gcd' b c)
+-- @
+--
 class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, OverlappingGCDMonoid m) => GCDMonoid m where
    gcd :: m -> m -> m
 
@@ -88,6 +163,39 @@ class (Monoid m, Commutative m, Reductive m, LeftGCDMonoid m, RightGCDMonoid m, 
 -- and it cannot itself be a suffix of any other common prefix @y@ of both values:
 --
 -- > not (y `isPrefixOf` a && y `isPrefixOf` b && commonPrefix a b `isSuffixOf` y)
+--
+-- In addition, the 'commonPrefix' operation must satisfy the following
+-- properties:
+--
+-- __/Idempotence/__
+--
+-- @
+-- 'commonPrefix' a a '==' a
+-- @
+--
+-- __/Identity/__
+--
+-- @
+-- 'commonPrefix' 'mempty' a '==' 'mempty'
+-- @
+-- @
+-- 'commonPrefix' a 'mempty' '==' 'mempty'
+-- @
+--
+-- __/Commutativity/__
+--
+-- @
+-- 'commonPrefix' a b '==' 'commonPrefix' b a
+-- @
+--
+-- __/Associativity/__
+--
+-- @
+-- 'commonPrefix' ('commonPrefix' a b) c
+-- '=='
+-- 'commonPrefix' a ('commonPrefix' b c)
+-- @
+--
 class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
    commonPrefix :: m -> m -> m
    stripCommonPrefix :: m -> m -> (m, m, m)
@@ -118,6 +226,39 @@ class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
 -- and it cannot itself be a prefix of any other common suffix @y@ of both values:
 --
 -- > not (y `isSuffixOf` a && y `isSuffixOf` b && commonSuffix a b `isPrefixOf` y)
+--
+-- In addition, the 'commonSuffix' operation must satisfy the following
+-- properties:
+--
+-- __/Idempotence/__
+--
+-- @
+-- 'commonSuffix' a a '==' a
+-- @
+--
+-- __/Identity/__
+--
+-- @
+-- 'commonSuffix' 'mempty' a '==' 'mempty'
+-- @
+-- @
+-- 'commonSuffix' a 'mempty' '==' 'mempty'
+-- @
+--
+-- __/Commutativity/__
+--
+-- @
+-- 'commonSuffix' a b '==' 'commonSuffix' b a
+-- @
+--
+-- __/Associativity/__
+--
+-- @
+-- 'commonSuffix' ('commonSuffix' a b) c
+-- '=='
+-- 'commonSuffix' a ('commonSuffix' b c)
+-- @
+--
 class (Monoid m, RightReductive m) => RightGCDMonoid m where
    commonSuffix :: m -> m -> m
    stripCommonSuffix :: m -> m -> (m, m, m)
@@ -455,3 +596,97 @@ instance RightGCDMonoid LazyText.Text where
           stripCommonSuffix (LazyEncoding.encodeUtf8 x) (LazyEncoding.encodeUtf8 y)
     in (LazyEncoding.decodeUtf8 xlist, LazyEncoding.decodeUtf8 ylist, LazyEncoding.decodeUtf8 slist)
 #endif
+
+--------------------------------------------------------------------------------
+-- DistributiveGCDMonoid
+--------------------------------------------------------------------------------
+
+-- | Class of /commutative/ GCD monoids with /symmetric/ distributivity.
+--
+-- In addition to the general 'GCDMonoid' laws, instances of this class
+-- must also satisfy the following laws:
+--
+-- @
+-- 'gcd' (a '<>' b) (a '<>' c) '==' a '<>' 'gcd' b c
+-- @
+-- @
+-- 'gcd' (a '<>' c) (b '<>' c) '==' 'gcd' a b '<>' c
+-- @
+--
+class (LeftDistributiveGCDMonoid m, RightDistributiveGCDMonoid m, GCDMonoid m)
+    => DistributiveGCDMonoid m
+
+instance DistributiveGCDMonoid ()
+instance DistributiveGCDMonoid (Product Natural)
+instance DistributiveGCDMonoid (Sum Natural)
+instance DistributiveGCDMonoid IntSet.IntSet
+instance DistributiveGCDMonoid a => DistributiveGCDMonoid (Dual a)
+instance Ord a => DistributiveGCDMonoid (Set.Set a)
+
+-------------------------------------------------------------------------------
+-- LeftDistributiveGCDMonoid
+--------------------------------------------------------------------------------
+
+-- | Class of /left/ GCD monoids with /left/-distributivity.
+--
+-- In addition to the general 'LeftGCDMonoid' laws, instances of this class
+-- must also satisfy the following law:
+--
+-- @
+-- 'commonPrefix' (a '<>' b) (a '<>' c) '==' a '<>' 'commonPrefix' b c
+-- @
+--
+class LeftGCDMonoid m => LeftDistributiveGCDMonoid m
+
+-- Instances for non-commutative monoids:
+instance Eq a => LeftDistributiveGCDMonoid [a]
+instance Eq a => LeftDistributiveGCDMonoid (Sequence.Seq a)
+instance Eq a => LeftDistributiveGCDMonoid (Vector.Vector a)
+instance LeftDistributiveGCDMonoid ByteString.ByteString
+instance LeftDistributiveGCDMonoid LazyByteString.ByteString
+instance LeftDistributiveGCDMonoid Text.Text
+instance LeftDistributiveGCDMonoid LazyText.Text
+
+-- Instances for commutative monoids:
+instance LeftDistributiveGCDMonoid ()
+instance LeftDistributiveGCDMonoid (Product Natural)
+instance LeftDistributiveGCDMonoid (Sum Natural)
+instance LeftDistributiveGCDMonoid IntSet.IntSet
+instance Ord a => LeftDistributiveGCDMonoid (Set.Set a)
+
+-- Instances for monoid transformers:
+instance RightDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Dual a)
+
+--------------------------------------------------------------------------------
+-- RightDistributiveGCDMonoid
+--------------------------------------------------------------------------------
+
+-- | Class of /right/ GCD monoids with /right/-distributivity.
+--
+-- In addition to the general 'RightGCDMonoid' laws, instances of this class
+-- must also satisfy the following law:
+--
+-- @
+-- 'commonSuffix' (a '<>' c) (b '<>' c) '==' 'commonSuffix' a b '<>' c
+-- @
+--
+class RightGCDMonoid m => RightDistributiveGCDMonoid m
+
+-- Instances for non-commutative monoids:
+instance Eq a => RightDistributiveGCDMonoid [a]
+instance Eq a => RightDistributiveGCDMonoid (Sequence.Seq a)
+instance Eq a => RightDistributiveGCDMonoid (Vector.Vector a)
+instance RightDistributiveGCDMonoid ByteString.ByteString
+instance RightDistributiveGCDMonoid LazyByteString.ByteString
+instance RightDistributiveGCDMonoid Text.Text
+instance RightDistributiveGCDMonoid LazyText.Text
+
+-- Instances for commutative monoids:
+instance RightDistributiveGCDMonoid ()
+instance RightDistributiveGCDMonoid (Product Natural)
+instance RightDistributiveGCDMonoid (Sum Natural)
+instance RightDistributiveGCDMonoid IntSet.IntSet
+instance Ord a => RightDistributiveGCDMonoid (Set.Set a)
+
+-- Instances for monoid transformers:
+instance LeftDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Dual a)

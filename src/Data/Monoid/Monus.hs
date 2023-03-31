@@ -67,6 +67,24 @@ infix 5 <\>
 -- > ∀y. ((∀x. (x `isPrefixOf` b && x `isSuffixOf` a) => x `isPrefixOf` y && x `isSuffixOf` y) => y == overlap a b)
 --
 -- @since 1.0
+--
+-- In addition, the 'overlap' operation must satisfy the following properties:
+--
+-- __/Idempotence/__
+--
+-- @
+-- 'overlap' a a '==' a
+-- @
+--
+-- __/Identity/__
+--
+-- @
+-- 'overlap' 'mempty' a '==' 'mempty'
+-- @
+-- @
+-- 'overlap' a 'mempty' '==' 'mempty'
+-- @
+--
 class (Monoid m, LeftReductive m, RightReductive m) => OverlappingGCDMonoid m where
    stripPrefixOverlap :: m -> m -> m
    stripSuffixOverlap :: m -> m -> m
