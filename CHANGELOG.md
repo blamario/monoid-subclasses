@@ -1,3 +1,7 @@
+Version 1.2.3
+---------------
+* Add `DistributiveGCDMonoid` and `DistributiveLCMMonoid` type class by Jonathan Knowles
+
 Version 1.2.2
 ---------------
 * Add `Data.Monoid.LCM` module with `LCMMonoid` type class by Jonathan Knowles
