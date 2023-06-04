@@ -31,8 +31,8 @@ import Data.Monoid.GCD (LeftGCDMonoid)
 import Data.Monoid.Factorial (FactorialMonoid)
 import qualified Data.Monoid.Factorial as Factorial
 
-import Prelude hiding (all, any, break, concatMap, dropWhile, foldl, foldl1, foldr, foldr1, map,
-                       scanl, scanl1, scanr, scanr1, span, takeWhile)
+import Prelude (Bool(..), Int, Char, String, Maybe(..), (.), ($), (==), (||), (&&),
+                id, seq, succ, const, otherwise, maybe, fst, snd)
 
 -- | The 'TextualMonoid' class is an extension of 'FactorialMonoid' specialized for monoids that can contain
 -- characters. Its methods are generally equivalent to their namesake functions from "Data.List" and "Data.Text", and
