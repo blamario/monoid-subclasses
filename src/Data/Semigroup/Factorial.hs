@@ -37,7 +37,10 @@ import Numeric.Natural (Natural)
 
 import Data.Monoid.Null (MonoidNull(null))
 
-import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, mapM, mapM_, null, reverse)
+import Prelude (Int, Maybe(..), Eq, Ord, Monoid, Applicative, Monad, Integral,
+                (.), (-), (+), ($), (*>), (++), pure, return, mempty, mappend,
+                mconcat, pred, id, seq, otherwise, uncurry, fromIntegral, not,
+                fmap, max, abs, signum, replicate, maybe, succ, const)
 
 -- | Class of semigroups that can be split into irreducible (/i.e./, atomic or prime) 'factors' in a unique way. Factors of
 -- a 'Product' are literally its prime factors:

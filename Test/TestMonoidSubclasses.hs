@@ -10,7 +10,11 @@
 
 module Main where
 
-import Prelude hiding (foldl, foldr, gcd, lcm, length, null, reverse, span, splitAt, takeWhile)
+import Prelude (Bool(..), Ordering, Int, Integer, Double, Float, Char, String,
+                Maybe(..), Either(..), Eq, Show, (.), ($), (*), (==), (/=),
+                (&&), (||), (++), (>>=), fmap, maybe, either, map, all, not,
+                undefined, const, flip, succ, uncurry, min, id, replicate,
+                minBound, maxBound, otherwise, fst, snd, concatMap, mappend, div)
 
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.QuickCheck (Arbitrary, CoArbitrary, Property, Gen,
@@ -507,7 +511,7 @@ distributiveLCMInstances =
     ]
 
 main = defaultMain (testGroup "MonoidSubclasses" $ map expand tests)
-  where expand (name, test) = testProperty name (foldr1 (.&&.) $ checkInstances test)
+  where expand (name, test) = testProperty name (List.foldr1 (.&&.) $ checkInstances test)
 
 checkInstances :: Test -> [Property]
 checkInstances (CommutativeTest checkType) = (map checkType commutativeInstances)
