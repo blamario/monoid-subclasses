@@ -58,6 +58,7 @@ import Data.Monoid.Instances.Concat (Concat)
 import qualified Data.Monoid.Instances.Concat as Concat
 import Data.Monoid.Instances.Measured (Measured)
 import qualified Data.Monoid.Instances.Measured as Measured
+import qualified Data.Monoid.Instances.PrefixMemory as PrefixMemory
 import Data.Monoid.Instances.Stateful (Stateful)
 import qualified Data.Monoid.Instances.Stateful as Stateful
 import Data.Monoid.Instances.Positioned (OffsetPositioned, LinePositioned)
@@ -238,7 +239,7 @@ factorialInstances = map upcast stableFactorialInstances
    where upcast (StableFactorialMonoidInstance i) = FactorialMonoidInstance i
 
 stableFactorialInstances :: [StableFactorialMonoidInstance]
-stableFactorialInstances = stable1 ++ map measure stable1 ++ map position stable1 
+stableFactorialInstances = stable1 ++ map measure stable1 ++ map prefixed stable1 ++ map position stable1 
    where stable1 = map upcast stableTextualInstances
                    ++ [StableFactorialMonoidInstance (mempty :: ByteString),
                        StableFactorialMonoidInstance (mempty :: Lazy.ByteString),
@@ -247,6 +248,7 @@ stableFactorialInstances = stable1 ++ map measure stable1 ++ map position stable
                        StableFactorialMonoidInstance (mempty :: Vector Int)]
          upcast (StableTextualMonoidInstance i) = StableFactorialMonoidInstance i
          measure (StableFactorialMonoidInstance i) = StableFactorialMonoidInstance (Measured.measure i)
+         prefixed (StableFactorialMonoidInstance i) = StableFactorialMonoidInstance (PrefixMemory.shadowed i)
          position (StableFactorialMonoidInstance (i :: a)) = 
             StableFactorialMonoidInstance (pure i :: OffsetPositioned a)
 
@@ -263,7 +265,7 @@ textualInstances = map upcast stableTextualInstances
    where upcast (StableTextualMonoidInstance i) = TextualMonoidInstance i
 
 stableTextualInstances :: [StableTextualMonoidInstance]
-stableTextualInstances = stable1 ++ map measure stable1 ++ concatMap position stable1
+stableTextualInstances = stable1 ++ map measure stable1 ++ map prefixed stable1 ++ concatMap position stable1
    where stable1 = [StableTextualMonoidInstance (mempty :: TestString),
                     StableTextualMonoidInstance (mempty :: String),
                     StableTextualMonoidInstance (mempty :: Text),
@@ -271,6 +273,7 @@ stableTextualInstances = stable1 ++ map measure stable1 ++ concatMap position st
                     StableTextualMonoidInstance (mempty :: Seq Char),
                     StableTextualMonoidInstance (mempty :: Vector Char)]
          measure (StableTextualMonoidInstance i) = StableTextualMonoidInstance (Measured.measure i)
+         prefixed (StableTextualMonoidInstance i) = StableTextualMonoidInstance (PrefixMemory.shadowed i)
          position (StableTextualMonoidInstance (i :: a)) = 
             [StableTextualMonoidInstance (pure i :: OffsetPositioned a),
              StableTextualMonoidInstance (pure i :: LinePositioned a)]
@@ -290,6 +293,7 @@ leftReductiveInstances = map upcast leftCancellativeInstances
                              LeftReductiveMonoidInstance (mempty :: LinePositioned Text),
                              LeftReductiveMonoidInstance (mempty :: OffsetPositioned Text),
                              LeftReductiveMonoidInstance (mempty :: Measured Text),
+                             LeftReductiveMonoidInstance (mempty :: PrefixMemory.Shadowed Text),
                              LeftReductiveMonoidInstance (mempty :: Stateful (Sum Integer) Text)]
    where upcast (LeftCancellativeMonoidInstance i) = LeftReductiveMonoidInstance i
 
@@ -307,6 +311,7 @@ rightReductiveInstances = map upcast rightCancellativeInstances
                               RightReductiveMonoidInstance (mempty :: LinePositioned Text),
                               RightReductiveMonoidInstance (mempty :: OffsetPositioned Text),
                               RightReductiveMonoidInstance (mempty :: Measured Text),
+                              RightReductiveMonoidInstance (mempty :: PrefixMemory.Shadowed Text),
                               RightReductiveMonoidInstance (mempty :: Stateful (Sum Integer) Text)]
    where upcast (RightCancellativeMonoidInstance i) = RightReductiveMonoidInstance i
 
@@ -1314,6 +1319,9 @@ instance (Arbitrary a, MonoidNull a, PositiveMonoid a) => Arbitrary (Concat a) w
 instance (Arbitrary a, FactorialMonoid a) => Arbitrary (Measured a) where
    arbitrary = fmap Measured.measure arbitrary
 
+instance (Arbitrary a, Monoid a) => Arbitrary (PrefixMemory.Shadowed a) where
+   arbitrary = fmap PrefixMemory.shadowed arbitrary
+
 instance (Arbitrary a, FactorialMonoid a) => Arbitrary (OffsetPositioned a) where
    arbitrary = fmap pure arbitrary
 
@@ -1331,6 +1339,9 @@ instance CoArbitrary a => CoArbitrary (Concat a) where
 
 instance CoArbitrary a => CoArbitrary (Measured a) where
    coarbitrary = coarbitrary . Measured.extract
+
+instance CoArbitrary a => CoArbitrary (PrefixMemory.Shadowed a) where
+   coarbitrary = coarbitrary . PrefixMemory.content
 
 instance CoArbitrary a => CoArbitrary (OffsetPositioned a) where
    coarbitrary = coarbitrary . Positioned.extract

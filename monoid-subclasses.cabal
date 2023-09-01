@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             1.2.3
+Version:             1.2.4
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -32,6 +32,7 @@ Library
                    , Data.Monoid.Instances.Concat
                    , Data.Monoid.Instances.Measured
                    , Data.Monoid.Instances.Positioned
+                   , Data.Monoid.Instances.PrefixMemory
                    , Data.Monoid.Instances.Stateful
                    , Data.Monoid.LCM
                    , Data.Monoid.Monus

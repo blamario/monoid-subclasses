@@ -1,11 +1,14 @@
+Version 1.2.4
+---------------
+* Added `Data.Monoid.Instances.PrefixMemory.Shadowed` monoid transformer
 Version 1.2.3
 ---------------
-* Add `DistributiveGCDMonoid` and `DistributiveLCMMonoid` type class by Jonathan Knowles
+* Added `DistributiveGCDMonoid` and `DistributiveLCMMonoid` type class by Jonathan Knowles
 
 Version 1.2.2
 ---------------
-* Add `Data.Monoid.LCM` module with `LCMMonoid` type class by Jonathan Knowles
-* Repair links to Hackage within `README.md` by Jonathan Knowles
+* Added `Data.Monoid.LCM` module with `LCMMonoid` type class by Jonathan Knowles
+* Repaired links to Hackage within `README.md` by Jonathan Knowles
 
 Version 1.2.1
 ---------------
