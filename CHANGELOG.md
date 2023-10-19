@@ -1,6 +1,11 @@
+Version 1.2.4.1
+---------------
+* Bumped the `text` dependency upper bounds
+
 Version 1.2.4
 ---------------
 * Added `Data.Monoid.Instances.PrefixMemory.Shadowed` monoid transformer
+
 Version 1.2.3
 ---------------
 * Added `DistributiveGCDMonoid` and `DistributiveLCMMonoid` type class by Jonathan Knowles
