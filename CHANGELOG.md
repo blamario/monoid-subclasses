@@ -1,3 +1,8 @@
+Unreleased (Minor)
+------------------
+
+* `Data.Monoid.Null.MonoidNull` now has a default implementation
+
 Version 1.2.4.1
 ---------------
 * Bumped the `text` dependency upper bounds

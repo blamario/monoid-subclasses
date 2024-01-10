@@ -37,6 +37,8 @@ import Prelude hiding (null)
 -- Furthermore, the performance of this method should be constant, /i.e./, independent of the length of its argument.
 class Monoid m => MonoidNull m where
    null :: m -> Bool
+   default null :: Eq m => m -> Bool
+   null = (==) mempty
 
 -- | Subclass of 'Monoid' for types whose values have no inverse, with the exception of 'Data.Monoid.mempty'. More
 -- formally, the class instances must satisfy the following law:
