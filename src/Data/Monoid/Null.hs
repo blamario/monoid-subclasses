@@ -1,11 +1,11 @@
-{- 
+{-
     Copyright 2013-2015 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
 -- | This module defines the MonoidNull class and some of its instances.
--- 
+--
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
 
@@ -13,7 +13,7 @@ module Data.Monoid.Null (
    MonoidNull(..), PositiveMonoid
    )
 where
-   
+
 import Data.Monoid -- (Monoid, First(..), Last(..), Dual(..), Sum(..), Product(..), All(getAll), Any(getAny))
 import qualified Data.List as List
 import qualified Data.ByteString as ByteString
@@ -31,16 +31,16 @@ import Numeric.Natural (Natural)
 import Prelude hiding (null)
 
 -- | Extension of 'Monoid' that allows testing a value for equality with 'mempty'. The following law must hold:
--- 
+--
 -- prop> null x == (x == mempty)
--- 
+--
 -- Furthermore, the performance of this method should be constant, /i.e./, independent of the length of its argument.
 class Monoid m => MonoidNull m where
    null :: m -> Bool
 
 -- | Subclass of 'Monoid' for types whose values have no inverse, with the exception of 'Data.Monoid.mempty'. More
 -- formally, the class instances must satisfy the following law:
--- 
+--
 -- prop> null (x <> y) == (null x && null y)
 class MonoidNull m => PositiveMonoid m
 
