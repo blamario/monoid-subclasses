@@ -2,6 +2,24 @@ Unreleased (Minor)
 ------------------
 
 * `Data.Monoid.Null.MonoidNull` now has a default implementation
+* Add instances of `MonoidNull` and (where appropriate) `PositiveMonoid` for:
+  - `(a, b, c, d, e)`
+  - `Data.Functor.Compose f g a`
+  - `Data.Functor.Const r a`
+  - `Data.Functor.Identity a`
+  - `Data.Functor.Product f g a`
+  - `Data.Ord.Down a`
+  - `Data.Proxy.Proxy a`
+  - `Data.Semigroup.Max a`
+  - `Data.Semigroup.Min a`
+  - `Data.Semigroup.WrappedMonoid a`
+  - `GHC.Generics.(:*:) f g a`
+  - `GHC.Generics.(:.:) f g a`
+  - `GHC.Generics.K1 i c p`
+  - `GHC.Generics.M1 i c f p`
+  - `GHC.Generics.Par1 p`
+  - `GHC.Generics.Rec1 f p`
+  - `GHC.Generics.U1 p`
 
 Version 1.2.4.1
 ---------------
