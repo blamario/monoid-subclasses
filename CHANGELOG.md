@@ -1,5 +1,5 @@
-Unreleased (Minor)
-------------------
+Version 1.2.5
+---------------
 
 * `Data.Monoid.Null.MonoidNull` now has a default implementation
 * Add instances of `MonoidNull` and (where appropriate) `PositiveMonoid` for:
@@ -20,10 +20,12 @@ Unreleased (Minor)
   - `GHC.Generics.Par1 p`
   - `GHC.Generics.Rec1 f p`
   - `GHC.Generics.U1 p`
+* Added instances of `Reductive` for `Max a`, `Min a`, `Any`, and `All`
+* Bumped the `commutative-semigroups` dependency upper bound
 
 Version 1.2.4.1
 ---------------
-* Bumped the `text` dependency upper bounds
+* Bumped the `text` dependency upper bound
 
 Version 1.2.4
 ---------------

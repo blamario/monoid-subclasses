@@ -202,6 +202,48 @@ instance (CommutativeProduct a, Integral a) => LeftReductive (Product a) where
 instance (CommutativeProduct a, Integral a) => RightReductive (Product a) where
    stripSuffix a b = b </> a
 
+-- Max & Min instances
+
+instance Ord a => Reductive (Max a) where
+   a </> b = if b <= a then Just a else Nothing
+instance Ord a => Reductive (Min a) where
+   a </> b = if a <= b then Just a else Nothing
+
+instance Ord a => LeftReductive (Max a) where
+   isPrefixOf a b = a <= b
+   stripPrefix a b = b </> a
+instance Ord a => LeftReductive (Min a) where
+   isPrefixOf a b = b <= a
+   stripPrefix a b = b </> a
+
+instance Ord a => RightReductive (Max a) where
+   isSuffixOf a b = a <= b
+   stripSuffix a b = b </> a
+instance Ord a => RightReductive (Min a) where
+   isSuffixOf a b = b <= a
+   stripSuffix a b = b </> a
+
+-- Any & All instances
+
+instance Reductive Any where
+   a </> b = if b <= a then Just a else Nothing
+instance Reductive All where
+   a </> b = if a <= b then Just a else Nothing
+
+instance LeftReductive Any where
+   isPrefixOf a b = a <= b
+   stripPrefix a b = b </> a
+instance LeftReductive All where
+   isPrefixOf a b = b <= a
+   stripPrefix a b = b </> a
+
+instance RightReductive Any where
+   isSuffixOf a b = a <= b
+   stripSuffix a b = b </> a
+instance RightReductive All where
+   isSuffixOf a b = b <= a
+   stripSuffix a b = b </> a
+
 -- Pair instances
 
 instance (Reductive a, Reductive b) => Reductive (a, b) where

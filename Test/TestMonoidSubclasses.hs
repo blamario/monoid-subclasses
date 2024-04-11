@@ -64,7 +64,7 @@ import qualified Data.Monoid.Instances.Stateful as Stateful
 import Data.Monoid.Instances.Positioned (OffsetPositioned, LinePositioned)
 import qualified Data.Monoid.Instances.Positioned as Positioned
 
-import Data.Semigroup (Semigroup, (<>))
+import Data.Semigroup (Semigroup, (<>), Max, Min, WrappedMonoid)
 import Data.Monoid (Monoid, mempty, mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
 import Data.Semigroup.Factorial (Factorial, StableFactorial, 
@@ -184,7 +184,10 @@ data DistributiveLCMMonoidInstance =
 
 commutativeInstances :: [CommutativeMonoidInstance]
 commutativeInstances = map upcast reductiveInstances
-                       ++ [CommutativeMonoidInstance (mempty :: Product Double)]
+                       ++ [CommutativeMonoidInstance (mempty :: Product Double),
+                           CommutativeMonoidInstance (mempty :: All),
+                           CommutativeMonoidInstance (mempty :: Any),
+                           CommutativeMonoidInstance (mempty :: WrappedMonoid All)]
    where upcast (ReductiveMonoidInstance i) = CommutativeMonoidInstance i
 
 nullInstances :: [NullMonoidInstance]
@@ -317,6 +320,10 @@ rightReductiveInstances = map upcast rightCancellativeInstances
 
 reductiveInstances = map upcast cancellativeInstances
                      ++ [ReductiveMonoidInstance (mempty :: Product Integer),
+                         ReductiveMonoidInstance (mempty :: Max Int),
+                         ReductiveMonoidInstance (mempty :: Min Int),
+                         ReductiveMonoidInstance (mempty :: All),
+                         ReductiveMonoidInstance (mempty :: Any),
                          ReductiveMonoidInstance (mempty :: IntSet),
                          ReductiveMonoidInstance (mempty :: Maybe IntSet),
                          ReductiveMonoidInstance (mempty :: Set Integer)]
