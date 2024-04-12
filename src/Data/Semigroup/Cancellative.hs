@@ -37,6 +37,8 @@ module Data.Semigroup.Cancellative (
    )
 where
 
+import Data.Functor.Const
+import Data.Functor.Identity
 import Data.Semigroup -- (Semigroup, Dual(..), Sum(..), Product(..))
 import Data.Semigroup.Commutative
 import qualified Data.List as List
@@ -243,6 +245,36 @@ instance RightReductive Any where
 instance RightReductive All where
    isSuffixOf a b = b <= a
    stripSuffix a b = b </> a
+
+-- Identity & Const instances
+
+instance Reductive a => Reductive (Identity a) where
+   Identity a </> Identity b = Identity <$> (a </> b)
+instance Reductive a => Reductive (Const a x) where
+   Const a </> Const b = Const <$> (a </> b)
+
+instance Cancellative a => Cancellative (Identity a)
+instance Cancellative a => Cancellative (Const a x)
+
+instance LeftReductive a => LeftReductive (Identity a) where
+   stripPrefix (Identity a) (Identity b) = Identity <$> stripPrefix a b
+   isPrefixOf (Identity a) (Identity b) = isPrefixOf a b
+instance LeftReductive a => LeftReductive (Const a x) where
+   stripPrefix (Const a) (Const b) = Const <$> stripPrefix a b
+   isPrefixOf (Const a) (Const b) = isPrefixOf a b
+
+instance RightReductive a => RightReductive (Identity a) where
+   stripSuffix (Identity a) (Identity b) = Identity <$> stripSuffix a b
+   isSuffixOf (Identity a) (Identity b) = isSuffixOf a b
+instance RightReductive a => RightReductive (Const a x) where
+   stripSuffix (Const a) (Const b) = Const <$> stripSuffix a b
+   isSuffixOf (Const a) (Const b) = isSuffixOf a b
+
+instance LeftCancellative a => LeftCancellative (Identity a)
+instance LeftCancellative a => LeftCancellative (Const a x)
+
+instance RightCancellative a => RightCancellative (Identity a)
+instance RightCancellative a => RightCancellative (Const a x)
 
 -- Pair instances
 

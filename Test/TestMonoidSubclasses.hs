@@ -23,6 +23,8 @@ import Test.QuickCheck.Instances ()
 
 import Control.Applicative (Applicative(..), liftA2)
 import Data.Functor ((<$>))
+import Data.Functor.Const (Const(..))
+import Data.Functor.Identity (Identity(..))
 import Data.Foldable (foldMap, toList)
 import Data.Int (Int8, Int32)
 import qualified Data.Foldable as Foldable
@@ -31,6 +33,7 @@ import Data.List (intersperse, unfoldr)
 import qualified Data.List as List
 import Data.Maybe (isJust)
 import Data.Either (lefts, rights)
+import Data.Proxy (Proxy)
 import Data.Tuple (swap)
 import Data.String (IsString, fromString)
 import Data.Char (isLetter)
@@ -64,7 +67,7 @@ import qualified Data.Monoid.Instances.Stateful as Stateful
 import Data.Monoid.Instances.Positioned (OffsetPositioned, LinePositioned)
 import qualified Data.Monoid.Instances.Positioned as Positioned
 
-import Data.Semigroup (Semigroup, (<>), Max, Min, WrappedMonoid)
+import Data.Semigroup (Semigroup, (<>), Max, Min)
 import Data.Monoid (Monoid, mempty, mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
 import Data.Semigroup.Factorial (Factorial, StableFactorial, 
@@ -184,10 +187,7 @@ data DistributiveLCMMonoidInstance =
 
 commutativeInstances :: [CommutativeMonoidInstance]
 commutativeInstances = map upcast reductiveInstances
-                       ++ [CommutativeMonoidInstance (mempty :: Product Double),
-                           CommutativeMonoidInstance (mempty :: All),
-                           CommutativeMonoidInstance (mempty :: Any),
-                           CommutativeMonoidInstance (mempty :: WrappedMonoid All)]
+                       ++ [CommutativeMonoidInstance (mempty :: Product Double)]
    where upcast (ReductiveMonoidInstance i) = CommutativeMonoidInstance i
 
 nullInstances :: [NullMonoidInstance]
@@ -209,6 +209,11 @@ positiveInstances = map upcast stableFactorialInstances
                          PositiveMonoidInstance (mempty :: Ordering),
                          PositiveMonoidInstance (mempty :: All),
                          PositiveMonoidInstance (mempty :: Any),
+                         PositiveMonoidInstance (mempty :: Max Int),
+                         PositiveMonoidInstance (mempty :: Min Int),
+                         PositiveMonoidInstance (mempty :: Const String Float),
+                         PositiveMonoidInstance (mempty :: Identity Ordering),
+                         PositiveMonoidInstance (mempty :: (Proxy Float)),
                          PositiveMonoidInstance (mempty :: (Maybe (Sum Integer))),
                          PositiveMonoidInstance (mempty :: (Product Natural)),
                          PositiveMonoidInstance (mempty :: (Sum Natural)),
@@ -324,6 +329,8 @@ reductiveInstances = map upcast cancellativeInstances
                          ReductiveMonoidInstance (mempty :: Min Int),
                          ReductiveMonoidInstance (mempty :: All),
                          ReductiveMonoidInstance (mempty :: Any),
+                         ReductiveMonoidInstance (mempty :: Identity IntSet),
+                         ReductiveMonoidInstance (mempty :: Const (Sum Int) Float),
                          ReductiveMonoidInstance (mempty :: IntSet),
                          ReductiveMonoidInstance (mempty :: Maybe IntSet),
                          ReductiveMonoidInstance (mempty :: Set Integer)]
