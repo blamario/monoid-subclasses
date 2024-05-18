@@ -1,3 +1,8 @@
+Version 1.2.5.1
+---------------
+
+* Bumped the `containers` dependency upper bound
+
 Version 1.2.5
 ---------------
 
