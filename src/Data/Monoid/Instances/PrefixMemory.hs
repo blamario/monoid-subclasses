@@ -130,6 +130,10 @@ instance (StableFactorial m, FactorialMonoid m) => FactorialMonoid (Shadowed m) 
       where rewrap (cp, cs) = (Shadowed p cp, Shadowed (p <> cp) cs)
    splitPrimeSuffix (Shadowed p c) = fmap rewrap (splitPrimeSuffix c)
       where rewrap (cp, cs) = (Shadowed p cp, Shadowed (p <> cp) cs)
+   inits (Shadowed p c) = Shadowed p <$> inits c
+   tails (Shadowed p c)
+      | null p = zipWith Shadowed (inits c) (tails c)
+      | otherwise = zipWith (Shadowed . (p <>)) (inits c) (tails c)
    spanMaybe s0 f (Shadowed p0 c) = rewrap $ Factorial.spanMaybe (s0, p0) f' c
       where f' (s, p) prime = do s' <- f s (Shadowed p prime)
                                  let p' = p <> prime
