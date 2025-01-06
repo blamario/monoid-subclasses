@@ -70,11 +70,11 @@ instance (Semigroup a, Semigroup b, Monoid a, Monoid b) => Monoid (Stateful a b)
    {-# INLINE mempty #-}
    {-# INLINE mappend #-}
 
-instance (MonoidNull a, MonoidNull b) => MonoidNull (Stateful a b) where
+instance (Semigroup a, Semigroup b, MonoidNull a, MonoidNull b) => MonoidNull (Stateful a b) where
    null (Stateful x) = null x
    {-# INLINE null #-}
 
-instance (PositiveMonoid a, PositiveMonoid b) => PositiveMonoid (Stateful a b)
+instance (Semigroup a, Semigroup b, PositiveMonoid a, PositiveMonoid b) => PositiveMonoid (Stateful a b)
 
 instance (LeftReductive a, LeftReductive b) => LeftReductive (Stateful a b) where
    isPrefixOf (Stateful x) (Stateful x') = isPrefixOf x x'
