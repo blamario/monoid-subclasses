@@ -356,7 +356,11 @@ monusInstances = [MonusInstance (mempty :: Product Natural),
                   MonusInstance (mempty :: Maybe (Sum Natural)),
                   MonusInstance (mempty :: IntSet),
                   MonusInstance (mempty :: Set String),
-                  MonusInstance (mempty :: ())]
+                  MonusInstance (mempty :: ()),
+                  MonusInstance (mempty :: (Sum Natural)),
+                  MonusInstance (mempty :: (Sum Natural, Sum Natural)),
+                  MonusInstance (mempty :: (Sum Natural, Sum Natural, Sum Natural)),
+                  MonusInstance (mempty :: (Sum Natural, Sum Natural, Sum Natural, Sum Natural))]
 
 leftCancellativeInstances = map upcast cancellativeInstances
                             ++ [LeftCancellativeMonoidInstance (mempty :: String),
