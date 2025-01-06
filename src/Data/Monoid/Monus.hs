@@ -34,11 +34,32 @@ import Data.Monoid.Null (MonoidNull(null))
 
 import Prelude hiding (null)
 
--- | Class of Abelian monoids with monus. The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
--- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative and commutative:
+-- | Class of Abelian monoids with monus.
+--
+-- The monus operation '<\>' is a synonym for both 'stripPrefixOverlap' and
+-- 'stripSuffixOverlap', which must be equivalent as '<>' is both associative
+-- and commutative:
 --
 -- > (<\>) = flip stripPrefixOverlap
 -- > (<\>) = flip stripSuffixOverlap
+--
+-- In addition, the monus operation '<\>' must satisfy the following laws:
+--
+-- @
+-- a '<\>' a '==' 'mempty'
+-- @
+--
+-- @
+-- 'mempty' '<\>' a '==' 'mempty'
+-- @
+--
+-- @
+-- a '<>' (b '<\>' a) '==' b '<>' (a '<\>' b)
+-- @
+--
+-- @
+-- (a '<\>' b) '<\>' c '==' a '<\>' (b '<>' c)
+-- @
 --
 -- @since 1.0
 class (Commutative m, Monoid m, OverlappingGCDMonoid m) => Monus m where
