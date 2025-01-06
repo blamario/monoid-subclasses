@@ -629,6 +629,12 @@ tests = [("CommutativeMonoid", CommutativeTest checkCommutative),
          ("overlap idempotence", OverlappingGCDTest checkOverlap_idempotence),
          ("overlap identity (left)", OverlappingGCDTest checkOverlap_identity_left),
          ("overlap identity (right)", OverlappingGCDTest checkOverlap_identity_right),
+         ("Monus identity (1)", MonusTest checkMonus_identity_1),
+         ("Monus identity (2)", MonusTest checkMonus_identity_2),
+         ("Monus mappend (1)", MonusTest checkMonus_mappend_1),
+         ("Monus mappend (2)", MonusTest checkMonus_mappend_2),
+         ("Monus stripPrefixOverlap", MonusTest checkMonus_stripPrefixOverlap),
+         ("Monus stripSuffixOverlap", MonusTest checkMonus_stripSuffixOverlap),
          ("isPrefixOf", LeftReductiveTest checkIsPrefixOf),
          ("stripSuffix", RightReductiveTest checkStripSuffix),
          ("isSuffixOf", RightReductiveTest checkIsSuffixOf),
@@ -1262,6 +1268,36 @@ checkLCM_distributivity_lcm_gcd (DistributiveLCMMonoidInstance (_ :: a)) =
     forAll (arbitrary :: Gen (a, a, a)) check
   where
     check a b c = gcd a (lcm b c) === lcm (gcd a b) (gcd a c)
+
+checkMonus_identity_1 (MonusInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) check
+  where
+    check a = a <\> a === mempty
+
+checkMonus_identity_2 (MonusInstance (_ :: a)) =
+    forAll (arbitrary :: Gen a) check
+  where
+    check a = mempty <\> a === mempty
+
+checkMonus_mappend_1 (MonusInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check a b = a <> (b <\> a) === b <> (a <\> b)
+
+checkMonus_mappend_2 (MonusInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a, a)) check
+  where
+    check (a, b, c) = (a <\> b) <\> c === a <\> (b <> c)
+
+checkMonus_stripPrefixOverlap (MonusInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check (a, b) = (a <\> b) === stripPrefixOverlap b a
+
+checkMonus_stripSuffixOverlap (MonusInstance (_ :: a)) =
+    forAll (arbitrary :: Gen (a, a)) check
+  where
+    check (a, b) = (a <\> b) === stripSuffixOverlap b a
 
 textualFactors :: TextualMonoid t => t -> [Either t Char]
 textualFactors = map characterize . factors
