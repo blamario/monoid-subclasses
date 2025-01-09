@@ -27,6 +27,8 @@
 -- * 'RightCancellative'
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Semigroup.Cancellative (
    -- * Symmetric, commutative semigroup classes
@@ -248,24 +250,19 @@ instance RightReductive All where
 
 -- Identity & Const instances
 
-instance Reductive a => Reductive (Identity a) where
-   Identity a </> Identity b = Identity <$> (a </> b)
+deriving instance Reductive a => Reductive (Identity a)
 instance Reductive a => Reductive (Const a x) where
    Const a </> Const b = Const <$> (a </> b)
 
 instance Cancellative a => Cancellative (Identity a)
 instance Cancellative a => Cancellative (Const a x)
 
-instance LeftReductive a => LeftReductive (Identity a) where
-   stripPrefix (Identity a) (Identity b) = Identity <$> stripPrefix a b
-   isPrefixOf (Identity a) (Identity b) = isPrefixOf a b
+deriving instance LeftReductive a => LeftReductive (Identity a)
 instance LeftReductive a => LeftReductive (Const a x) where
    stripPrefix (Const a) (Const b) = Const <$> stripPrefix a b
    isPrefixOf (Const a) (Const b) = isPrefixOf a b
 
-instance RightReductive a => RightReductive (Identity a) where
-   stripSuffix (Identity a) (Identity b) = Identity <$> stripSuffix a b
-   isSuffixOf (Identity a) (Identity b) = isSuffixOf a b
+deriving instance RightReductive a => RightReductive (Identity a)
 instance RightReductive a => RightReductive (Const a x) where
    stripSuffix (Const a) (Const b) = Const <$> stripSuffix a b
    isSuffixOf (Const a) (Const b) = isSuffixOf a b

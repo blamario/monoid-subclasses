@@ -8,6 +8,8 @@
 --
 
 {-# LANGUAGE Haskell2010, CPP, FlexibleInstances, DefaultSignatures, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Monoid.Null (
    MonoidNull(..), PositiveMonoid
@@ -144,8 +146,7 @@ instance MonoidNull r => MonoidNull (Const r a) where
    null (Const r) = null r
 
 -- | @since 1.2.5.0
-instance MonoidNull a => MonoidNull (Identity a) where
-   null (Identity a) = null a
+deriving instance MonoidNull a => MonoidNull (Identity a)
 
 -- | @since 1.2.5.0
 instance MonoidNull a => MonoidNull (WrappedMonoid a) where
