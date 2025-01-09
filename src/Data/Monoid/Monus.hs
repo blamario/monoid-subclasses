@@ -9,12 +9,15 @@
 -- @since 1.0
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Monoid.Monus (
    Monus(..), OverlappingGCDMonoid(..)
    )
 where
 
+import Data.Functor.Identity (Identity (Identity))
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
@@ -132,6 +135,11 @@ instance OverlappingGCDMonoid () where
    stripOverlap () () = ((), (), ())
    stripPrefixOverlap () () = ()
    stripSuffixOverlap () () = ()
+
+-- Identity instances
+
+deriving instance Monus a => Monus (Identity a)
+deriving instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Identity a)
 
 -- Dual instances
 

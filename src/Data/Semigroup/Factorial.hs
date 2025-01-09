@@ -8,6 +8,8 @@
 --
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Semigroup.Factorial (
    -- * Classes
@@ -18,6 +20,7 @@ module Data.Semigroup.Factorial (
 where
 
 import qualified Control.Monad as Monad
+import Data.Functor.Identity (Identity (Identity))
 import Data.Semigroup -- (Semigroup (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -116,6 +119,8 @@ instance Factorial () where
    primeSuffix () = ()
    length () = 0
    reverse = id
+
+deriving instance Factorial a => Factorial (Identity a)
 
 instance Factorial a => Factorial (Dual a) where
    factors (Dual a) = fmap Dual (reverse $ factors a)

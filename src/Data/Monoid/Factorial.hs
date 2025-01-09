@@ -8,6 +8,8 @@
 --
 
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Monoid.Factorial (
    module Data.Semigroup.Factorial,
@@ -16,6 +18,7 @@ module Data.Monoid.Factorial (
 where
 
 import Control.Arrow (first)
+import Data.Functor.Identity (Identity (Identity))
 import Data.Monoid -- (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -162,6 +165,8 @@ type StableFactorialMonoid m = (StableFactorial m, FactorialMonoid m, PositiveMo
 instance FactorialMonoid () where
    splitPrimePrefix () = Nothing
    splitPrimeSuffix () = Nothing
+
+deriving instance FactorialMonoid a => FactorialMonoid (Identity a)
 
 instance FactorialMonoid a => FactorialMonoid (Dual a) where
    splitPrimePrefix (Dual a) = case splitPrimeSuffix a

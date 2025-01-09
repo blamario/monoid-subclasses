@@ -49,6 +49,8 @@
 --     Subclass of 'RightGCDMonoid' with /right/-distributivity.
 --
 {-# LANGUAGE CPP, Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Monoid.GCD
     ( GCDMonoid (..)
@@ -63,6 +65,7 @@ module Data.Monoid.GCD
 
 import qualified Prelude
 
+import Data.Functor.Identity (Identity (Identity))
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Unsafe as ByteString
@@ -284,6 +287,12 @@ instance LeftGCDMonoid () where
 -- | /O(1)/
 instance RightGCDMonoid () where
    commonSuffix () () = ()
+
+-- Identity instances
+
+deriving instance GCDMonoid a => GCDMonoid (Identity a)
+deriving instance LeftGCDMonoid a => LeftGCDMonoid (Identity a)
+deriving instance RightGCDMonoid a => RightGCDMonoid (Identity a)
 
 -- Dual instances
 
@@ -617,6 +626,7 @@ class (LeftDistributiveGCDMonoid m, RightDistributiveGCDMonoid m, GCDMonoid m)
     => DistributiveGCDMonoid m
 
 instance DistributiveGCDMonoid ()
+instance DistributiveGCDMonoid a => DistributiveGCDMonoid (Identity a)
 instance DistributiveGCDMonoid (Product Natural)
 instance DistributiveGCDMonoid (Sum Natural)
 instance DistributiveGCDMonoid IntSet.IntSet
@@ -655,6 +665,7 @@ instance LeftDistributiveGCDMonoid IntSet.IntSet
 instance Ord a => LeftDistributiveGCDMonoid (Set.Set a)
 
 -- Instances for monoid transformers:
+instance LeftDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Identity a)
 instance RightDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Dual a)
 
 --------------------------------------------------------------------------------
@@ -689,4 +700,5 @@ instance RightDistributiveGCDMonoid IntSet.IntSet
 instance Ord a => RightDistributiveGCDMonoid (Set.Set a)
 
 -- Instances for monoid transformers:
+instance RightDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Identity a)
 instance LeftDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Dual a)
