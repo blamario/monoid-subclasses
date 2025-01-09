@@ -231,6 +231,7 @@ factorialInstances :: [FactorialMonoidInstance]
 factorialInstances = map upcast stableFactorialInstances
                      ++ [FactorialMonoidInstance (mempty :: Sum Integer),
                          FactorialMonoidInstance (mempty :: Product Int32),
+                         FactorialMonoidInstance (mempty :: Identity String),
                          FactorialMonoidInstance (mempty :: Maybe String),
                          FactorialMonoidInstance (mempty :: (Text, String)),
                          FactorialMonoidInstance (mempty :: (Product Int32, ByteString, Sum Integer)),
@@ -338,6 +339,7 @@ reductiveInstances = map upcast cancellativeInstances
 
 overlappingGCDMonoidInstances = map upcast monusInstances
                                ++ [OverlappingGCDMonoidInstance (mempty :: String),
+                                   OverlappingGCDMonoidInstance (mempty :: Identity String),
                                    OverlappingGCDMonoidInstance (mempty :: Seq Int),
                                    OverlappingGCDMonoidInstance (mempty :: ByteString),
                                    OverlappingGCDMonoidInstance (mempty :: Lazy.ByteString),
@@ -350,6 +352,7 @@ overlappingGCDMonoidInstances = map upcast monusInstances
 
 monusInstances = [MonusInstance (mempty :: Product Natural),
                   MonusInstance (mempty :: Sum Natural),
+                  MonusInstance (mempty :: Identity (Sum Natural)),
                   MonusInstance (mempty :: Dual (Product Natural)),
                   MonusInstance (mempty :: Maybe ()),
                   MonusInstance (mempty :: Maybe (Product Natural)),
@@ -393,6 +396,7 @@ leftGCDInstances = map upcast gcdInstances
                        LeftGCDMonoidInstance (mempty :: Lazy.ByteString),
                        LeftGCDMonoidInstance (mempty :: Text),
                        LeftGCDMonoidInstance (mempty :: Lazy.Text),
+                       LeftGCDMonoidInstance (mempty :: Identity ByteString),
                        LeftGCDMonoidInstance (mempty :: Dual ByteString),
                        LeftGCDMonoidInstance (mempty :: (Text, String)),
                        LeftGCDMonoidInstance (mempty :: (ByteString, Text, String)),
@@ -415,6 +419,7 @@ rightGCDInstances = map upcast gcdInstances
                        RightGCDMonoidInstance (mempty :: Text),
                        RightGCDMonoidInstance (mempty :: Lazy.Text),
                        RightGCDMonoidInstance (mempty :: String),
+                       RightGCDMonoidInstance (mempty :: Identity ByteString),
                        RightGCDMonoidInstance (mempty :: Dual String),
                        RightGCDMonoidInstance (mempty :: (Seq Int, ByteString)),
                        RightGCDMonoidInstance (mempty :: Seq Int),
@@ -427,6 +432,7 @@ rightGCDInstances = map upcast gcdInstances
 gcdInstances =
     [ GCDMonoidInstance (mempty :: ())
     , GCDMonoidInstance (mempty :: Product Natural)
+    , GCDMonoidInstance (mempty :: Identity (Sum Natural))
     , GCDMonoidInstance (mempty :: Dual (Product Natural))
     , GCDMonoidInstance (mempty :: IntSet)
     , GCDMonoidInstance (mempty :: Set String)
@@ -441,6 +447,7 @@ distributiveGCDMonoidInstances =
     , DistributiveGCDMonoidInstance (mempty :: Set ())
     , DistributiveGCDMonoidInstance (mempty :: Set Bool)
     , DistributiveGCDMonoidInstance (mempty :: Set Word)
+    , DistributiveGCDMonoidInstance (mempty :: Identity (Sum Natural))
     , DistributiveGCDMonoidInstance (mempty :: Dual (Set ()))
     , DistributiveGCDMonoidInstance (mempty :: Dual (Set Bool))
     , DistributiveGCDMonoidInstance (mempty :: Dual (Set Word))
@@ -471,6 +478,9 @@ leftDistributiveGCDMonoidInstances =
     , LeftDistributiveGCDMonoidInstance (mempty :: Set Bool)
     , LeftDistributiveGCDMonoidInstance (mempty :: Set Word)
       -- Instances for monoid transformers:
+    , LeftDistributiveGCDMonoidInstance (mempty :: Identity [()])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Identity [Bool])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Identity [Word])
     , LeftDistributiveGCDMonoidInstance (mempty :: Dual [()])
     , LeftDistributiveGCDMonoidInstance (mempty :: Dual [Bool])
     , LeftDistributiveGCDMonoidInstance (mempty :: Dual [Word])
@@ -501,6 +511,9 @@ rightDistributiveGCDMonoidInstances =
     , RightDistributiveGCDMonoidInstance (mempty :: Set Bool)
     , RightDistributiveGCDMonoidInstance (mempty :: Set Word)
       -- Instances for monoid transformers:
+    , RightDistributiveGCDMonoidInstance (mempty :: Identity [()])
+    , RightDistributiveGCDMonoidInstance (mempty :: Identity [Bool])
+    , RightDistributiveGCDMonoidInstance (mempty :: Identity [Word])
     , RightDistributiveGCDMonoidInstance (mempty :: Dual [()])
     , RightDistributiveGCDMonoidInstance (mempty :: Dual [Bool])
     , RightDistributiveGCDMonoidInstance (mempty :: Dual [Word])
@@ -509,6 +522,7 @@ rightDistributiveGCDMonoidInstances =
 lcmInstances =
     [LCMMonoidInstance (mempty :: Product Natural),
      LCMMonoidInstance (mempty :: Sum Natural),
+     LCMMonoidInstance (mempty :: Identity (Sum Natural)),
      LCMMonoidInstance (mempty :: Dual (Product Natural)),
      LCMMonoidInstance (mempty :: Dual (Sum Natural)),
      LCMMonoidInstance (mempty :: IntSet),
@@ -530,6 +544,7 @@ distributiveLCMInstances =
     , DistributiveLCMMonoidInstance (mempty :: Set ())
     , DistributiveLCMMonoidInstance (mempty :: Set Bool)
     , DistributiveLCMMonoidInstance (mempty :: Set Word)
+    , DistributiveLCMMonoidInstance (mempty :: Identity (Sum Natural))
     , DistributiveLCMMonoidInstance (mempty :: Dual (Product Natural))
     , DistributiveLCMMonoidInstance (mempty :: Dual (Sum Natural))
     ]
