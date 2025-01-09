@@ -1,4 +1,4 @@
-{- 
+{-
     Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
@@ -14,7 +14,7 @@ module Data.Monoid.Monus (
    Monus(..), OverlappingGCDMonoid(..)
    )
 where
-   
+
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString

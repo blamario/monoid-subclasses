@@ -1,4 +1,4 @@
-{- 
+{-
     Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
@@ -17,13 +17,13 @@
 --
 -- All semigroup subclasses listed above are for Abelian, /i.e./, commutative or symmetric semigroups. Since most
 -- practical semigroups in Haskell are not Abelian, each of the these classes has two symmetric superclasses:
--- 
+--
 -- * 'LeftReductive'
--- 
+--
 -- * 'LeftCancellative'
--- 
+--
 -- * 'RightReductive'
--- 
+--
 -- * 'RightCancellative'
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
@@ -59,7 +59,7 @@ import Numeric.Product.Commutative (CommutativeProduct)
 
 -- | Class of Abelian semigroups with a partial inverse for the Semigroup '<>' operation. The inverse operation '</>' must
 -- satisfy the following laws:
--- 
+--
 -- > maybe a (b <>) (a </> b) == a
 -- > maybe a (<> b) (a </> b) == a
 --
@@ -81,11 +81,11 @@ infix 5 </>
 class (LeftCancellative m, RightCancellative m, Reductive m) => Cancellative m
 
 -- | Class of semigroups with a left inverse of 'Data.Semigroup.<>', satisfying the following law:
--- 
+--
 -- > isPrefixOf a b == isJust (stripPrefix a b)
 -- > maybe b (a <>) (stripPrefix a b) == b
 -- > a `isPrefixOf` (a <> b)
--- 
+--
 -- Every instance definition has to implement at least the 'stripPrefix' method.
 class Semigroup m => LeftReductive m where
    isPrefixOf :: m -> m -> Bool
@@ -95,11 +95,11 @@ class Semigroup m => LeftReductive m where
    {-# MINIMAL stripPrefix #-}
 
 -- | Class of semigroups with a right inverse of 'Data.Semigroup.<>', satisfying the following law:
--- 
+--
 -- > isSuffixOf a b == isJust (stripSuffix a b)
 -- > maybe b (<> a) (stripSuffix a b) == b
 -- > b `isSuffixOf` (a <> b)
--- 
+--
 -- Every instance definition has to implement at least the 'stripSuffix' method.
 class Semigroup m => RightReductive m where
    isSuffixOf :: m -> m -> Bool

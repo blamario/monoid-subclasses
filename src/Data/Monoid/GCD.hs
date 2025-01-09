@@ -1,4 +1,4 @@
-{- 
+{-
     Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
@@ -210,7 +210,7 @@ class (Monoid m, LeftReductive m) => LeftGCDMonoid m where
 
 -- | Class of monoids capable of finding the equivalent of greatest common divisor on the right side of two monoidal
 -- values. The following laws must be respected:
--- 
+--
 -- > stripCommonSuffix a b == (a', b', s)
 -- >    where s = commonSuffix a b
 -- >          Just a' = stripSuffix p a

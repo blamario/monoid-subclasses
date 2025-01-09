@@ -1,11 +1,11 @@
-{- 
+{-
     Copyright 2013-2017 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
 -- | This module defines the 'FactorialMonoid' class and some of its instances.
--- 
+--
 
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
 
@@ -46,9 +46,9 @@ import Prelude hiding (break, drop, dropWhile, foldl, foldr, last, length, map, 
 -- Factors of a list are /not/ its elements but all its single-item sublists:
 --
 -- prop> factors "abc" == ["a", "b", "c"]
--- 
+--
 -- The methods of this class satisfy the following laws in addition to those of 'Factorial':
--- 
+--
 -- > null == List.null . factors
 -- > factors == unfoldr splitPrimePrefix == List.reverse . unfoldr (fmap swap . splitPrimeSuffix)
 -- > reverse == mconcat . List.reverse . factors
