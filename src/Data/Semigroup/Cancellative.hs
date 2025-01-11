@@ -1,4 +1,4 @@
-{- 
+{-
     Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
@@ -17,16 +17,18 @@
 --
 -- All semigroup subclasses listed above are for Abelian, /i.e./, commutative or symmetric semigroups. Since most
 -- practical semigroups in Haskell are not Abelian, each of the these classes has two symmetric superclasses:
--- 
+--
 -- * 'LeftReductive'
--- 
+--
 -- * 'LeftCancellative'
--- 
+--
 -- * 'RightReductive'
--- 
+--
 -- * 'RightCancellative'
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Semigroup.Cancellative (
    -- * Symmetric, commutative semigroup classes
@@ -59,7 +61,7 @@ import Numeric.Product.Commutative (CommutativeProduct)
 
 -- | Class of Abelian semigroups with a partial inverse for the Semigroup '<>' operation. The inverse operation '</>' must
 -- satisfy the following laws:
--- 
+--
 -- > maybe a (b <>) (a </> b) == a
 -- > maybe a (<> b) (a </> b) == a
 --
@@ -81,11 +83,11 @@ infix 5 </>
 class (LeftCancellative m, RightCancellative m, Reductive m) => Cancellative m
 
 -- | Class of semigroups with a left inverse of 'Data.Semigroup.<>', satisfying the following law:
--- 
+--
 -- > isPrefixOf a b == isJust (stripPrefix a b)
 -- > maybe b (a <>) (stripPrefix a b) == b
 -- > a `isPrefixOf` (a <> b)
--- 
+--
 -- Every instance definition has to implement at least the 'stripPrefix' method.
 class Semigroup m => LeftReductive m where
    isPrefixOf :: m -> m -> Bool
@@ -95,11 +97,11 @@ class Semigroup m => LeftReductive m where
    {-# MINIMAL stripPrefix #-}
 
 -- | Class of semigroups with a right inverse of 'Data.Semigroup.<>', satisfying the following law:
--- 
+--
 -- > isSuffixOf a b == isJust (stripSuffix a b)
 -- > maybe b (<> a) (stripSuffix a b) == b
 -- > b `isSuffixOf` (a <> b)
--- 
+--
 -- Every instance definition has to implement at least the 'stripSuffix' method.
 class Semigroup m => RightReductive m where
    isSuffixOf :: m -> m -> Bool
@@ -248,24 +250,19 @@ instance RightReductive All where
 
 -- Identity & Const instances
 
-instance Reductive a => Reductive (Identity a) where
-   Identity a </> Identity b = Identity <$> (a </> b)
+deriving instance Reductive a => Reductive (Identity a)
 instance Reductive a => Reductive (Const a x) where
    Const a </> Const b = Const <$> (a </> b)
 
 instance Cancellative a => Cancellative (Identity a)
 instance Cancellative a => Cancellative (Const a x)
 
-instance LeftReductive a => LeftReductive (Identity a) where
-   stripPrefix (Identity a) (Identity b) = Identity <$> stripPrefix a b
-   isPrefixOf (Identity a) (Identity b) = isPrefixOf a b
+deriving instance LeftReductive a => LeftReductive (Identity a)
 instance LeftReductive a => LeftReductive (Const a x) where
    stripPrefix (Const a) (Const b) = Const <$> stripPrefix a b
    isPrefixOf (Const a) (Const b) = isPrefixOf a b
 
-instance RightReductive a => RightReductive (Identity a) where
-   stripSuffix (Identity a) (Identity b) = Identity <$> stripSuffix a b
-   isSuffixOf (Identity a) (Identity b) = isSuffixOf a b
+deriving instance RightReductive a => RightReductive (Identity a)
 instance RightReductive a => RightReductive (Const a x) where
    stripSuffix (Const a) (Const b) = Const <$> stripSuffix a b
    isSuffixOf (Const a) (Const b) = isSuffixOf a b

@@ -1,4 +1,6 @@
 {-# LANGUAGE Haskell2010, FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 -- | This module defines the 'LCMMonoid' subclass of the 'Monoid' class.
 --
@@ -21,6 +23,7 @@ module Data.Monoid.LCM
 import Prelude hiding (gcd, lcm, max)
 import qualified Prelude
 
+import Data.Functor.Identity (Identity (Identity))
 import Data.IntSet (IntSet)
 import Data.Monoid (Dual (..), Product (..), Sum (..))
 import Data.Monoid.GCD (GCDMonoid (..), DistributiveGCDMonoid)
@@ -106,6 +109,8 @@ class GCDMonoid m => LCMMonoid m where
 instance LCMMonoid () where
     lcm () () = ()
 
+deriving instance LCMMonoid a => LCMMonoid (Identity a)
+
 instance LCMMonoid a => LCMMonoid (Dual a) where
     lcm (Dual a) (Dual b) = Dual (lcm a b)
 
@@ -166,6 +171,7 @@ instance (LCMMonoid a, LCMMonoid b, LCMMonoid c, LCMMonoid d) =>
 class (DistributiveGCDMonoid m, LCMMonoid m) => DistributiveLCMMonoid m
 
 instance DistributiveLCMMonoid ()
+instance DistributiveLCMMonoid a => DistributiveLCMMonoid (Identity a)
 instance DistributiveLCMMonoid (Product Natural)
 instance DistributiveLCMMonoid (Sum Natural)
 instance DistributiveLCMMonoid IntSet

@@ -1,13 +1,15 @@
-{- 
+{-
     Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
 -}
 
 -- | This module defines the 'Semigroup' => 'Factorial' => 'StableFactorial' classes and some of their instances.
--- 
+--
 
 {-# LANGUAGE Haskell2010, FlexibleInstances, Trustworthy #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Semigroup.Factorial (
    -- * Classes
@@ -18,6 +20,7 @@ module Data.Semigroup.Factorial (
 where
 
 import qualified Control.Monad as Monad
+import Data.Functor.Identity (Identity (Identity))
 import Data.Semigroup -- (Semigroup (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -50,9 +53,9 @@ import Prelude (Int, Maybe(..), Eq, Ord, Monoid, Applicative, Monad, Integral,
 -- Factors of a list are /not/ its elements but all its single-item sublists:
 --
 -- prop> factors "abc" == ["a", "b", "c"]
--- 
+--
 -- The methods of this class satisfy the following laws:
--- 
+--
 -- > maybe id sconcat  . nonEmpty . factors == id
 -- > List.all (\prime-> factors prime == [prime]) . factors
 -- > primePrefix s == foldr const s s
@@ -116,6 +119,8 @@ instance Factorial () where
    primeSuffix () = ()
    length () = 0
    reverse = id
+
+deriving instance Factorial a => Factorial (Identity a)
 
 instance Factorial a => Factorial (Dual a) where
    factors (Dual a) = fmap Dual (reverse $ factors a)

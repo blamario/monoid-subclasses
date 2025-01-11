@@ -1,4 +1,4 @@
-{- 
+{-
     Copyright 2013-2019 Mario Blazevic
 
     License: BSD3 (see BSD3-LICENSE.txt file)
@@ -70,7 +70,7 @@ import qualified Data.Monoid.Instances.Positioned as Positioned
 import Data.Semigroup (Semigroup, (<>), Max, Min)
 import Data.Monoid (Monoid, mempty, mconcat, All(All), Any(Any), Dual(Dual),
                     First(First), Last(Last), Sum(Sum), Product(Product))
-import Data.Semigroup.Factorial (Factorial, StableFactorial, 
+import Data.Semigroup.Factorial (Factorial, StableFactorial,
                                  factors, primePrefix, primeSuffix, foldl, foldl', foldr, length, reverse)
 import Data.Semigroup.Cancellative (Commutative, Reductive,
                                     LeftReductive, RightReductive,
@@ -231,6 +231,7 @@ factorialInstances :: [FactorialMonoidInstance]
 factorialInstances = map upcast stableFactorialInstances
                      ++ [FactorialMonoidInstance (mempty :: Sum Integer),
                          FactorialMonoidInstance (mempty :: Product Int32),
+                         FactorialMonoidInstance (mempty :: Identity String),
                          FactorialMonoidInstance (mempty :: Maybe String),
                          FactorialMonoidInstance (mempty :: (Text, String)),
                          FactorialMonoidInstance (mempty :: (Product Int32, ByteString, Sum Integer)),
@@ -247,7 +248,7 @@ factorialInstances = map upcast stableFactorialInstances
    where upcast (StableFactorialMonoidInstance i) = FactorialMonoidInstance i
 
 stableFactorialInstances :: [StableFactorialMonoidInstance]
-stableFactorialInstances = stable1 ++ map measure stable1 ++ map prefixed stable1 ++ map position stable1 
+stableFactorialInstances = stable1 ++ map measure stable1 ++ map prefixed stable1 ++ map position stable1
    where stable1 = map upcast stableTextualInstances
                    ++ [StableFactorialMonoidInstance (mempty :: ByteString),
                        StableFactorialMonoidInstance (mempty :: Lazy.ByteString),
@@ -257,7 +258,7 @@ stableFactorialInstances = stable1 ++ map measure stable1 ++ map prefixed stable
          upcast (StableTextualMonoidInstance i) = StableFactorialMonoidInstance i
          measure (StableFactorialMonoidInstance i) = StableFactorialMonoidInstance (Measured.measure i)
          prefixed (StableFactorialMonoidInstance i) = StableFactorialMonoidInstance (PrefixMemory.shadowed i)
-         position (StableFactorialMonoidInstance (i :: a)) = 
+         position (StableFactorialMonoidInstance (i :: a)) =
             StableFactorialMonoidInstance (pure i :: OffsetPositioned a)
 
 textualInstances :: [TextualMonoidInstance]
@@ -282,7 +283,7 @@ stableTextualInstances = stable1 ++ map measure stable1 ++ map prefixed stable1 
                     StableTextualMonoidInstance (mempty :: Vector Char)]
          measure (StableTextualMonoidInstance i) = StableTextualMonoidInstance (Measured.measure i)
          prefixed (StableTextualMonoidInstance i) = StableTextualMonoidInstance (PrefixMemory.shadowed i)
-         position (StableTextualMonoidInstance (i :: a)) = 
+         position (StableTextualMonoidInstance (i :: a)) =
             [StableTextualMonoidInstance (pure i :: OffsetPositioned a),
              StableTextualMonoidInstance (pure i :: LinePositioned a)]
 
@@ -338,6 +339,7 @@ reductiveInstances = map upcast cancellativeInstances
 
 overlappingGCDMonoidInstances = map upcast monusInstances
                                ++ [OverlappingGCDMonoidInstance (mempty :: String),
+                                   OverlappingGCDMonoidInstance (mempty :: Identity String),
                                    OverlappingGCDMonoidInstance (mempty :: Seq Int),
                                    OverlappingGCDMonoidInstance (mempty :: ByteString),
                                    OverlappingGCDMonoidInstance (mempty :: Lazy.ByteString),
@@ -350,6 +352,7 @@ overlappingGCDMonoidInstances = map upcast monusInstances
 
 monusInstances = [MonusInstance (mempty :: Product Natural),
                   MonusInstance (mempty :: Sum Natural),
+                  MonusInstance (mempty :: Identity (Sum Natural)),
                   MonusInstance (mempty :: Dual (Product Natural)),
                   MonusInstance (mempty :: Maybe ()),
                   MonusInstance (mempty :: Maybe (Product Natural)),
@@ -393,6 +396,7 @@ leftGCDInstances = map upcast gcdInstances
                        LeftGCDMonoidInstance (mempty :: Lazy.ByteString),
                        LeftGCDMonoidInstance (mempty :: Text),
                        LeftGCDMonoidInstance (mempty :: Lazy.Text),
+                       LeftGCDMonoidInstance (mempty :: Identity ByteString),
                        LeftGCDMonoidInstance (mempty :: Dual ByteString),
                        LeftGCDMonoidInstance (mempty :: (Text, String)),
                        LeftGCDMonoidInstance (mempty :: (ByteString, Text, String)),
@@ -415,6 +419,7 @@ rightGCDInstances = map upcast gcdInstances
                        RightGCDMonoidInstance (mempty :: Text),
                        RightGCDMonoidInstance (mempty :: Lazy.Text),
                        RightGCDMonoidInstance (mempty :: String),
+                       RightGCDMonoidInstance (mempty :: Identity ByteString),
                        RightGCDMonoidInstance (mempty :: Dual String),
                        RightGCDMonoidInstance (mempty :: (Seq Int, ByteString)),
                        RightGCDMonoidInstance (mempty :: Seq Int),
@@ -427,6 +432,7 @@ rightGCDInstances = map upcast gcdInstances
 gcdInstances =
     [ GCDMonoidInstance (mempty :: ())
     , GCDMonoidInstance (mempty :: Product Natural)
+    , GCDMonoidInstance (mempty :: Identity (Sum Natural))
     , GCDMonoidInstance (mempty :: Dual (Product Natural))
     , GCDMonoidInstance (mempty :: IntSet)
     , GCDMonoidInstance (mempty :: Set String)
@@ -441,6 +447,7 @@ distributiveGCDMonoidInstances =
     , DistributiveGCDMonoidInstance (mempty :: Set ())
     , DistributiveGCDMonoidInstance (mempty :: Set Bool)
     , DistributiveGCDMonoidInstance (mempty :: Set Word)
+    , DistributiveGCDMonoidInstance (mempty :: Identity (Sum Natural))
     , DistributiveGCDMonoidInstance (mempty :: Dual (Set ()))
     , DistributiveGCDMonoidInstance (mempty :: Dual (Set Bool))
     , DistributiveGCDMonoidInstance (mempty :: Dual (Set Word))
@@ -471,6 +478,9 @@ leftDistributiveGCDMonoidInstances =
     , LeftDistributiveGCDMonoidInstance (mempty :: Set Bool)
     , LeftDistributiveGCDMonoidInstance (mempty :: Set Word)
       -- Instances for monoid transformers:
+    , LeftDistributiveGCDMonoidInstance (mempty :: Identity [()])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Identity [Bool])
+    , LeftDistributiveGCDMonoidInstance (mempty :: Identity [Word])
     , LeftDistributiveGCDMonoidInstance (mempty :: Dual [()])
     , LeftDistributiveGCDMonoidInstance (mempty :: Dual [Bool])
     , LeftDistributiveGCDMonoidInstance (mempty :: Dual [Word])
@@ -501,6 +511,9 @@ rightDistributiveGCDMonoidInstances =
     , RightDistributiveGCDMonoidInstance (mempty :: Set Bool)
     , RightDistributiveGCDMonoidInstance (mempty :: Set Word)
       -- Instances for monoid transformers:
+    , RightDistributiveGCDMonoidInstance (mempty :: Identity [()])
+    , RightDistributiveGCDMonoidInstance (mempty :: Identity [Bool])
+    , RightDistributiveGCDMonoidInstance (mempty :: Identity [Word])
     , RightDistributiveGCDMonoidInstance (mempty :: Dual [()])
     , RightDistributiveGCDMonoidInstance (mempty :: Dual [Bool])
     , RightDistributiveGCDMonoidInstance (mempty :: Dual [Word])
@@ -509,6 +522,7 @@ rightDistributiveGCDMonoidInstances =
 lcmInstances =
     [LCMMonoidInstance (mempty :: Product Natural),
      LCMMonoidInstance (mempty :: Sum Natural),
+     LCMMonoidInstance (mempty :: Identity (Sum Natural)),
      LCMMonoidInstance (mempty :: Dual (Product Natural)),
      LCMMonoidInstance (mempty :: Dual (Sum Natural)),
      LCMMonoidInstance (mempty :: IntSet),
@@ -530,6 +544,7 @@ distributiveLCMInstances =
     , DistributiveLCMMonoidInstance (mempty :: Set ())
     , DistributiveLCMMonoidInstance (mempty :: Set Bool)
     , DistributiveLCMMonoidInstance (mempty :: Set Word)
+    , DistributiveLCMMonoidInstance (mempty :: Identity (Sum Natural))
     , DistributiveLCMMonoidInstance (mempty :: Dual (Product Natural))
     , DistributiveLCMMonoidInstance (mempty :: Dual (Sum Natural))
     ]
@@ -547,14 +562,14 @@ checkInstances (TextualTest checkType) = (map checkType textualInstances)
 checkInstances (LeftReductiveTest checkType) = (map checkType leftReductiveInstances)
 checkInstances (RightReductiveTest checkType) = (map checkType rightReductiveInstances)
 checkInstances (ReductiveTest checkType) = (map checkType reductiveInstances)
-checkInstances (LeftCancellativeTest checkType) = (map checkType leftCancellativeInstances) 
-checkInstances (RightCancellativeTest checkType) = (map checkType rightCancellativeInstances) 
-checkInstances (CancellativeTest checkType) = (map checkType cancellativeInstances) 
+checkInstances (LeftCancellativeTest checkType) = (map checkType leftCancellativeInstances)
+checkInstances (RightCancellativeTest checkType) = (map checkType rightCancellativeInstances)
+checkInstances (CancellativeTest checkType) = (map checkType cancellativeInstances)
 checkInstances (OverlappingGCDTest checkType) = (map checkType overlappingGCDMonoidInstances)
 checkInstances (MonusTest checkType) = (map checkType monusInstances)
-checkInstances (LeftGCDTest checkType) = (map checkType leftGCDInstances) 
-checkInstances (RightGCDTest checkType) = (map checkType rightGCDInstances) 
-checkInstances (GCDTest checkType) = (map checkType gcdInstances)  
+checkInstances (LeftGCDTest checkType) = (map checkType leftGCDInstances)
+checkInstances (RightGCDTest checkType) = (map checkType rightGCDInstances)
+checkInstances (GCDTest checkType) = (map checkType gcdInstances)
 checkInstances (DistributiveGCDTest checkType) = (map checkType distributiveGCDMonoidInstances)
 checkInstances (LeftDistributiveGCDTest checkType) = (map checkType leftDistributiveGCDMonoidInstances)
 checkInstances (RightDistributiveGCDTest checkType) = (map checkType rightDistributiveGCDMonoidInstances)
@@ -705,16 +720,16 @@ checkConcatFactors (FactorialMonoidInstance (e :: a)) = null (factors e) .&&. fo
 checkFactorsOfFactors (FactorialMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) (all singleton . factors)
    where singleton prime = factors prime == [prime]
 
-checkSplitPrimePrefix (FactorialMonoidInstance (_ :: a)) = 
+checkSplitPrimePrefix (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> factors a == unfoldr splitPrimePrefix a)
 
 checkSplitPrimeSuffix (FactorialMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
    where check a = factors a == reverse (unfoldr (fmap swap . splitPrimeSuffix) a)
 
-checkPrimePrefix (FactorialMonoidInstance (_ :: a)) = 
+checkPrimePrefix (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> primePrefix a == maybe mempty fst (splitPrimePrefix a))
 
-checkPrimeSuffix (FactorialMonoidInstance (_ :: a)) = 
+checkPrimeSuffix (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> primeSuffix a == maybe mempty snd (splitPrimeSuffix a))
 
 checkInits (FactorialMonoidInstance (_ :: a)) =
@@ -723,16 +738,16 @@ checkInits (FactorialMonoidInstance (_ :: a)) =
 checkTails (FactorialMonoidInstance (_ :: a)) =
    mapSize (`div` 5) $ forAll (arbitrary :: Gen a) (\a-> tails a == List.map mconcat (List.tails $ factors a))
 
-checkLeftFold (FactorialMonoidInstance (_ :: a)) = 
+checkLeftFold (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> foldl (flip (:)) [] a == List.foldl (flip (:)) [] (factors a))
 
-checkLeftFold' (FactorialMonoidInstance (_ :: a)) = 
+checkLeftFold' (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> foldl' (flip (:)) [] a == List.foldl' (flip (:)) [] (factors a))
 
-checkRightFold (FactorialMonoidInstance (_ :: a)) = 
+checkRightFold (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> foldr (:) [] a == List.foldr (:) [] (factors a))
 
-checkLength (FactorialMonoidInstance (_ :: a)) = 
+checkLength (FactorialMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) (\a-> length a == List.length (factors a))
 
 checkSpan (FactorialMonoidInstance (_ :: a)) = property $ \p-> forAll (arbitrary :: Gen a) (check p)
@@ -755,19 +770,19 @@ checkSplitAt (FactorialMonoidInstance (_ :: a)) = property $ \i-> forAll (arbitr
    where check i a = splitAt i a == (mconcat l, mconcat r)
             where (l, r) = List.splitAt i (factors a)
 
-checkReverse (FactorialMonoidInstance (_ :: a)) = 
+checkReverse (FactorialMonoidInstance (_ :: a)) =
    property $ forAll (arbitrary :: Gen a) (\a-> reverse a == mconcat (List.reverse $ factors a))
 
 checkStability (StableFactorialMonoidInstance (_ :: a)) =
    property $ forAll (arbitrary :: Gen (a, a)) (\(a, b)-> factors (a <> b) == factors a <> factors b)
 
-checkFromText (TextualMonoidInstance (_ :: a)) = 
+checkFromText (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen Text) (\t-> Textual.fromText t == (fromString (Text.unpack t) :: a))
 
-checkSingleton (TextualMonoidInstance (_ :: a)) = 
+checkSingleton (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen Char) (\c-> Textual.singleton c == (fromString [c] :: a))
 
-checkSplitCharacterPrefix (TextualMonoidInstance (_ :: a)) = 
+checkSplitCharacterPrefix (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen String) check1 .&&. forAll (arbitrary :: Gen a) check2
    where check1 s = unfoldr Textual.splitCharacterPrefix (fromString s :: a) == s
          check2 t = Textual.splitCharacterPrefix (primePrefix t)
@@ -785,7 +800,7 @@ checkUnfoldrToFactors (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Ge
 checkFactorsFromString (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen String) check
    where check s = unfoldr Textual.splitCharacterPrefix (fromString s :: a) == s
 
-checkTextualMap (TextualMonoidInstance (_ :: a)) = 
+checkTextualMap (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.map wrapSucc a == Textual.concatMap (Textual.singleton . wrapSucc) a
                     && Textual.map id a == a
@@ -794,7 +809,7 @@ checkTextualMap (TextualMonoidInstance (_ :: a)) =
             | c == maxBound = minBound
             | otherwise = succ c
 
-checkConcatMap (TextualMonoidInstance (_ :: a)) = 
+checkConcatMap (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.concatMap (fromString . f) a == mconcat (map apply $ factors a)
                     && Textual.concatMap Textual.singleton a == a
@@ -808,19 +823,19 @@ checkAll (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
 checkAny (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a) check
    where check a = Textual.any isLetter a == Textual.foldr (const id) ((||) . isLetter) False a
 
-checkTextualFoldl (TextualMonoidInstance (_ :: a)) = 
+checkTextualFoldl (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.foldl (\l a-> Left a : l) (\l c-> Right c : l) [] a == List.reverse (textualFactors a)
                     && Textual.foldl (<>) (\a-> (a <>) . Textual.singleton) mempty a == a
          check2 s = Textual.foldl undefined (flip (:)) [] s == List.foldl (flip (:)) [] s
 
-checkTextualFoldr (TextualMonoidInstance (_ :: a)) = 
+checkTextualFoldr (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.foldr (\a l-> Left a : l) (\c l-> Right c : l) [] a == textualFactors a
                     && Textual.foldr (<>) ((<>) . Textual.singleton) mempty a == a
          check2 s = Textual.foldr undefined (:) [] (fromString s :: a) == s
 
-checkTextualFoldl' (TextualMonoidInstance (_ :: a)) = 
+checkTextualFoldl' (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.foldl' (\l a-> Left a : l) (\l c-> Right c : l) [] a == List.reverse (textualFactors a)
                     && Textual.foldl' (<>) (\a-> (a <>) . Textual.singleton) mempty a == a
@@ -879,28 +894,28 @@ checkToText (TextualMonoidInstance (_ :: a)) =
    where check1 a = forAll arbitrary $ \f-> Textual.toText f a == Textual.foldr (\t s-> f t <> s) Text.cons Text.empty a
          check2 s = Textual.toText undefined (Textual.fromText s :: a) == s
 
-checkTextualMapAccumL (TextualMonoidInstance (_ :: a)) = 
+checkTextualMapAccumL (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = uncurry (Textual.mapAccumL (,)) ((), a) == ((), a)
          check2 s = Textual.mapAccumL f c (fromString s :: a) == fmap fromString (List.mapAccumL f c s)
          c = 0 :: Int
          f n c = if isLetter c then (succ n, succ c) else (2*n, c)
 
-checkTextualMapAccumR (TextualMonoidInstance (_ :: a)) = 
+checkTextualMapAccumR (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = uncurry (Textual.mapAccumR (,)) ((), a) == ((), a)
          check2 s = Textual.mapAccumR f c (fromString s :: a) == fmap fromString (List.mapAccumR f c s)
          c = 0 :: Int
          f n c = if isLetter c then (succ n, succ c) else (2*n, c)
 
-checkTextualTakeWhile (TextualMonoidInstance (_ :: a)) = 
+checkTextualTakeWhile (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = textualFactors (Textual.takeWhile (const True) isLetter a)
                     == List.takeWhile (either (const True) isLetter) (textualFactors a)
                     && Textual.takeWhile (const True) (const True) a == a
          check2 s = Textual.takeWhile undefined isLetter (fromString s :: a) == fromString (List.takeWhile isLetter s)
 
-checkTextualDropWhile (TextualMonoidInstance (_ :: a)) = 
+checkTextualDropWhile (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = textualFactors (Textual.dropWhile (const True) isLetter a)
                     == List.dropWhile (either (const True) isLetter) (textualFactors a)
@@ -953,14 +968,14 @@ checkTextualSpanMaybe_' (TextualMonoidInstance (_ :: a)) =
                   foldMaybe = Textual.foldl_' gc (Just s0)
                   gc s c = s >>= flip fc c
 
-checkTextualTakeWhile_ (TextualMonoidInstance (_ :: a)) = 
+checkTextualTakeWhile_ (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = textualFactors (Textual.takeWhile_ True isLetter a)
                     == List.takeWhile (either (const True) isLetter) (textualFactors a)
                     && Textual.takeWhile_ True (const True) a == a
          check2 s = Textual.takeWhile_ undefined isLetter (fromString s :: a) == fromString (List.takeWhile isLetter s)
 
-checkTextualDropWhile_ (TextualMonoidInstance (_ :: a)) = 
+checkTextualDropWhile_ (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = textualFactors (Textual.dropWhile_ True isLetter a)
                     == List.dropWhile (either (const True) isLetter) (textualFactors a)
@@ -972,7 +987,7 @@ checkTextualSplit (TextualMonoidInstance (_ :: a)) = forAll (arbitrary :: Gen a)
    where check a = List.all (List.all isLetter . rights . textualFactors) (Textual.split (not . isLetter) a)
                    && (mconcat . intersperse (fromString " ") . Textual.split (== ' ')) a == a
 
-checkTextualFind (TextualMonoidInstance (_ :: a)) = 
+checkTextualFind (TextualMonoidInstance (_ :: a)) =
    forAll (arbitrary :: Gen a) check1 .&&. forAll (arbitrary :: Gen String) check2
    where check1 a = Textual.find isLetter a == (List.find isLetter . rights . textualFactors) a
          check2 s = Textual.find isLetter (fromString s :: a) == List.find isLetter s
@@ -1308,7 +1323,7 @@ textualFactors :: TextualMonoid t => t -> [Either t Char]
 textualFactors = map characterize . factors
    where characterize prime = maybe (Left prime) Right (Textual.characterPrefix prime)
 
-newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary, 
+newtype TestString = TestString String deriving (Eq, Show, Arbitrary, CoArbitrary,
                                                  Semigroup, LeftReductive, LeftCancellative, StableFactorial,
                                                  Monoid, LeftGCDMonoid,
                                                  MonoidNull, PositiveMonoid, IsString)
