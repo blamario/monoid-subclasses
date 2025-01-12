@@ -65,6 +65,7 @@ module Data.Monoid.GCD
 
 import qualified Prelude
 
+import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.ByteString as ByteString
@@ -293,6 +294,12 @@ instance RightGCDMonoid () where
 deriving instance GCDMonoid a => GCDMonoid (Identity a)
 deriving instance LeftGCDMonoid a => LeftGCDMonoid (Identity a)
 deriving instance RightGCDMonoid a => RightGCDMonoid (Identity a)
+
+-- Const instances
+
+deriving instance GCDMonoid a => GCDMonoid (Const a b)
+deriving instance LeftGCDMonoid a => LeftGCDMonoid (Const a b)
+deriving instance RightGCDMonoid a => RightGCDMonoid (Const a b)
 
 -- Dual instances
 
@@ -627,6 +634,7 @@ class (LeftDistributiveGCDMonoid m, RightDistributiveGCDMonoid m, GCDMonoid m)
 
 instance DistributiveGCDMonoid ()
 instance DistributiveGCDMonoid a => DistributiveGCDMonoid (Identity a)
+instance DistributiveGCDMonoid a => DistributiveGCDMonoid (Const a b)
 instance DistributiveGCDMonoid (Product Natural)
 instance DistributiveGCDMonoid (Sum Natural)
 instance DistributiveGCDMonoid IntSet.IntSet
@@ -666,6 +674,7 @@ instance Ord a => LeftDistributiveGCDMonoid (Set.Set a)
 
 -- Instances for monoid transformers:
 instance LeftDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Identity a)
+instance LeftDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Const a b)
 instance RightDistributiveGCDMonoid a => LeftDistributiveGCDMonoid (Dual a)
 
 --------------------------------------------------------------------------------
@@ -701,4 +710,5 @@ instance Ord a => RightDistributiveGCDMonoid (Set.Set a)
 
 -- Instances for monoid transformers:
 instance RightDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Identity a)
+instance RightDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Const a b)
 instance LeftDistributiveGCDMonoid a => RightDistributiveGCDMonoid (Dual a)
