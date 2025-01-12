@@ -425,6 +425,7 @@ instance Factorial (Vector.Vector a) where
    reverse = Vector.reverse
 
 instance StableFactorial ()
+instance StableFactorial a => StableFactorial (Identity a)
 instance StableFactorial a => StableFactorial (Dual a)
 instance StableFactorial [x]
 instance StableFactorial ByteString.ByteString
