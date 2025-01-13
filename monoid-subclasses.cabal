@@ -15,6 +15,8 @@ Tested-with:         GHC==8.0.2
                    , GHC==9.4.8
                    , GHC==9.6.6
                    , GHC==9.8.4
+                   , GHC==9.10.1
+                   , GHC==9.12.1
 
 Description:
   A hierarchy of subclasses of 'Monoid' together with their instances for all data structures from base, containers, and
