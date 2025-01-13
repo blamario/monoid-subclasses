@@ -9,7 +9,7 @@ Tested-with:         GHC==9.8.2, GHC==9.6.4, GHC==9.4.8, GHC==9.2.8, GHC==9.0.2,
 Description:
   A hierarchy of subclasses of 'Monoid' together with their instances for all data structures from base, containers, and
   text packages.
-  
+
 License:             BSD3
 License-file:        BSD3-LICENSE.txt
 Copyright:           (c) 2013-2024 Mario Blažević
