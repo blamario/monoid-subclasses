@@ -23,6 +23,7 @@ module Data.Monoid.LCM
 import Prelude hiding (gcd, lcm, max)
 import qualified Prelude
 
+import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
 import Data.IntSet (IntSet)
 import Data.Monoid (Dual (..), Product (..), Sum (..))
@@ -111,6 +112,8 @@ instance LCMMonoid () where
 
 deriving instance LCMMonoid a => LCMMonoid (Identity a)
 
+deriving instance LCMMonoid a => LCMMonoid (Const a b)
+
 instance LCMMonoid a => LCMMonoid (Dual a) where
     lcm (Dual a) (Dual b) = Dual (lcm a b)
 
@@ -172,6 +175,7 @@ class (DistributiveGCDMonoid m, LCMMonoid m) => DistributiveLCMMonoid m
 
 instance DistributiveLCMMonoid ()
 instance DistributiveLCMMonoid a => DistributiveLCMMonoid (Identity a)
+instance DistributiveLCMMonoid a => DistributiveLCMMonoid (Const a b)
 instance DistributiveLCMMonoid (Product Natural)
 instance DistributiveLCMMonoid (Sum Natural)
 instance DistributiveLCMMonoid IntSet

@@ -251,21 +251,16 @@ instance RightReductive All where
 -- Identity & Const instances
 
 deriving instance Reductive a => Reductive (Identity a)
-instance Reductive a => Reductive (Const a x) where
-   Const a </> Const b = Const <$> (a </> b)
+deriving instance Reductive a => Reductive (Const a b)
 
 instance Cancellative a => Cancellative (Identity a)
 instance Cancellative a => Cancellative (Const a x)
 
 deriving instance LeftReductive a => LeftReductive (Identity a)
-instance LeftReductive a => LeftReductive (Const a x) where
-   stripPrefix (Const a) (Const b) = Const <$> stripPrefix a b
-   isPrefixOf (Const a) (Const b) = isPrefixOf a b
+deriving instance LeftReductive a => LeftReductive (Const a b)
 
 deriving instance RightReductive a => RightReductive (Identity a)
-instance RightReductive a => RightReductive (Const a x) where
-   stripSuffix (Const a) (Const b) = Const <$> stripSuffix a b
-   isSuffixOf (Const a) (Const b) = isSuffixOf a b
+deriving instance RightReductive a => RightReductive (Const a b)
 
 instance LeftCancellative a => LeftCancellative (Identity a)
 instance LeftCancellative a => LeftCancellative (Const a x)

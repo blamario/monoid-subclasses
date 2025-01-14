@@ -20,6 +20,7 @@ module Data.Semigroup.Factorial (
 where
 
 import qualified Control.Monad as Monad
+import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
 import Data.Semigroup -- (Semigroup (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
@@ -121,6 +122,8 @@ instance Factorial () where
    reverse = id
 
 deriving instance Factorial a => Factorial (Identity a)
+
+deriving instance Factorial a => Factorial (Const a b)
 
 instance Factorial a => Factorial (Dual a) where
    factors (Dual a) = fmap Dual (reverse $ factors a)
@@ -425,6 +428,8 @@ instance Factorial (Vector.Vector a) where
    reverse = Vector.reverse
 
 instance StableFactorial ()
+instance StableFactorial a => StableFactorial (Identity a)
+instance StableFactorial a => StableFactorial (Const a b)
 instance StableFactorial a => StableFactorial (Dual a)
 instance StableFactorial [x]
 instance StableFactorial ByteString.ByteString

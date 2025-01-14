@@ -17,6 +17,7 @@ module Data.Monoid.Monus (
    )
 where
 
+import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
 import Data.Monoid -- (Monoid, Dual(..), Sum(..), Product(..))
 import qualified Data.ByteString as ByteString
@@ -140,6 +141,11 @@ instance OverlappingGCDMonoid () where
 
 deriving instance Monus a => Monus (Identity a)
 deriving instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Identity a)
+
+-- Const instances
+
+deriving instance Monus a => Monus (Const a b)
+deriving instance OverlappingGCDMonoid a => OverlappingGCDMonoid (Const a b)
 
 -- Dual instances
 

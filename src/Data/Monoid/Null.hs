@@ -142,8 +142,7 @@ instance (MonoidNull (f a), MonoidNull (g a)) => MonoidNull (Functor.Product f g
 #endif
 
 -- | @since 1.2.5.0
-instance MonoidNull r => MonoidNull (Const r a) where
-   null (Const r) = null r
+deriving instance MonoidNull a => MonoidNull (Const a b)
 
 -- | @since 1.2.5.0
 deriving instance MonoidNull a => MonoidNull (Identity a)

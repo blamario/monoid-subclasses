@@ -18,6 +18,7 @@ module Data.Monoid.Factorial (
 where
 
 import Control.Arrow (first)
+import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
 import Data.Monoid -- (Monoid (..), Dual(..), Sum(..), Product(..), Endo(Endo, appEndo))
 import qualified Data.Foldable as Foldable
@@ -167,6 +168,8 @@ instance FactorialMonoid () where
    splitPrimeSuffix () = Nothing
 
 deriving instance FactorialMonoid a => FactorialMonoid (Identity a)
+
+deriving instance FactorialMonoid a => FactorialMonoid (Const a b)
 
 instance FactorialMonoid a => FactorialMonoid (Dual a) where
    splitPrimePrefix (Dual a) = case splitPrimeSuffix a
