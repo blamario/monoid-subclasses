@@ -1,3 +1,16 @@
+Version 1.2.6
+---------------
+
+* Improved the performance of `instance FactorialMonoid PrefixMemory`
+* Bumped the `containers` dependency upper bound
+* Thanks to Jonathan Knowles:
+  * Documented and added tests for `Monus` laws
+  * Added the missing class instances and tests for `Identity` and `Const`
+  * Using `GeneralizedNewtypeDeriving` to simplify existing instances
+  * Fixed compilation on older versions of GHC
+  * Updated and improved the CI
+  * Removed trailing whitespace
+
 Version 1.2.5.1
 ---------------
 
