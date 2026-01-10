@@ -1,3 +1,8 @@
+Version 1.2.6.1
+---------------
+
+* Bumped the `quickcheck-instances` dependency upper bound
+
 Version 1.2.6
 ---------------
 

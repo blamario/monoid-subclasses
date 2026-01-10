@@ -1,5 +1,5 @@
 Name:                monoid-subclasses
-Version:             1.2.6
+Version:             1.2.6.1
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
 Synopsis:            Subclasses of Monoid
@@ -67,7 +67,7 @@ test-suite Main
   Type:              exitcode-stdio-1.0
   Build-Depends:     base >= 4.9 && < 5,
                      bytestring, containers, text, vector, primes,
-                     QuickCheck >= 2.9 && < 3, quickcheck-instances >= 0.3.12 && <0.4,
+                     QuickCheck >= 2.9 && < 3, quickcheck-instances >= 0.3.12 && <0.5,
                      tasty >= 0.7, tasty-quickcheck >= 0.7 && < 1.0,
                      monoid-subclasses
   Main-is:           Test/TestMonoidSubclasses.hs
