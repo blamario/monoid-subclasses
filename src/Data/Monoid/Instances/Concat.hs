@@ -8,6 +8,7 @@
 -- 
 
 {-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-uni-patterns #-}
 
 module Data.Monoid.Instances.Concat (
    Concat, concatenate, extract, force

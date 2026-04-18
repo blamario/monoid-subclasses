@@ -51,6 +51,7 @@
 {-# LANGUAGE CPP, Haskell2010, FlexibleInstances, Trustworthy #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-uni-patterns #-}
 
 module Data.Monoid.GCD
     ( GCDMonoid (..)
