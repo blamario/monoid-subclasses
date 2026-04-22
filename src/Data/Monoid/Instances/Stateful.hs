@@ -13,6 +13,7 @@
 -- >[Stateful ("d",[]),Stateful ("a",[]),Stateful ("t",[]),Stateful ("a",[]),Stateful ("",[4])]
 
 {-# LANGUAGE Haskell2010, DeriveDataTypeable #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-uni-patterns #-}
 
 module Data.Monoid.Instances.Stateful (
    Stateful(Stateful), extract, state, setState

@@ -10,6 +10,7 @@
 {-# LANGUAGE Haskell2010, ConstraintKinds, FlexibleInstances, Trustworthy #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-uni-patterns #-}
 
 module Data.Monoid.Factorial (
    module Data.Semigroup.Factorial,

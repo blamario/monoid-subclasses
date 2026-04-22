@@ -6,6 +6,7 @@
 
 {-# LANGUAGE CPP, Rank2Types, ScopedTypeVariables, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# OPTIONS_GHC -Wwarn=incomplete-uni-patterns #-}
 {- HLINT ignore "Use camelCase" -}
 
 module Main where
